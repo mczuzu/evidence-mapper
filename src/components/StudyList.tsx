@@ -1,13 +1,34 @@
-import { Study } from '@/types/study';
+import { StudyListItem } from '@/types/database';
 import { StudyCard } from './StudyCard';
-import { FileSearch } from 'lucide-react';
+import { FileSearch, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface StudyListProps {
-  studies: Study[];
+  studies: StudyListItem[];
   totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  isLoading: boolean;
+  onPageChange: (page: number) => void;
 }
 
-export function StudyList({ studies, totalCount }: StudyListProps) {
+export function StudyList({
+  studies,
+  totalCount,
+  currentPage,
+  totalPages,
+  isLoading,
+  onPageChange,
+}: StudyListProps) {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
+        <p className="text-sm text-muted-foreground">Loading studies...</p>
+      </div>
+    );
+  }
+
   if (studies.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -25,14 +46,43 @@ export function StudyList({ studies, totalCount }: StudyListProps) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Showing <span className="font-medium text-foreground">{studies.length}</span> of{' '}
-        <span className="font-medium text-foreground">{totalCount}</span> studies
+        Showing{' '}
+        <span className="font-medium text-foreground">
+          {currentPage * 20 + 1}–{Math.min((currentPage + 1) * 20, totalCount)}
+        </span>{' '}
+        of <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> studies
       </p>
+
       <div className="grid gap-4">
         {studies.map((study) => (
-          <StudyCard key={study.id} study={study} />
+          <StudyCard key={study.nct_id} study={study} />
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground px-4">
+            Page {currentPage + 1} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages - 1}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

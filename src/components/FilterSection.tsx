@@ -1,12 +1,17 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
+interface FilterOption {
+  value: string;
+  count?: number;
+}
+
 interface FilterSectionProps {
   title: string;
-  options: string[];
+  options: FilterOption[];
   selected: string[];
   onChange: (selected: string[]) => void;
   defaultExpanded?: boolean;
@@ -21,13 +26,24 @@ export function FilterSection({
 }: FilterSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
-  const handleToggle = (option: string) => {
-    if (selected.includes(option)) {
-      onChange(selected.filter((s) => s !== option));
+  const toggleOption = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((v) => v !== value));
     } else {
-      onChange([...selected, option]);
+      onChange([...selected, value]);
     }
   };
+
+  if (options.length === 0) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          {title}
+        </div>
+        <p className="text-xs text-muted-foreground pl-6">No options available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">
@@ -47,28 +63,37 @@ export function FilterSection({
           </span>
         )}
       </button>
-      
+
       <div
         className={cn(
-          'space-y-1.5 pl-6 overflow-hidden transition-all duration-200',
-          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          'overflow-hidden transition-all duration-200',
+          isExpanded ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
         )}
       >
-        {options.map((option) => (
-          <div key={option} className="flex items-center space-x-2">
-            <Checkbox
-              id={`${title}-${option}`}
-              checked={selected.includes(option)}
-              onCheckedChange={() => handleToggle(option)}
-            />
-            <Label
-              htmlFor={`${title}-${option}`}
-              className="text-sm font-normal text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-            >
-              {option}
-            </Label>
+        <ScrollArea className="h-56 pl-6">
+          <div className="space-y-2 pr-4">
+            {options.map((option) => (
+              <label
+                key={option.value}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <Checkbox
+                  checked={selected.includes(option.value)}
+                  onCheckedChange={() => toggleOption(option.value)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors flex-1 truncate">
+                  {option.value}
+                </span>
+                {option.count !== undefined && (
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {option.count}
+                  </span>
+                )}
+              </label>
+            ))}
           </div>
-        ))}
+        </ScrollArea>
       </div>
     </div>
   );
