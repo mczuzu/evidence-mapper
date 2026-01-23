@@ -66,7 +66,7 @@ export function useSemanticLabelsFacet() {
       const { data, error } = await supabaseExternal
         .from('v_ui_facet_semantic_labels')
         .select('*')
-        .order('count', { ascending: false });
+        .order('n_studies', { ascending: false });
 
       if (error) {
         console.error('Error fetching semantic labels facet:', error);
@@ -85,7 +85,7 @@ export function useParamTypeFacet() {
       const { data, error } = await supabaseExternal
         .from('v_ui_facet_param_type')
         .select('*')
-        .order('count', { ascending: false });
+        .order('n_studies', { ascending: false });
 
       if (error) {
         console.error('Error fetching param type facet:', error);
