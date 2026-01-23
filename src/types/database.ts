@@ -15,11 +15,11 @@ export interface StudyListItem {
 }
 
 export interface FacetSemanticLabel {
-  semantic_label: string;
-  count: number;
+  label: string;
+  n_studies: number;
 }
 
 export interface FacetParamType {
   param_type: string;
-  count: number;
+  n_studies: number;
 }

@@ -27,13 +27,13 @@ export function FilterSidebar({
   };
 
   const labelOptions = semanticLabels?.map((l) => ({
-    value: l.semantic_label,
-    count: l.count,
+    value: l.label,
+    count: l.n_studies,
   })) || [];
 
   const paramTypeOptions = paramTypes?.map((p) => ({
     value: p.param_type,
-    count: p.count,
+    count: p.n_studies,
   })) || [];
 
   return (
