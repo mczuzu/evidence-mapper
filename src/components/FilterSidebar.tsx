@@ -1,27 +1,40 @@
 import { FilterSection } from './FilterSection';
 import { Button } from '@/components/ui/button';
-import { Filter, RotateCcw } from 'lucide-react';
-import { allSemanticLabels, allParameterTypes } from '@/data/mockStudies';
+import { Filter, RotateCcw, Loader2 } from 'lucide-react';
+import { useSemanticLabelsFacet, useParamTypeFacet } from '@/hooks/useStudies';
 
 interface FilterSidebarProps {
   selectedLabels: string[];
   setSelectedLabels: (labels: string[]) => void;
-  selectedParams: string[];
-  setSelectedParams: (params: string[]) => void;
+  selectedParamTypes: string[];
+  setSelectedParamTypes: (types: string[]) => void;
 }
 
 export function FilterSidebar({
   selectedLabels,
   setSelectedLabels,
-  selectedParams,
-  setSelectedParams,
+  selectedParamTypes,
+  setSelectedParamTypes,
 }: FilterSidebarProps) {
-  const hasFilters = selectedLabels.length > 0 || selectedParams.length > 0;
+  const { data: semanticLabels, isLoading: labelsLoading } = useSemanticLabelsFacet();
+  const { data: paramTypes, isLoading: paramTypesLoading } = useParamTypeFacet();
+
+  const hasFilters = selectedLabels.length > 0 || selectedParamTypes.length > 0;
 
   const clearFilters = () => {
     setSelectedLabels([]);
-    setSelectedParams([]);
+    setSelectedParamTypes([]);
   };
+
+  const labelOptions = semanticLabels?.map((l) => ({
+    value: l.semantic_label,
+    count: l.count,
+  })) || [];
+
+  const paramTypeOptions = paramTypes?.map((p) => ({
+    value: p.param_type,
+    count: p.count,
+  })) || [];
 
   return (
     <aside className="w-72 flex-shrink-0 bg-card border-r border-border p-5 overflow-y-auto">
@@ -44,19 +57,33 @@ export function FilterSidebar({
       </div>
 
       <div className="space-y-6">
-        <FilterSection
-          title="Semantic Labels"
-          options={allSemanticLabels}
-          selected={selectedLabels}
-          onChange={setSelectedLabels}
-        />
-        
-        <FilterSection
-          title="Parameter Types"
-          options={allParameterTypes}
-          selected={selectedParams}
-          onChange={setSelectedParams}
-        />
+        {labelsLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading labels...
+          </div>
+        ) : (
+          <FilterSection
+            title="Semantic Labels"
+            options={labelOptions}
+            selected={selectedLabels}
+            onChange={setSelectedLabels}
+          />
+        )}
+
+        {paramTypesLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading param types...
+          </div>
+        ) : (
+          <FilterSection
+            title="Parameter Types"
+            options={paramTypeOptions}
+            selected={selectedParamTypes}
+            onChange={setSelectedParamTypes}
+          />
+        )}
       </div>
     </aside>
   );
