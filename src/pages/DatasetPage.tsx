@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
-import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch } from 'lucide-react';
+import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -197,6 +197,27 @@ const DatasetPage = () => {
               </Button>
             </div>
           </div>
+
+          {/* Banner for IDs mode */}
+          {isIdsMode && (
+            <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Filter className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Vista filtrada por estudios relacionados
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(-1)}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Volver al dataset anterior
+              </Button>
+            </div>
+          )}
 
           {/* Error state */}
           {error && (
