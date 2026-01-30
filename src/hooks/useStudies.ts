@@ -18,7 +18,7 @@ export function useStudies({ searchQuery, selectedLabels, selectedParamTypes, pa
       let query = supabaseExternal
         .from('v_ui_study_list')
         .select('*', { count: 'exact' })
-        .order('updated_at', { ascending: false, nullsFirst: false });
+        .order('nct_id', { ascending: false });
 
       // Text search on brief_title and official_title
       if (searchQuery.trim()) {
