@@ -63,3 +63,41 @@ export function useDatasetStudies({
     },
   });
 }
+
+// Hook for fetching specific studies by IDs
+export function useDatasetStudiesByIds(nctIds: string[]) {
+  return useQuery({
+    queryKey: ['dataset-studies-by-ids', nctIds],
+    queryFn: async () => {
+      if (nctIds.length === 0) {
+        return {
+          studies: [],
+          totalCount: 0,
+          pageSize: 0,
+          currentPage: 0,
+          totalPages: 0,
+        };
+      }
+
+      const { data, error } = await supabaseExternal
+        .from('v_ui_study_list')
+        .select('*')
+        .in('nct_id', nctIds)
+        .order('nct_id', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching studies by IDs:', error);
+        throw error;
+      }
+
+      return {
+        studies: (data as StudyListItem[]) || [],
+        totalCount: data?.length || 0,
+        pageSize: data?.length || 0,
+        currentPage: 0,
+        totalPages: 1,
+      };
+    },
+    enabled: nctIds.length > 0,
+  });
+}
