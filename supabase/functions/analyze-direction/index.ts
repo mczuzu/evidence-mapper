@@ -37,32 +37,33 @@ Deno.serve(async (req) => {
       db: { schema: 'em' }
     });
 
-    // Fetch study data for the selected NCT IDs
+    // Fetch study data for the selected NCT IDs (only columns that exist)
     const { data: studies, error: studiesError } = await supabaseExternal
       .from('v_ui_study_list')
-      .select('nct_id, brief_title, semantic_labels')
+      .select('nct_id, brief_title')
       .in('nct_id', nctIds);
 
     if (studiesError) {
       console.error('Error fetching studies:', studiesError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch study data' }),
+        JSON.stringify({ error: 'Failed to fetch study data', details: studiesError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Generate mock analysis result
+    // Get study titles for context
+    const studyTitles = studies?.map(s => s.brief_title).filter(Boolean) || [];
+    const titleSummary = studyTitles.slice(0, 3).join(', ') || 'selected clinical trials';
+
+    // Generate analysis result
     // In production, this would call an AI model
-    const allLabels = studies?.flatMap(s => s.semantic_labels || []) || [];
-    const uniqueLabels = [...new Set(allLabels)];
-    
     const analysisResult = {
       analysis: {
-        direction: `Analysis of ${nctIds.length} clinical trials focusing on ${uniqueLabels.slice(0, 3).join(', ') || 'various conditions'}. The studies show promising research directions in this therapeutic area.`,
+        direction: `Analysis of ${nctIds.length} clinical trials related to: ${titleSummary}. The studies show promising research directions in this therapeutic area.`,
         themes: [
           {
             title: 'Primary Research Focus',
-            description: `${uniqueLabels[0] || 'General clinical research'} is the predominant theme across the selected studies.`,
+            description: `The selected studies focus on clinical outcomes and patient health improvements.`,
             study_ids: nctIds.slice(0, Math.ceil(nctIds.length / 2))
           },
           {
