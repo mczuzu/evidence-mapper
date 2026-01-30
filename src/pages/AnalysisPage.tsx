@@ -1,10 +1,17 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/Header';
-import { ArrowLeft, AlertCircle, Compass, Lightbulb, AlertTriangle, ArrowRight, Eye, Loader2 } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+
+import { HypothesisSection } from '@/components/analysis/HypothesisSection';
+import { PatternsSection } from '@/components/analysis/PatternsSection';
+import { GapsSection } from '@/components/analysis/GapsSection';
+import { NextStudiesSection } from '@/components/analysis/NextStudiesSection';
+import { LegacyAnalysisContent } from '@/components/analysis/LegacyAnalysisContent';
+import type { AnalysisResult } from '@/types/analysis';
 
 type AnalysisRunRow = {
   id: string;
@@ -34,6 +41,32 @@ function useAnalysisRun(analysisId: string | undefined) {
       return data as unknown as AnalysisRunRow;
     },
   });
+}
+
+// Helper to safely parse analysis result (handles string or object)
+function parseAnalysisResult(result: any): AnalysisResult | null {
+  if (!result) return null;
+
+  // If result is a string, try to parse it
+  if (typeof result === 'string') {
+    try {
+      return JSON.parse(result) as AnalysisResult;
+    } catch {
+      return null;
+    }
+  }
+
+  return result as AnalysisResult;
+}
+
+// Check if the analysis uses the new schema
+function isNewSchema(analysis: any): boolean {
+  return !!(
+    analysis?.direction_hypotheses ||
+    analysis?.patterns ||
+    analysis?.opportunity_gaps ||
+    analysis?.next_studies
+  );
 }
 
 const AnalysisPage = () => {
@@ -73,18 +106,18 @@ const AnalysisPage = () => {
     navigate(-1);
   };
 
-  const handleViewStudies = (studyIds: string[]) => {
-    navigate(`/dataset?ids=${studyIds.join(',')}`);
-  };
-
-  const result = analysisRun?.result;
-  const analysis = result?.analysis;
+  // Parse and extract data
+  const parsedResult = parseAnalysisResult(analysisRun?.result);
+  const analysis = parsedResult?.analysis;
+  const studyIndex = parsedResult?.study_index;
+  const metadata = parsedResult?.metadata;
 
   const nFound =
-    result?.metadata?.n_found ??
-    result?.metadata?.study_count ??
+    metadata?.n_found ??
+    metadata?.study_count ??
     (analysisRun?.nct_ids?.length ?? 0);
   const firstThree = (analysisRun?.nct_ids ?? []).slice(0, 3);
+  const useNewSchema = analysis ? isNewSchema(analysis) : false;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -103,9 +136,9 @@ const AnalysisPage = () => {
                 Análisis de Dirección
               </h1>
             </div>
-            {result?.metadata && (
+            {nFound > 0 && (
               <span className="text-sm text-muted-foreground">
-                {result.metadata.study_count} estudios analizados
+                {nFound} estudios analizados
               </span>
             )}
           </div>
@@ -128,6 +161,12 @@ const AnalysisPage = () => {
                     {firstThree.length ? firstThree.join(', ') : '—'}
                   </span>
                 </div>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Schema:</span>{' '}
+                  <span className="font-medium text-foreground">
+                    {isLoading ? '…' : useNewSchema ? 'Nuevo (v2)' : 'Legacy (v1)'}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -146,143 +185,26 @@ const AnalysisPage = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 text-destructive">
                   <AlertCircle className="h-5 w-5" />
-                  <p className="text-sm">
-                    {errorMessage}
-                  </p>
+                  <p className="text-sm">{errorMessage}</p>
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Analysis Content */}
-          {analysis && (
-            <div className="space-y-6">
-              {/* Direction */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-serif text-lg flex items-center gap-2">
-                    <Compass className="h-5 w-5 text-primary" />
-                    Dirección del Análisis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-foreground leading-relaxed">
-                    {analysis.direction}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Themes */}
-              {analysis.themes && analysis.themes.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-serif text-lg flex items-center gap-2">
-                      <Lightbulb className="h-5 w-5 text-primary" />
-                      Temas Identificados
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {analysis.themes.map((theme, index) => (
-                      <div
-                        key={index}
-                        className="bg-muted/30 rounded-lg p-4 border border-border"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-foreground mb-1">
-                              {theme.title}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              {theme.description}
-                            </p>
-                          </div>
-                          {theme.study_ids && theme.study_ids.length > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewStudies(theme.study_ids)}
-                              className="shrink-0 gap-1"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              Ver estudios ({theme.study_ids.length})
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
+          {analysis && !isLoading && (
+            <>
+              {useNewSchema ? (
+                <div className="space-y-6">
+                  <HypothesisSection hypotheses={analysis.direction_hypotheses || []} />
+                  <PatternsSection patterns={analysis.patterns || []} />
+                  <GapsSection gaps={analysis.opportunity_gaps || []} />
+                  <NextStudiesSection studies={analysis.next_studies || []} />
+                </div>
+              ) : (
+                <LegacyAnalysisContent analysis={analysis} />
               )}
-
-              {/* Gaps */}
-              {analysis.gaps && analysis.gaps.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-serif text-lg flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-amber-500" />
-                      Brechas Identificadas
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {analysis.gaps.map((gap, index) => (
-                      <div
-                        key={index}
-                        className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-foreground mb-1">
-                              {gap.title}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              {gap.description}
-                            </p>
-                          </div>
-                          {gap.study_ids && gap.study_ids.length > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewStudies(gap.study_ids)}
-                              className="shrink-0 gap-1"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              Ver estudios ({gap.study_ids.length})
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Suggested Next Steps */}
-              {analysis.suggested_next_steps && analysis.suggested_next_steps.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-serif text-lg flex items-center gap-2">
-                      <ArrowRight className="h-5 w-5 text-primary" />
-                      Próximos Pasos Sugeridos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {analysis.suggested_next_steps.map((step, index) => (
-                        <li
-                          key={index}
-                          className="flex items-start gap-3 text-sm"
-                        >
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center justify-center">
-                            {index + 1}
-                          </span>
-                          <span className="text-foreground">{step}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            </>
           )}
         </div>
       </main>
