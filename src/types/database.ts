@@ -11,7 +11,6 @@ export interface StudyListItem {
   has_placebo_or_control_label: boolean | null;
   semantic_labels: string[] | null;
   param_type_set: string[] | null;
-  updated_at: string | null;
 }
 
 export interface FacetSemanticLabel {

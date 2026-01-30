@@ -1,14 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { FilterSidebar } from '@/components/FilterSidebar';
 import { SearchInput } from '@/components/SearchInput';
 import { StudyList } from '@/components/StudyList';
 import { useStudies } from '@/hooks/useStudies';
+import { parseFiltersFromQueryParams } from '@/lib/filter-utils';
 
 const Index = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
-  const [selectedParamTypes, setSelectedParamTypes] = useState<string[]>([]);
+  const [searchParams] = useSearchParams();
+  
+  // Initialize state from query params
+  const initialFilters = parseFiltersFromQueryParams(searchParams);
+  const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery);
+  const [selectedLabels, setSelectedLabels] = useState<string[]>(initialFilters.labels);
+  const [selectedParamTypes, setSelectedParamTypes] = useState<string[]>(initialFilters.paramTypes);
   const [page, setPage] = useState(0);
 
   const { data, isLoading, error } = useStudies({
