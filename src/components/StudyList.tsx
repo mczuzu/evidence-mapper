@@ -1,6 +1,7 @@
+import { useNavigate } from 'react-router-dom';
 import { StudyListItem } from '@/types/database';
 import { StudyCard } from './StudyCard';
-import { FileSearch, Loader2 } from 'lucide-react';
+import { FileSearch, Loader2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface StudyListProps {
@@ -10,6 +11,9 @@ interface StudyListProps {
   totalPages: number;
   isLoading: boolean;
   onPageChange: (page: number) => void;
+  searchQuery?: string;
+  selectedLabels?: string[];
+  selectedParamTypes?: string[];
 }
 
 export function StudyList({
@@ -19,7 +23,22 @@ export function StudyList({
   totalPages,
   isLoading,
   onPageChange,
+  searchQuery = '',
+  selectedLabels = [],
+  selectedParamTypes = [],
 }: StudyListProps) {
+  const navigate = useNavigate();
+
+  const handleViewDataset = () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (selectedLabels.length > 0) params.set('labels', selectedLabels.join(','));
+    if (selectedParamTypes.length > 0) params.set('paramTypes', selectedParamTypes.join(','));
+    
+    const queryString = params.toString();
+    navigate(queryString ? `/dataset?${queryString}` : '/dataset');
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -45,13 +64,25 @@ export function StudyList({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Showing{' '}
-        <span className="font-medium text-foreground">
-          {currentPage * 20 + 1}–{Math.min((currentPage + 1) * 20, totalCount)}
-        </span>{' '}
-        of <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> studies
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Showing{' '}
+          <span className="font-medium text-foreground">
+            {currentPage * 20 + 1}–{Math.min((currentPage + 1) * 20, totalCount)}
+          </span>{' '}
+          of <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> studies
+        </p>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleViewDataset}
+          className="gap-2"
+        >
+          <Database className="h-4 w-4" />
+          Ver dataset ({totalCount.toLocaleString()})
+        </Button>
+      </div>
 
       <div className="grid gap-4">
         {studies.map((study) => (
