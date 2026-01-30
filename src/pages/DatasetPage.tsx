@@ -14,13 +14,12 @@ import {
 } from '@/components/ui/table';
 import { useDatasetStudies, useDatasetStudiesByIds } from '@/hooks/useDatasetStudies';
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from '@/lib/filter-utils';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAnalysisStore } from '@/state/analysis-store';
 
 const DatasetPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setRun } = useAnalysisStore();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -134,17 +133,33 @@ const DatasetPage = () => {
 
       const result = await response.json();
 
-      // Generate a NEW analysisId per run and store run in client state (no reuse)
+      // Generate a NEW analysisId per run (no reuse)
       const analysisId = crypto.randomUUID();
-      setRun({
-        id: analysisId,
-        created_at: new Date().toISOString(),
-        nct_ids: nctIds,
-        result,
-      });
+
+      // Persist the FULL response payload, strictly associated with this analysisId
+      const { error: insertError } = await supabase
+        .from('analysis_runs')
+        .insert({
+          id: analysisId,
+          nct_ids: nctIds,
+          result,
+        });
+
+      if (insertError) {
+        console.error('Error saving analysis:', insertError);
+        throw new Error('Failed to save analysis results');
+      }
 
       // Navigate to the analysis page using the NEW analysisId
-      navigate(`/analysis/${analysisId}`);
+      navigate(`/analysis/${analysisId}`, {
+        state: {
+          run: {
+            id: analysisId,
+            nct_ids: nctIds,
+            result,
+          },
+        },
+      });
     } catch (err) {
       console.error('Analysis error:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to analyze studies');
