@@ -1,71 +1,22 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/Header';
-import { ArrowLeft, Loader2, AlertCircle, Compass, Lightbulb, AlertTriangle, ArrowRight, Eye } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Compass, Lightbulb, AlertTriangle, ArrowRight, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
-
-interface AnalysisTheme {
-  title: string;
-  description: string;
-  study_ids: string[];
-}
-
-interface AnalysisGap {
-  title: string;
-  description: string;
-  study_ids: string[];
-}
-
-interface AnalysisResult {
-  analysis: {
-    direction: string;
-    themes: AnalysisTheme[];
-    gaps: AnalysisGap[];
-    suggested_next_steps: string[];
-  };
-  metadata: {
-    study_count: number;
-    generated_at: string;
-  };
-}
-
-interface AnalysisRun {
-  id: string;
-  created_at: string;
-  nct_ids: string[];
-  result: AnalysisResult;
-}
-
-function useAnalysisRun(analysisId: string | undefined) {
-  return useQuery({
-    queryKey: ['analysis-run', analysisId],
-    queryFn: async () => {
-      if (!analysisId) throw new Error('No analysis ID provided');
-
-      const { data, error } = await supabase
-        .from('analysis_runs')
-        .select('*')
-        .eq('id', analysisId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching analysis:', error);
-        throw error;
-      }
-
-      return data as unknown as AnalysisRun;
-    },
-    enabled: !!analysisId,
-  });
-}
+import { useAnalysisStore, type StoredAnalysisRun } from '@/state/analysis-store';
 
 const AnalysisPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
 
-  const { data: analysisRun, isLoading, error } = useAnalysisRun(analysisId);
+  const { getRun } = useAnalysisStore();
+  const analysisRun: StoredAnalysisRun | undefined = analysisId ? getRun(analysisId) : undefined;
+
+  const errorMessage = !analysisId
+    ? 'No analysis ID provided.'
+    : !analysisRun
+      ? 'Este análisis no está disponible (probablemente se perdió al recargar). Genera un análisis nuevo desde el dataset.'
+      : null;
 
   const handleBack = () => {
     navigate(-1);
@@ -102,22 +53,14 @@ const AnalysisPage = () => {
             )}
           </div>
 
-          {/* Loading */}
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
-              <p className="text-sm text-muted-foreground">Loading analysis...</p>
-            </div>
-          )}
-
           {/* Error */}
-          {error && (
+          {errorMessage && (
             <Card className="border-destructive/50 bg-destructive/5">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 text-destructive">
                   <AlertCircle className="h-5 w-5" />
                   <p className="text-sm">
-                    Error loading analysis: {error.message}
+                    {errorMessage}
                   </p>
                 </div>
               </CardContent>
