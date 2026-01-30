@@ -68,6 +68,9 @@ const Index = () => {
                 totalPages={data?.totalPages || 0}
                 isLoading={isLoading}
                 onPageChange={setPage}
+                searchQuery={searchQuery}
+                selectedLabels={selectedLabels}
+                selectedParamTypes={selectedParamTypes}
               />
             )}
           </div>
