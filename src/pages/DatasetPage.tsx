@@ -14,12 +14,13 @@ import {
 } from '@/components/ui/table';
 import { useDatasetStudies, useDatasetStudiesByIds } from '@/hooks/useDatasetStudies';
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from '@/lib/filter-utils';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAnalysisStore } from '@/state/analysis-store';
 
 const DatasetPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { setRun } = useAnalysisStore();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -133,23 +134,17 @@ const DatasetPage = () => {
 
       const result = await response.json();
 
-      // Insert into analysis_runs table
-      const { data: insertedRun, error: insertError } = await supabase
-        .from('analysis_runs')
-        .insert({
-          nct_ids: nctIds,
-          result: result,
-        })
-        .select('id')
-        .single();
+      // Generate a NEW analysisId per run and store run in client state (no reuse)
+      const analysisId = crypto.randomUUID();
+      setRun({
+        id: analysisId,
+        created_at: new Date().toISOString(),
+        nct_ids: nctIds,
+        result,
+      });
 
-      if (insertError) {
-        console.error('Error saving analysis:', insertError);
-        throw new Error('Failed to save analysis results');
-      }
-
-      // Navigate to the analysis page
-      navigate(`/analysis/${insertedRun.id}`);
+      // Navigate to the analysis page using the NEW analysisId
+      navigate(`/analysis/${analysisId}`);
     } catch (err) {
       console.error('Analysis error:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to analyze studies');
