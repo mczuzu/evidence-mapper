@@ -126,7 +126,7 @@ function MetricItem({
     <div className="flex flex-col items-center text-center p-2 rounded-md bg-muted/50">
       <div className="text-muted-foreground mb-1">{icon}</div>
       <span className="text-sm font-semibold text-foreground">
-        {value !== null ? value.toLocaleString() : '—'}
+        {value != null ? value.toLocaleString() : '—'}
       </span>
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
