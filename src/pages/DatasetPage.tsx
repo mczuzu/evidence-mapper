@@ -12,27 +12,43 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useDatasetStudies } from '@/hooks/useDatasetStudies';
-import { parseFiltersFromQueryParams, buildQueryParamsFromFilters, truncateText } from '@/lib/filter-utils';
+import { useDatasetStudies, useDatasetStudiesByIds } from '@/hooks/useDatasetStudies';
+import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from '@/lib/filter-utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const DatasetPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Parse filters from query params
+  // Check if we're in "ids" mode (specific studies) or filter mode
+  const idsParam = searchParams.get('ids');
+  const specificIds = useMemo(() => 
+    idsParam?.split(',').filter(Boolean) || [],
+    [idsParam]
+  );
+  const isIdsMode = specificIds.length > 0;
+
+  // Parse filters from query params (for filter mode)
   const { searchQuery, labels, paramTypes } = useMemo(
     () => parseFiltersFromQueryParams(searchParams),
     [searchParams]
   );
 
-  const { data, isLoading, error } = useDatasetStudies({
+  // Use appropriate hook based on mode
+  const filterQuery = useDatasetStudies({
     searchQuery,
     selectedLabels: labels,
     selectedParamTypes: paramTypes,
     page,
   });
+
+  const idsQuery = useDatasetStudiesByIds(specificIds);
+
+  const { data, isLoading, error } = isIdsMode ? idsQuery : filterQuery;
 
   const studies = data?.studies || [];
   const totalCount = data?.totalCount || 0;
@@ -40,8 +56,12 @@ const DatasetPage = () => {
 
   // Handle navigation back with preserved query params
   const handleBack = () => {
-    const queryString = buildQueryParamsFromFilters(searchQuery, labels, paramTypes);
-    navigate(queryString ? `/?${queryString}` : '/');
+    if (isIdsMode) {
+      navigate(-1);
+    } else {
+      const queryString = buildQueryParamsFromFilters(searchQuery, labels, paramTypes);
+      navigate(queryString ? `/?${queryString}` : '/');
+    }
   };
 
   // Toggle single study selection
@@ -63,14 +83,12 @@ const DatasetPage = () => {
     const allSelected = allVisibleIds.every((id) => selectedIds.has(id));
     
     if (allSelected) {
-      // Deselect all visible
       setSelectedIds((prev) => {
         const next = new Set(prev);
         allVisibleIds.forEach((id) => next.delete(id));
         return next;
       });
     } else {
-      // Select all visible
       setSelectedIds((prev) => {
         const next = new Set(prev);
         allVisibleIds.forEach((id) => next.add(id));
@@ -87,10 +105,57 @@ const DatasetPage = () => {
     navigate(`/study/${nctId}`);
   };
 
-  // Analyze selected (placeholder for now)
-  const handleAnalyze = () => {
-    // TODO: Navigate to analysis with selected IDs
-    console.log('Analyze:', Array.from(selectedIds));
+  // Analyze selected studies
+  const handleAnalyze = async () => {
+    const nctIds = Array.from(selectedIds);
+    if (nctIds.length === 0) return;
+
+    setIsAnalyzing(true);
+
+    try {
+      // Call the analyze-direction edge function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-direction`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ nct_ids: nctIds }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Analysis failed');
+      }
+
+      const result = await response.json();
+
+      // Insert into analysis_runs table
+      const { data: insertedRun, error: insertError } = await supabase
+        .from('analysis_runs')
+        .insert({
+          nct_ids: nctIds,
+          result: result,
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('Error saving analysis:', insertError);
+        throw new Error('Failed to save analysis results');
+      }
+
+      // Navigate to the analysis page
+      navigate(`/analysis/${insertedRun.id}`);
+    } catch (err) {
+      console.error('Analysis error:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to analyze studies');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -104,10 +169,13 @@ const DatasetPage = () => {
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver a filtros
+                {isIdsMode ? 'Volver' : 'Volver a filtros'}
               </Button>
               <h1 className="font-serif text-xl font-bold text-foreground">
-                Dataset: {totalCount.toLocaleString()} estudios
+                {isIdsMode 
+                  ? `Estudios seleccionados: ${specificIds.length}` 
+                  : `Dataset: ${totalCount.toLocaleString()} estudios`
+                }
               </h1>
             </div>
 
@@ -117,11 +185,15 @@ const DatasetPage = () => {
               </span>
               <Button
                 onClick={handleAnalyze}
-                disabled={selectedIds.size === 0}
+                disabled={selectedIds.size === 0 || isAnalyzing}
                 className="gap-2"
               >
-                <FlaskConical className="h-4 w-4" />
-                Analizar seleccionados
+                {isAnalyzing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FlaskConical className="h-4 w-4" />
+                )}
+                {isAnalyzing ? 'Analizando...' : 'Analizar seleccionados'}
               </Button>
             </div>
           </div>
@@ -220,8 +292,8 @@ const DatasetPage = () => {
                 </Table>
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
+              {/* Pagination - only show in filter mode */}
+              {!isIdsMode && totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-4">
                   <Button
                     variant="outline"
