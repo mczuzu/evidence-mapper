@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { useDatasetStudies, useDatasetStudiesByIds } from '@/hooks/useDatasetStudies';
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from '@/lib/filter-utils';
-import { supabaseExternalFunctions, supabaseExternalPublic } from '@/lib/supabase-external';
+import { hasExternalAnonJwtKey, supabaseExternalFunctions, supabaseExternalPublic } from '@/lib/supabase-external';
 import { toast } from 'sonner';
 
 const DatasetPage = () => {
@@ -113,6 +113,14 @@ const DatasetPage = () => {
     setIsAnalyzing(true);
 
     try {
+      // Frontend must have the external anon key available at build-time (Vite env var).
+      // If it's missing, invoking the external edge function will fail.
+      if (!hasExternalAnonJwtKey) {
+        throw new Error(
+          'Missing VITE_EXTERNAL_SUPABASE_ANON_KEY in the frontend environment. Please refresh after configuring env vars.'
+        );
+      }
+
       // Call the analyze-direction edge function using the Supabase client
       const { data: result, error: fnError } = await supabaseExternalFunctions.functions.invoke('analyze-direction', {
         body: { nct_ids: nctIds },
