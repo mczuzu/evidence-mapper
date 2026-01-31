@@ -4,7 +4,7 @@ import { Header } from '@/components/Header';
 import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseExternalPublic } from '@/lib/supabase-external';
 
 import { V3AnalysisContent } from '@/components/analysis/V3AnalysisContent';
 import { HypothesisSection } from '@/components/analysis/HypothesisSection';
@@ -34,7 +34,7 @@ function useAnalysisRun(analysisId: string | undefined) {
     queryFn: async () => {
       if (!analysisId) throw new Error('No analysis ID provided');
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseExternalPublic
         .from('analysis_runs')
         .select('id, created_at, nct_ids, result')
         .eq('id', analysisId)

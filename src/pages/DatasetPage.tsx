@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { useDatasetStudies, useDatasetStudiesByIds } from '@/hooks/useDatasetStudies';
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from '@/lib/filter-utils';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_KEY } from '@/lib/supabase-external';
 import { toast } from 'sonner';
 
 const DatasetPage = () => {
@@ -113,13 +113,13 @@ const DatasetPage = () => {
     setIsAnalyzing(true);
 
     try {
-      // Call the analyze-direction edge function
+      // Call the analyze-direction edge function on the external Supabase project
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-direction`,
+        `${EXTERNAL_SUPABASE_URL}/functions/v1/analyze-direction`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Authorization': `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ nct_ids: nctIds }),
@@ -136,8 +136,8 @@ const DatasetPage = () => {
       // Generate a NEW analysisId per run (no reuse)
       const analysisId = crypto.randomUUID();
 
-      // Persist the FULL response payload, strictly associated with this analysisId
-      const { error: insertError } = await supabase
+      // Persist the FULL response payload to the external project
+      const { error: insertError } = await supabaseExternalPublic
         .from('analysis_runs')
         .insert({
           id: analysisId,
