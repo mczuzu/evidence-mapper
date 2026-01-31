@@ -26,7 +26,28 @@ if (!anonKey.startsWith("eyJ")) {
   );
 }
 
+// Client for 'em' schema (study data)
 export const supabaseExternal = createClient(url, anonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+  db: { schema: 'em' },
+});
+
+// Client for 'public' schema (analysis_runs table)
+export const supabaseExternalPublic = createClient(url, anonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+  db: { schema: 'public' },
+});
+
+// Client for Edge Functions invocation
+export const supabaseExternalFunctions = createClient(url, anonKey, {
   auth: {
     persistSession: false,
     autoRefreshToken: false,
