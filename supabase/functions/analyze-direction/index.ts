@@ -55,57 +55,144 @@ Deno.serve(async (req) => {
     const studyTitles = studies?.map(s => s.brief_title).filter(Boolean) || [];
     const titleSummary = studyTitles.slice(0, 3).join(', ') || 'selected clinical trials';
 
-    // Generate analysis result
-    // In production, this would call an AI model
-    const analysisResult = {
-      analysis: {
-        direction: `Analysis of ${nctIds.length} clinical trials related to: ${titleSummary}. The studies show promising research directions in this therapeutic area.`,
-        themes: [
-          {
-            title: 'Primary Research Focus',
-            description: `The selected studies focus on clinical outcomes and patient health improvements.`,
-            study_ids: nctIds.slice(0, Math.ceil(nctIds.length / 2))
-          },
-          {
-            title: 'Methodological Approaches',
-            description: 'Studies employ various methodological approaches including randomized controlled trials and observational studies.',
-            study_ids: nctIds.slice(Math.ceil(nctIds.length / 2))
-          }
-        ],
-        gaps: [
-          {
-            title: 'Long-term Follow-up',
-            description: 'Limited long-term outcome data available across the selected studies.',
-            study_ids: nctIds.slice(0, 2)
-          },
-          {
-            title: 'Demographic Diversity',
-            description: 'Potential gaps in population diversity representation.',
-            study_ids: nctIds.slice(-2)
-          }
-        ],
-        suggested_next_steps: [
-          'Conduct meta-analysis of primary outcomes',
-          'Identify opportunities for collaborative research',
-          'Review protocol designs for future studies',
-          'Assess feasibility of longer follow-up periods'
-        ]
-      },
-      metadata: {
-        study_count: nctIds.length,
-        generated_at: new Date().toISOString()
-      }
-    };
+   // --- REAL AI ANALYSIS (V3) ---
+const openaiApiKey = Deno.env.get("OPENAI_API_KEY);
+const openaiModel = Deno.env.get("OPENAI_MODEL") ?? "gpt-4.1-mini";
 
-    return new Response(
-      JSON.stringify(analysisResult),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (err) {
-    console.error('Unexpected error:', err);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
+if (!openaiApiKey) {
+  return new Response(
+    JSON.stringify({ error: "Missing OPENAI_API_KEY" }),
+    { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
+}
+
+// Minimal payload for the LLM (you can enrich later)
+const llmPayload = {
+  nct_ids: nctIds,
+  studies: (studies ?? []).map((s: any) => ({
+    nct_id: s.nct_id,
+    brief_title: s.brief_title ?? null,
+  })),
+  title_summary: titleSummary,
+};
+
+const systemPrompt = `
+
+You are a rigorous evidence analyst.
+Return VALID JSON only (no markdown).
+Use ONLY the provided payload. Do not invent details.
+Output must match the V3 schema described in the user message.
+`.trim();
+
+// V3 contract (lightweight, aligned with your new UI sections)
+const userPrompt = {
+  task: "Generate a V3 direction analysis from the provided studies payload.",
+  required_output_v3: {
+    schema: "v3",
+    analysis: {
+      direction_summary: "string",
+      what_is_promising: [
+        { title: "string", description: "string", study_ids: ["NCT00000000"] },
+      ],
+      what_is_uncertain: [
+        { title: "string", description: "string", study_ids: ["NCT00000000"] },
+      ],
+      cluster_map: {
+        interventions: [{ label: "string", study_ids: ["NCT00000000"] }],
+        populations: [{ label: "string", study_ids: ["NCT00000000"] }],
+        outcomes: [{ label: "string", study_ids: ["NCT00000000"] }],
+        mechanisms: [{ label: "string", study_ids: ["NCT00000000"] }],
+      },
+      gaps: {
+        evidence: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
+        design: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
+        missing_subgroups: [
+          { title: "string", description: "string", study_ids: ["NCT00000000"] },
+        ],
+      },
+      next_studies: {
+        proposals: [
+          {
+            title: "string",
+            population: "string",
+            intervention: "string",
+            comparator: "string",
+            primary_outcomes: ["string"],
+            follow_up: "string",
+            rationale: "string",
+            study_ids: ["NCT00000000"],
+          },
+        ],
+        quick_wins: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
+      },
+    },
+    metadata: {
+      study_count: 0,
+      generated_at: "ISO_DATE",
+      model: "string",
+    },
+  },
+  constraints: [
+    "Use ONLY the provided payload. Do not browse or invent.",
+    "Every item that references studies must include study_ids from payload.nct_ids.",
+    "Keep text concise and non-generic.",
+  ],
+  payload: llmPayload,
+};
+
+const openaiResp = await fetch("<https://api.openai.com/v1/chat/completions>", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${openaiApiKey}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: openaiModel,
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: JSON.stringify(userPrompt) },
+    ],
+  }),
 });
+
+if (!openaiResp.ok) {
+  const errText = await openaiResp.text();
+  return new Response(
+    JSON.stringify({
+      error: "OpenAI call failed",
+      status: openaiResp.status,
+      details: errText.slice(0, 1000),
+    }),
+    { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
+}
+
+const out = await openaiResp.json();
+const content = out?.choices?.[0]?.message?.content;
+
+let analysisV3: any = null;
+try {
+  analysisV3 = JSON.parse(content);
+} catch {
+  analysisV3 = { raw: content };
+}
+
+// Enforce schema + metadata (in case model omits fields)
+const responseBody = {
+  schema: "v3",
+  analysis: analysisV3?.analysis ?? analysisV3,
+  metadata: {
+    study_count: nctIds.length,
+    generated_at: new Date().toISOString(),
+    model: openaiModel,
+  },
+};
+
+return new Response(JSON.stringify(responseBody), {
+  status: 200,
+  headers: { ...corsHeaders, "Content-Type": "application/json" },
+});
+
+
