@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { useDatasetStudies, useDatasetStudiesByIds } from '@/hooks/useDatasetStudies';
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from '@/lib/filter-utils';
-import { hasExternalAnonJwtKey, supabaseExternalFunctions, supabaseExternalPublic } from '@/lib/supabase-external';
+import { supabaseExternalFunctions, supabaseExternalPublic } from '@/lib/supabase-external';
 import { toast } from 'sonner';
 
 const DatasetPage = () => {
@@ -113,14 +113,6 @@ const DatasetPage = () => {
     setIsAnalyzing(true);
 
     try {
-      // IMPORTANT: The external Edge Function requires a JWT-style anon key.
-      // If we only have an `sb_publishable_...` key, the function will return 401 "Invalid JWT".
-      if (!hasExternalAnonJwtKey) {
-        throw new Error(
-          'Missing external anon JWT key. Set VITE_EXTERNAL_SUPABASE_ANON_KEY (the external project anon key) to call analyze-direction.'
-        );
-      }
-
       // Call the analyze-direction edge function using the Supabase client
       const { data: result, error: fnError } = await supabaseExternalFunctions.functions.invoke('analyze-direction', {
         body: { nct_ids: nctIds },
