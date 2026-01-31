@@ -8,7 +8,7 @@ export const EXTERNAL_SUPABASE_DB_KEY = 'sb_publishable_9XTutsu4Dmnk68u13bcPWA_V
 
 // The anon JWT key is required for Edge Function invocation (public, safe to include in frontend)
 // This is the external project's standard anon key from Supabase dashboard > Settings > API
-export const EXTERNAL_SUPABASE_ANON_JWT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4dGduZm10dXZ4YnBudnh6eGFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYxMTA0OTIsImV4cCI6MjA1MTY4NjQ5Mn0.nh8XumLm_zMUwAdKu2Xb9ozs_LjbmhtJiSd8DJn7HZU';
+export const EXTERNAL_SUPABASE_ANON_JWT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4dGduZm10dXZ4YnBudnh6eGFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTg0OTksImV4cCI6MjA4NDQ3NDQ5OX0.Reya82SFyWxJFwdHwAR_pdgttqKuAGyC3xxngwvTQto';
 
 // Client for 'em' schema (study data)
 export const supabaseExternal = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_DB_KEY, {
