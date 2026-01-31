@@ -1,32 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
-// External Supabase project configuration
-// IMPORTANT: Do not hardcode keys. These must come from Vite env vars.
-export const EXTERNAL_SUPABASE_URL = (import.meta.env.VITE_EXTERNAL_SUPABASE_URL ?? '').trim();
-// Non-secret fallback so the app can still run even if the Vite env var isn't injected yet.
-// (Keys are NOT given fallbacks.)
-export const EXTERNAL_SUPABASE_URL_FALLBACK = 'https://dxtgnfmtuvxbpnvxzxal.supabase.co';
+// External Supabase project configuration (dxtgnfmtuvxbpnvxzxal)
+export const EXTERNAL_SUPABASE_URL = 'https://dxtgnfmtuvxbpnvxzxal.supabase.co';
 
-export const externalSupabaseUrl = EXTERNAL_SUPABASE_URL || EXTERNAL_SUPABASE_URL_FALLBACK;
-
-// The publishable key works for REST/PostgREST queries against the external DB.
-// (This is a publishable key and is not considered a secret.)
+// The publishable key works for REST/PostgREST queries
 export const EXTERNAL_SUPABASE_DB_KEY = 'sb_publishable_9XTutsu4Dmnk68u13bcPWA_VUIF2Kk0';
 
-// The external project's anon public key (JWT-formatted). Required for Edge Function invocation.
-export const EXTERNAL_SUPABASE_ANON_KEY = (import.meta.env.VITE_EXTERNAL_SUPABASE_ANON_KEY ?? '').trim();
-
-export const hasExternalAnonJwtKey = EXTERNAL_SUPABASE_ANON_KEY.split('.').length === 3;
+// The anon JWT key is required for Edge Function invocation (public, safe to include in frontend)
+// This is the external project's standard anon key from Supabase dashboard > Settings > API
+export const EXTERNAL_SUPABASE_ANON_JWT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4dGduZm10dXZ4YnBudnh6eGFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYxMTA0OTIsImV4cCI6MjA1MTY4NjQ5Mn0.nh8XumLm_zMUwAdKu2Xb9ozs_LjbmhtJiSd8DJn7HZU';
 
 // Client for 'em' schema (study data)
-export const supabaseExternal = createClient(externalSupabaseUrl, EXTERNAL_SUPABASE_DB_KEY, {
+export const supabaseExternal = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_DB_KEY, {
   db: {
     schema: 'em'
   }
 });
 
 // Client for 'public' schema (analysis_runs table)
-export const supabaseExternalPublic = createClient(externalSupabaseUrl, EXTERNAL_SUPABASE_DB_KEY, {
+export const supabaseExternalPublic = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_DB_KEY, {
   db: {
     schema: 'public'
   }
@@ -35,6 +27,6 @@ export const supabaseExternalPublic = createClient(externalSupabaseUrl, EXTERNAL
 // Dedicated client for invoking Edge Functions on the external project.
 // Uses the anon JWT key which is required for function invocation.
 export const supabaseExternalFunctions = createClient(
-  externalSupabaseUrl,
-  EXTERNAL_SUPABASE_ANON_KEY
+  EXTERNAL_SUPABASE_URL,
+  EXTERNAL_SUPABASE_ANON_JWT_KEY
 );
