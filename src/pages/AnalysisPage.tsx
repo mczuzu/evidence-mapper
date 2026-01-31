@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 
+import { V3AnalysisContent } from '@/components/analysis/V3AnalysisContent';
 import { HypothesisSection } from '@/components/analysis/HypothesisSection';
 import { PatternsSection } from '@/components/analysis/PatternsSection';
 import { GapsSection } from '@/components/analysis/GapsSection';
 import { NextStudiesSection } from '@/components/analysis/NextStudiesSection';
 import { LegacyAnalysisContent } from '@/components/analysis/LegacyAnalysisContent';
-import type { AnalysisResult } from '@/types/analysis';
+import { AnalysisStatusBanner } from '@/components/analysis/AnalysisStatusBanner';
+import type { AnalysisResult, SchemaVersion } from '@/types/analysis';
+import { detectSchemaVersion } from '@/types/analysis';
 
 type AnalysisRunRow = {
   id: string;
@@ -59,16 +62,6 @@ function parseAnalysisResult(result: any): AnalysisResult | null {
   return result as AnalysisResult;
 }
 
-// Check if the analysis uses the new schema
-function isNewSchema(analysis: any): boolean {
-  return !!(
-    analysis?.direction_hypotheses ||
-    analysis?.patterns ||
-    analysis?.opportunity_gaps ||
-    analysis?.next_studies
-  );
-}
-
 const AnalysisPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
@@ -109,7 +102,6 @@ const AnalysisPage = () => {
   // Parse and extract data
   const parsedResult = parseAnalysisResult(analysisRun?.result);
   const analysis = parsedResult?.analysis;
-  const studyIndex = parsedResult?.study_index;
   const metadata = parsedResult?.metadata;
 
   const nFound =
@@ -117,7 +109,9 @@ const AnalysisPage = () => {
     metadata?.study_count ??
     (analysisRun?.nct_ids?.length ?? 0);
   const firstThree = (analysisRun?.nct_ids ?? []).slice(0, 3);
-  const useNewSchema = analysis ? isNewSchema(analysis) : false;
+  
+  // Detect schema version
+  const schemaVersion: SchemaVersion = analysis ? detectSchemaVersion(analysis) : 'v1';
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -130,15 +124,15 @@ const AnalysisPage = () => {
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
+                Back
               </Button>
               <h1 className="font-serif text-xl font-bold text-foreground">
-                Análisis de Dirección
+                Direction Analysis
               </h1>
             </div>
             {nFound > 0 && (
               <span className="text-sm text-muted-foreground">
-                {nFound} estudios analizados
+                {nFound} studies analyzed
               </span>
             )}
           </div>
@@ -156,7 +150,7 @@ const AnalysisPage = () => {
                   <span className="font-medium text-foreground">{isLoading ? '…' : nFound}</span>
                 </div>
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Primeros 3 NCT IDs:</span>{' '}
+                  <span className="text-muted-foreground">First 3 NCT IDs:</span>{' '}
                   <span className="font-mono text-xs text-foreground">
                     {firstThree.length ? firstThree.join(', ') : '—'}
                   </span>
@@ -164,7 +158,7 @@ const AnalysisPage = () => {
                 <div className="text-sm">
                   <span className="text-muted-foreground">Schema:</span>{' '}
                   <span className="font-medium text-foreground">
-                    {isLoading ? '…' : useNewSchema ? 'Nuevo (v2)' : 'Legacy (v1)'}
+                    {isLoading ? '…' : schemaVersion.toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -173,36 +167,39 @@ const AnalysisPage = () => {
 
           {/* Loading */}
           {isLoading && (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Loader2 className="h-6 w-6 text-primary animate-spin mb-3" />
-              <p className="text-sm text-muted-foreground">Cargando análisis…</p>
-            </div>
+            <AnalysisStatusBanner type="loading" studyCount={analysisRun?.nct_ids?.length} />
           )}
 
           {/* Error */}
           {errorMessage && (
-            <Card className="border-destructive/50 bg-destructive/5">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 text-destructive">
-                  <AlertCircle className="h-5 w-5" />
-                  <p className="text-sm">{errorMessage}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <AnalysisStatusBanner type="error" message={errorMessage} />
           )}
 
-          {/* Analysis Content */}
+          {/* Analysis Content - routed by schema version */}
           {analysis && !isLoading && (
             <>
-              {useNewSchema ? (
+              {schemaVersion === 'v3' && (
+                <V3AnalysisContent analysis={analysis} />
+              )}
+              
+              {schemaVersion === 'v2' && (
                 <div className="space-y-6">
                   <HypothesisSection hypotheses={analysis.direction_hypotheses || []} />
                   <PatternsSection patterns={analysis.patterns || []} />
                   <GapsSection gaps={analysis.opportunity_gaps || []} />
                   <NextStudiesSection studies={analysis.next_studies || []} />
                 </div>
-              ) : (
-                <LegacyAnalysisContent analysis={analysis} />
+              )}
+              
+              {schemaVersion === 'v1' && (
+                <LegacyAnalysisContent 
+                  analysis={{
+                    direction: typeof analysis.direction === 'string' ? analysis.direction : undefined,
+                    themes: analysis.themes,
+                    gaps: Array.isArray(analysis.gaps) ? analysis.gaps : undefined,
+                    suggested_next_steps: analysis.suggested_next_steps,
+                  }} 
+                />
               )}
             </>
           )}
