@@ -51,8 +51,33 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get study titles for context
-    const studyTitles = studies?.map(s => s.brief_title).filter(Boolean) || [];
+    // Determine which studies are available vs missing
+    const foundIds = new Set((studies ?? []).map(s => s.nct_id));
+    const available = nctIds.filter(id => foundIds.has(id));
+    const missing = nctIds.filter(id => !foundIds.has(id));
+
+    // If no studies are available, return early with missing info (NOT a 404)
+    if (available.length === 0) {
+      return new Response(
+        JSON.stringify({
+          schema: "v3",
+          available: [],
+          missing,
+          analysis: null,
+          metadata: {
+            study_count: 0,
+            generated_at: new Date().toISOString(),
+            model: null,
+            message: "No studies found for the provided NCT IDs.",
+          },
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get study titles for context (only available studies)
+    const availableStudies = (studies ?? []).filter(s => available.includes(s.nct_id));
+    const studyTitles = availableStudies.map(s => s.brief_title).filter(Boolean);
     const titleSummary = studyTitles.slice(0, 3).join(', ') || 'selected clinical trials';
 
    // --- REAL AI ANALYSIS (V3) ---
@@ -66,10 +91,10 @@ if (!openaiApiKey) {
   );
 }
 
-// Minimal payload for the LLM (you can enrich later)
+// Minimal payload for the LLM (only available studies)
 const llmPayload = {
-  nct_ids: nctIds,
-  studies: (studies ?? []).map((s: any) => ({
+  nct_ids: available,
+  studies: availableStudies.map((s: any) => ({
     nct_id: s.nct_id,
     brief_title: s.brief_title ?? null,
   })),
@@ -182,9 +207,11 @@ try {
 // Enforce schema + metadata (in case model omits fields)
 const responseBody = {
   schema: "v3",
+  available,
+  missing,
   analysis: analysisV3?.analysis ?? analysisV3,
   metadata: {
-    study_count: nctIds.length,
+    study_count: available.length,
     generated_at: new Date().toISOString(),
     model: openaiModel,
   },

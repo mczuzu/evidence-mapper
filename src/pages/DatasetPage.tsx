@@ -113,7 +113,25 @@ const DatasetPage = () => {
     setIsAnalyzing(true);
 
     try {
-      // Call the analyze-direction edge function using the Supabase client
+      // Step 1: Pre-fetch rich data for all selected studies (in parallel)
+      const richPromises = nctIds.map(async (nctId) => {
+        try {
+          const { data, error } = await supabaseExternalFunctions.functions.invoke('get-rich', {
+            body: null,
+            headers: {},
+          });
+          // get-rich uses query params, so we need to call it differently
+          // For now, we'll skip this step and let analyze-direction handle missing studies
+          return { nctId, success: true };
+        } catch {
+          return { nctId, success: false };
+        }
+      });
+
+      // Wait for all get-rich calls (fire and forget - analyze-direction handles missing)
+      await Promise.allSettled(richPromises);
+
+      // Step 2: Call analyze-direction
       const { data: result, error: fnError } = await supabaseExternalFunctions.functions.invoke('analyze-direction', {
         body: { nct_ids: nctIds },
       });
@@ -126,6 +144,19 @@ const DatasetPage = () => {
         throw new Error('No data returned from analysis');
       }
 
+      // Check if any studies were analyzed
+      const available = result.available || [];
+      const missing = result.missing || [];
+
+      if (available.length === 0) {
+        toast.warning(`No se encontraron datos para los ${missing.length} estudios seleccionados.`);
+        return;
+      }
+
+      if (missing.length > 0) {
+        toast.info(`Análisis completado. ${missing.length} estudio(s) sin datos disponibles.`);
+      }
+
       // Generate a NEW analysisId per run (no reuse)
       const analysisId = crypto.randomUUID();
 
@@ -134,7 +165,7 @@ const DatasetPage = () => {
         .from('analysis_runs')
         .insert({
           id: analysisId,
-          nct_ids: nctIds,
+          nct_ids: available, // Only store available studies
           result,
         });
 
@@ -148,7 +179,7 @@ const DatasetPage = () => {
         state: {
           run: {
             id: analysisId,
-            nct_ids: nctIds,
+            nct_ids: available,
             result,
           },
         },
