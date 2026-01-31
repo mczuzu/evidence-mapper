@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const titleSummary = studyTitles.slice(0, 3).join(', ') || 'selected clinical trials';
 
    // --- REAL AI ANALYSIS (V3) ---
-const openaiApiKey = Deno.env.get("OPENAI_API_KEY);
+const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
 const openaiModel = Deno.env.get("OPENAI_MODEL") ?? "gpt-4.1-mini";
 
 if (!openaiApiKey) {
@@ -190,9 +190,16 @@ const responseBody = {
   },
 };
 
-return new Response(JSON.stringify(responseBody), {
-  status: 200,
-  headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify(responseBody), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error: unknown) {
+    console.error("Error in analyze-direction:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(
+      JSON.stringify({ error: "Internal server error", details: message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 });
-
-
