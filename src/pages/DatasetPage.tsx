@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { useDatasetStudies, useDatasetStudiesByIds } from '@/hooks/useDatasetStudies';
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from '@/lib/filter-utils';
-import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_KEY } from '@/lib/supabase-external';
+import { supabaseExternal, supabaseExternalPublic } from '@/lib/supabase-external';
 import { toast } from 'sonner';
 
 const DatasetPage = () => {
@@ -113,25 +113,18 @@ const DatasetPage = () => {
     setIsAnalyzing(true);
 
     try {
-      // Call the analyze-direction edge function on the external Supabase project
-      const response = await fetch(
-        `${EXTERNAL_SUPABASE_URL}/functions/v1/analyze-direction`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ nct_ids: nctIds }),
-        }
-      );
+      // Call the analyze-direction edge function using the Supabase client
+      const { data: result, error: fnError } = await supabaseExternal.functions.invoke('analyze-direction', {
+        body: { nct_ids: nctIds },
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Analysis failed');
+      if (fnError) {
+        throw new Error(fnError.message || 'Analysis failed');
       }
 
-      const result = await response.json();
+      if (!result) {
+        throw new Error('No data returned from analysis');
+      }
 
       // Generate a NEW analysisId per run (no reuse)
       const analysisId = crypto.randomUUID();
