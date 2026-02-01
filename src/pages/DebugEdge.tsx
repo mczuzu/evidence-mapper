@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { supabaseExternal } from "../lib/supabase-external";
 
 type DebugResult = {
@@ -23,29 +23,40 @@ async function fetchJson(url: string, init: RequestInit): Promise<{ status: numb
   return { status: res.status, text, json };
 }
 
-export default function DebugSupabase() {
+export default function DebugEdge() {
   const [nctId, setNctId] = useState("NCT00997893");
   const [nctIds, setNctIds] = useState("NCT00997893");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<DebugResult[]>([]);
 
-  const baseUrl = "https://dxtgnfmtuvxbpnvxzxal.supabase.co";
-  const anonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4dGduZm10dXZ4YnBudnh6eGFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTg0OTksImV4cCI6MjA4NDQ3NDQ5OX0.Reya82SFyWxJFwdHwAR_pdgttqKuAGyC3xxngwvTQto";
-  if (!baseUrl || !anonKey) {
-    console.error("Missing baseUrl/anonKey", { baseUrl, anonKeyPresent: !!anonKey });
-  }
+  // Read env vars (must exist in Lovable project env)
+  const baseUrl = ((import.meta as any).env?.VITE_EXTERNAL_SUPABASE_URL as string | undefined)?.trim();
+  const anonKey = ((import.meta as any).env?.VITE_EXTERNAL_SUPABASE_ANON_KEY as string | undefined)?.trim();
+
   const push = (r: DebugResult) => setResults((prev) => [r, ...prev]);
+
+  const preflightCheck = (): { ok: true } | { ok: false; error: string } => {
+    if (!baseUrl) return { ok: false, error: "Missing env var: VITE_EXTERNAL_SUPABASE_URL" };
+    if (!anonKey) return { ok: false, error: "Missing env var: VITE_EXTERNAL_SUPABASE_ANON_KEY" };
+    return { ok: true };
+  };
 
   const testGetRich = async () => {
     setLoading(true);
     try {
+      const chk = preflightCheck();
+      if (!chk.ok) {
+        push({ ok: false, url: "get-rich", error: chk.error });
+        return;
+      }
+
       const url = `${baseUrl}/functions/v1/get-rich?nct_id=${encodeURIComponent(nctId)}`;
+
       const { status, text, json } = await fetchJson(url, {
         method: "GET",
         headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
+          apikey: anonKey!,
+          Authorization: `Bearer ${anonKey!}`,
         },
       });
 
@@ -66,6 +77,12 @@ export default function DebugSupabase() {
   const testAnalyzeDirection = async () => {
     setLoading(true);
     try {
+      const chk = preflightCheck();
+      if (!chk.ok) {
+        push({ ok: false, url: "analyze-direction", error: chk.error });
+        return;
+      }
+
       const ids = nctIds
         .split(",")
         .map((s) => s.trim())
@@ -77,8 +94,8 @@ export default function DebugSupabase() {
       const { status, text, json } = await fetchJson(url, {
         method: "POST",
         headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
+          apikey: anonKey!,
+          Authorization: `Bearer ${anonKey!}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -100,7 +117,6 @@ export default function DebugSupabase() {
   };
 
   const testSupabaseJsInvoke = async () => {
-    // Optional: same call but via supabase-js invoke (some people prefer this)
     setLoading(true);
     try {
       const ids = nctIds
@@ -109,7 +125,10 @@ export default function DebugSupabase() {
         .filter(Boolean);
 
       const payload = { nct_ids: ids };
-      const { data, error } = await supabaseExternal.functions.invoke("analyze-direction", { body: payload });
+
+      const { data, error } = await supabaseExternal.functions.invoke("analyze-direction", {
+        body: payload,
+      });
 
       if (error) {
         push({
@@ -119,7 +138,12 @@ export default function DebugSupabase() {
           request: payload,
         });
       } else {
-        push({ ok: true, url: "supabase-js invoke analyze-direction", responseJson: data, request: payload });
+        push({
+          ok: true,
+          url: "supabase-js invoke analyze-direction",
+          responseJson: data,
+          request: payload,
+        });
       }
     } catch (e: any) {
       push({ ok: false, url: "supabase-js invoke analyze-direction", error: String(e) });
@@ -131,6 +155,21 @@ export default function DebugSupabase() {
   return (
     <div style={{ padding: 16, maxWidth: 980 }}>
       <h2>Debug - Supabase Edge Functions</h2>
+
+      <div style={{ marginBottom: 12, padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
+        <div>
+          <b>Env check</b>
+        </div>
+        <div style={{ marginTop: 6 }}>
+          <div>
+            <b>VITE_EXTERNAL_SUPABASE_URL:</b> {baseUrl ?? "(undefined)"}
+          </div>
+          <div>
+            <b>VITE_EXTERNAL_SUPABASE_ANON_KEY:</b>{" "}
+            {anonKey ? `${anonKey.slice(0, 10)}… (len ${anonKey.length})` : "(undefined)"}
+          </div>
+        </div>
+      </div>
 
       <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
         <div>
