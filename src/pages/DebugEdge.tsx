@@ -29,15 +29,12 @@ export default function DebugSupabase() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<DebugResult[]>([]);
 
-  const baseUrl = useMemo(() => {
-    // supabase-js stores it internally; we rely on env var for the actual URL.
-    return (import.meta as any).env?.VITE_EXTERNAL_SUPABASE_URL as string;
-  }, []);
-
-  const anonKey = useMemo(() => {
-    return (import.meta as any).env?.VITE_EXTERNAL_SUPABASE_ANON_KEY as string;
-  }, []);
-
+  const baseUrl = "https://dxtgnfmtuvxbpnvxzxal.supabase.co";
+  const anonKey =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4dGduZm10dXZ4YnBudnh6eGFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTg0OTksImV4cCI6MjA4NDQ3NDQ5OX0.Reya82SFyWxJFwdHwAR_pdgttqKuAGyC3xxngwvTQto";
+  if (!baseUrl || !anonKey) {
+    console.error("Missing baseUrl/anonKey", { baseUrl, anonKeyPresent: !!anonKey });
+  }
   const push = (r: DebugResult) => setResults((prev) => [r, ...prev]);
 
   const testGetRich = async () => {
