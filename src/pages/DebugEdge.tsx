@@ -1,6 +1,5 @@
-// src/pages/DebugEdge.tsx
-import React, { useState } from "react";
-import { supabaseExternal } from "../lib/supabase-external";
+import React, { useMemo, useState } from "react";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 type DebugResult = {
   ok: boolean;
@@ -15,50 +14,50 @@ type DebugResult = {
 async function fetchJson(url: string, init: RequestInit): Promise<{ status: number; text: string; json?: any }> {
   const res = await fetch(url, init);
   const text = await res.text();
+
   let json: any = undefined;
   try {
     json = text ? JSON.parse(text) : undefined;
   } catch {
     // keep as text
   }
+
   return { status: res.status, text, json };
 }
 
 export default function DebugEdge() {
-  // Inputs
-  const [baseUrl, setBaseUrl] = useState("https://dxtgnfmtuvxbpnvxzxal.supabase.co");
-  const [anonKey, setAnonKey] = useState("");
-
-  // Params
   const [nctId, setNctId] = useState("NCT00997893");
   const [nctIds, setNctIds] = useState("NCT00997893");
-
-  // UI state
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<DebugResult[]>([]);
 
+  // Sin env: lo metes aquí directamente
+  const [baseUrl, setBaseUrl] = useState("https://dxtgnfmtuvxbpnvxzxal.supabase.co");
+  const [anonKey, setAnonKey] = useState("");
+
   const push = (r: DebugResult) => setResults((prev) => [r, ...prev]);
 
-  const validate = (): { ok: true } | { ok: false; error: string } => {
-    const u = baseUrl?.trim();
-    const k = anonKey?.trim();
+  // Forma estable (no union raro) -> evita el TS2339
+  const validate = (): { ok: boolean; error?: string } => {
+    const u = (baseUrl || "").trim();
+    const k = (anonKey || "").trim();
 
-    if (!u) return { ok: false, error: "Missing Supabase URL" };
-    if (!u.startsWith("https://") || !u.includes(".supabase.co")) {
-      return { ok: false, error: "Supabase URL looks wrong (expected https://<ref>.supabase.co)" };
-    }
-    if (!k) return { ok: false, error: "Missing Anon key" };
+    if (!u) return { ok: false, error: "Missing baseUrl" };
+    if (!k) return { ok: false, error: "Missing anonKey" };
 
-    // Supabase anon keys are JWT-like and typically start with eyJ
-    if (!k.startsWith("eyJ")) {
-      return {
-        ok: false,
-        error:
-          "Anon key looks wrong (expected JWT starting with 'eyJ'). Make sure you're using the Supabase ANON key, not OpenAI key, not sb_publishable.",
-      };
-    }
+    // sanity check mínima
+    if (!u.startsWith("https://")) return { ok: false, error: "baseUrl must start with https://" };
+    if (!k.startsWith("eyJ")) return { ok: false, error: "anonKey doesn't look like a JWT (should start with eyJ...)" };
+
     return { ok: true };
   };
+
+  // Supabase client opcional (solo si hay baseUrl+anonKey)
+  const supabase: SupabaseClient | null = useMemo(() => {
+    const v = validate();
+    if (!v.ok) return null;
+    return createClient(baseUrl.trim(), anonKey.trim());
+  }, [baseUrl, anonKey]);
 
   const testGetRich = async () => {
     setLoading(true);
@@ -69,15 +68,13 @@ export default function DebugEdge() {
         return;
       }
 
-      const u = baseUrl.trim();
-      const k = anonKey.trim();
-      const url = `${u}/functions/v1/get-rich?nct_id=${encodeURIComponent(nctId.trim())}`;
+      const url = `${baseUrl.trim()}/functions/v1/get-rich?nct_id=${encodeURIComponent(nctId)}`;
 
       const { status, text, json } = await fetchJson(url, {
         method: "GET",
         headers: {
-          apikey: k,
-          Authorization: `Bearer ${k}`,
+          apikey: anonKey.trim(),
+          Authorization: `Bearer ${anonKey.trim()}`,
         },
       });
 
@@ -95,31 +92,28 @@ export default function DebugEdge() {
     }
   };
 
-  const testAnalyzeDirection = async () => {
+  const testAnalyzeDirectionFetch = async () => {
     setLoading(true);
     try {
       const chk = validate();
       if (!chk.ok) {
-        push({ ok: false, url: "analyze-direction", error: chk.error });
+        push({ ok: false, url: "analyze-direction (fetch)", error: chk.error });
         return;
       }
 
-      const u = baseUrl.trim();
-      const k = anonKey.trim();
-
       const ids = nctIds
         .split(",")
-        .map((s) => s.trim().toUpperCase())
+        .map((s) => s.trim())
         .filter(Boolean);
 
-      const url = `${u}/functions/v1/analyze-direction`;
+      const url = `${baseUrl.trim()}/functions/v1/analyze-direction`;
       const payload = { nct_ids: ids };
 
       const { status, text, json } = await fetchJson(url, {
         method: "POST",
         headers: {
-          apikey: k,
-          Authorization: `Bearer ${k}`,
+          apikey: anonKey.trim(),
+          Authorization: `Bearer ${anonKey.trim()}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -134,43 +128,51 @@ export default function DebugEdge() {
         responseJson: json,
       });
     } catch (e: any) {
-      push({ ok: false, url: "analyze-direction", error: String(e) });
+      push({ ok: false, url: "analyze-direction (fetch)", error: String(e) });
     } finally {
       setLoading(false);
     }
   };
 
-  const testSupabaseJsInvoke = async () => {
+  const testAnalyzeDirectionSupabaseJs = async () => {
     setLoading(true);
     try {
+      const chk = validate();
+      if (!chk.ok) {
+        push({ ok: false, url: "analyze-direction (supabase-js)", error: chk.error });
+        return;
+      }
+      if (!supabase) {
+        push({ ok: false, url: "analyze-direction (supabase-js)", error: "Supabase client not initialized" });
+        return;
+      }
+
       const ids = nctIds
         .split(",")
-        .map((s) => s.trim().toUpperCase())
+        .map((s) => s.trim())
         .filter(Boolean);
 
       const payload = { nct_ids: ids };
 
-      const { data, error } = await supabaseExternal.functions.invoke("analyze-direction", {
-        body: payload,
-      });
+      const { data, error } = await supabase.functions.invoke("analyze-direction", { body: payload });
 
       if (error) {
         push({
           ok: false,
-          url: "supabase-js invoke analyze-direction",
-          error: JSON.stringify(error, null, 2),
+          url: `${baseUrl.trim()}/functions/v1/analyze-direction (supabase-js)`,
           request: payload,
+          error: JSON.stringify(error, null, 2),
         });
       } else {
         push({
           ok: true,
-          url: "supabase-js invoke analyze-direction",
-          responseJson: data,
+          url: `${baseUrl.trim()}/functions/v1/analyze-direction (supabase-js)`,
           request: payload,
+          responseJson: data,
         });
       }
     } catch (e: any) {
-      push({ ok: false, url: "supabase-js invoke analyze-direction", error: String(e) });
+      push({ ok: false, url: "analyze-direction (supabase-js)", error: String(e) });
     } finally {
       setLoading(false);
     }
@@ -180,35 +182,35 @@ export default function DebugEdge() {
     <div style={{ padding: 16, maxWidth: 980 }}>
       <h2>Debug - Supabase Edge Functions</h2>
 
-      <div
-        style={{ display: "grid", gap: 8, marginBottom: 12, padding: 12, border: "1px solid #ddd", borderRadius: 8 }}
-      >
-        <label>
-          <div style={{ marginBottom: 4 }}>
-            <b>Supabase URL</b>
+      <div style={{ marginBottom: 12, padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
+        <div style={{ display: "grid", gap: 8 }}>
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>Supabase baseUrl</div>
+            <input
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              style={{ width: "100%", padding: 8 }}
+              placeholder="https://xxxx.supabase.co"
+            />
           </div>
-          <input
-            value={baseUrl}
-            onChange={(e) => setBaseUrl(e.target.value)}
-            style={{ width: "100%", padding: 8 }}
-            placeholder="https://<project-ref>.supabase.co"
-          />
-        </label>
 
-        <label>
-          <div style={{ marginBottom: 4 }}>
-            <b>Anon key (Supabase)</b>
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>Anon key (JWT)</div>
+            <input
+              value={anonKey}
+              onChange={(e) => setAnonKey(e.target.value)}
+              style={{ width: "100%", padding: 8 }}
+              placeholder="eyJ..."
+            />
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
+              {anonKey ? `OK: ${anonKey.slice(0, 10)}… (len ${anonKey.length})` : "Empty"}
+            </div>
           </div>
-          <input
-            value={anonKey}
-            onChange={(e) => setAnonKey(e.target.value)}
-            style={{ width: "100%", padding: 8 }}
-            placeholder="eyJhbGciOi..."
-          />
-          <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
-            Showing prefix: {anonKey ? `${anonKey.slice(0, 10)}… (len ${anonKey.length})` : "(empty)"}
+
+          <div style={{ fontSize: 12 }}>
+            <b>Validation:</b> {validate().ok ? "OK" : `FAIL - ${validate().error}`}
           </div>
-        </label>
+        </div>
       </div>
 
       <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
@@ -234,10 +236,10 @@ export default function DebugEdge() {
             placeholder="NCT00997893,NCT05388656"
           />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <button onClick={testAnalyzeDirection} disabled={loading}>
+            <button onClick={testAnalyzeDirectionFetch} disabled={loading}>
               Test analyze-direction (fetch POST)
             </button>
-            <button onClick={testSupabaseJsInvoke} disabled={loading}>
+            <button onClick={testAnalyzeDirectionSupabaseJs} disabled={loading}>
               Test analyze-direction (supabase-js invoke)
             </button>
           </div>
@@ -255,7 +257,7 @@ export default function DebugEdge() {
                 <div>
                   <b>URL:</b> {r.url}
                 </div>
-                {r.status !== undefined && (
+                {"status" in r && r.status !== undefined && (
                   <div>
                     <b>Status:</b> {r.status}
                   </div>
