@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import DatasetPage from "./pages/DatasetPage";
 import AnalysisPage from "./pages/AnalysisPage";
 import StudyDetailPage from "./pages/StudyDetailPage";
+import DebugEdge from "./pages/DebugEdge";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/dataset" element={<DatasetPage />} />
           <Route path="/analysis/:analysisId" element={<AnalysisPage />} />
           <Route path="/study/:nctId" element={<StudyDetailPage />} />
+          <Route path="/debug-edge" element={<DebugEdge />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
