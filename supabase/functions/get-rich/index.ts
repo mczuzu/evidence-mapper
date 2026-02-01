@@ -1,67 +1,84 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+function json(resBody: unknown, status = 200) {
+  return new Response(JSON.stringify(resBody), {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+async function safeReadJson(req: Request): Promise<any | null> {
+  const ct = req.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) return null;
+  const text = await req.text();
+  if (!text || text.trim().length === 0) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
   }
+}
+
+async function downloadFromRichBucket(supabase: ReturnType<typeof createClient>, nctId: string) {
+  const bucket = "rich";
+  const candidates = [`${nctId}.json`, `rich_out/${nctId}.json`];
+
+  for (const path of candidates) {
+    const { data, error } = await supabase.storage.from(bucket).download(path);
+    if (!error && data) {
+      const text = await data.text();
+      return { ok: true as const, path, text };
+    }
+  }
+  return { ok: false as const };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const url = new URL(req.url);
-    const nctId = url.searchParams.get('nct_id');
 
-    if (!nctId) {
-      return new Response(
-        JSON.stringify({ error: 'Missing nct_id parameter' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const body = req.method === "POST" ? await safeReadJson(req) : null;
+    const nctId = (body?.nct_id as string | undefined) ?? url.searchParams.get("nct_id") ?? null;
+
+    if (!nctId || !/^NCT\d{8}$/i.test(nctId)) {
+      return json({ error: "Missing or invalid nct_id (expected NCT########)" }, 400);
     }
 
-    // Connect to external Supabase with the em schema
-    const externalUrl = 'https://dxtgnfmtuvxbpnvxzxal.supabase.co';
-    const externalKey = 'sb_publishable_9XTutsu4Dmnk68u13bcPWA_VUIF2Kk0';
-    
-    const supabase = createClient(externalUrl, externalKey, {
-      db: { schema: 'em' }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      return json({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }, 500);
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const normalized = nctId.toUpperCase();
+    const dl = await downloadFromRichBucket(supabase, normalized);
+
+    if (!dl.ok) {
+      return json({ error: "Rich JSON not found in bucket 'rich'", nct_id: normalized }, 404);
+    }
+
+    return new Response(dl.text, {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
-
-    // Query the rich data view (assuming v_ui_study_detail exists)
-    // If it doesn't exist, this will return an error which we handle gracefully
-    const { data, error } = await supabase
-      .from('v_ui_study_detail')
-      .select('primary_outcomes, eligibility_preview, detailed_description_preview')
-      .eq('nct_id', nctId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching rich data:', error);
-      return new Response(
-        JSON.stringify({ error: 'Rich data not available', details: error.message }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!data) {
-      return new Response(
-        JSON.stringify({ error: 'Study not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify(data),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (err) {
-    console.error('Unexpected error:', err);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  } catch (e) {
+    console.error("GET_RICH_UNHANDLED", e);
+    return json({ error: "Unhandled error", details: String(e) }, 500);
   }
 });

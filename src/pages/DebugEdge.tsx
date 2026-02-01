@@ -1,256 +1,230 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import React, { useMemo, useState } from "react";
+import { supabaseExternal } from "../lib/supabase-external";
 
-interface RequestLog {
-  url: string;
-  method: string;
-  headers: Record<string, string>;
-  body: string;
+type DebugResult = {
+  ok: boolean;
   status?: number;
-  responseTime?: number;
-  response?: string;
+  url: string;
+  request?: any;
+  responseText?: string;
+  responseJson?: any;
   error?: string;
+};
+
+async function fetchJson(url: string, init: RequestInit): Promise<{ status: number; text: string; json?: any }> {
+  const res = await fetch(url, init);
+  const text = await res.text();
+  let json: any = undefined;
+  try {
+    json = text ? JSON.parse(text) : undefined;
+  } catch {
+    // keep as text
+  }
+  return { status: res.status, text, json };
 }
 
-export default function DebugEdge() {
-  const [baseUrl, setBaseUrl] = useState("https://dxtgnfmtuvxbpnvxzxal.supabase.co");
-  const [anonKey, setAnonKey] = useState("");
-  const [nctIdsRaw, setNctIdsRaw] = useState("NCT00997893");
-  const [loading, setLoading] = useState<string | null>(null);
-  const [log, setLog] = useState<RequestLog | null>(null);
+export default function DebugSupabase() {
+  const [nctId, setNctId] = useState("NCT00997893");
+  const [nctIds, setNctIds] = useState("NCT00997893");
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<DebugResult[]>([]);
 
-  const parseNctIds = (): string[] => {
-    return nctIdsRaw
-      .split(/[\n,]+/)
-      .map((id) => id.trim())
-      .filter((id) => id.length > 0);
+  const baseUrl = useMemo(() => {
+    // supabase-js stores it internally; we rely on env var for the actual URL.
+    return (import.meta as any).env?.VITE_EXTERNAL_SUPABASE_URL as string;
+  }, []);
+
+  const anonKey = useMemo(() => {
+    return (import.meta as any).env?.VITE_EXTERNAL_SUPABASE_ANON_KEY as string;
+  }, []);
+
+  const push = (r: DebugResult) => setResults((prev) => [r, ...prev]);
+
+  const testGetRich = async () => {
+    setLoading(true);
+    try {
+      const url = `${baseUrl}/functions/v1/get-rich?nct_id=${encodeURIComponent(nctId)}`;
+      const { status, text, json } = await fetchJson(url, {
+        method: "GET",
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+      });
+
+      push({
+        ok: status >= 200 && status < 300,
+        status,
+        url,
+        responseText: text,
+        responseJson: json,
+      });
+    } catch (e: any) {
+      push({ ok: false, url: "get-rich", error: String(e) });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const callFunction = async (functionName: "get-rich" | "analyze-direction") => {
-    const nctIds = parseNctIds();
-    if (nctIds.length === 0) {
-      setLog({ url: "", method: "POST", headers: {}, body: "", error: "No NCT IDs provided" });
-      return;
-    }
-
-    const url = `${baseUrl.replace(/\/$/, "")}/functions/v1/${functionName}`;
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${anonKey}`,
-      apikey: anonKey,
-    };
-
-    let body: Record<string, unknown>;
-    if (functionName === "get-rich") {
-      body = { nct_id: nctIds[0], nct_ids: nctIds };
-    } else {
-      body = { nct_ids: nctIds };
-    }
-
-    const bodyStr = JSON.stringify(body, null, 2);
-
-    setLog({
-      url,
-      method: "POST",
-      headers,
-      body: bodyStr,
-    });
-    setLoading(functionName);
-
-    const startTime = performance.now();
-
+  const testAnalyzeDirection = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(url, {
+      const ids = nctIds
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const url = `${baseUrl}/functions/v1/analyze-direction`;
+      const payload = { nct_ids: ids };
+
+      const { status, text, json } = await fetchJson(url, {
         method: "POST",
-        headers,
-        body: JSON.stringify(body),
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
-      const endTime = performance.now();
-      const responseTime = Math.round(endTime - startTime);
-      const responseText = await response.text();
-
-      setLog({
+      push({
+        ok: status >= 200 && status < 300,
+        status,
         url,
-        method: "POST",
-        headers,
-        body: bodyStr,
-        status: response.status,
-        responseTime,
-        response: responseText,
+        request: payload,
+        responseText: text,
+        responseJson: json,
       });
-    } catch (err) {
-      const endTime = performance.now();
-      const responseTime = Math.round(endTime - startTime);
-
-      setLog({
-        url,
-        method: "POST",
-        headers,
-        body: bodyStr,
-        responseTime,
-        error: err instanceof Error ? err.message : String(err),
-      });
+    } catch (e: any) {
+      push({ ok: false, url: "analyze-direction", error: String(e) });
     } finally {
-      setLoading(null);
+      setLoading(false);
+    }
+  };
+
+  const testSupabaseJsInvoke = async () => {
+    // Optional: same call but via supabase-js invoke (some people prefer this)
+    setLoading(true);
+    try {
+      const ids = nctIds
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const payload = { nct_ids: ids };
+      const { data, error } = await supabaseExternal.functions.invoke("analyze-direction", { body: payload });
+
+      if (error) {
+        push({
+          ok: false,
+          url: "supabase-js invoke analyze-direction",
+          error: JSON.stringify(error, null, 2),
+          request: payload,
+        });
+      } else {
+        push({ ok: true, url: "supabase-js invoke analyze-direction", responseJson: data, request: payload });
+      }
+    } catch (e: any) {
+      push({ ok: false, url: "supabase-js invoke analyze-direction", error: String(e) });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Edge Function Debug</h1>
-        <p className="text-muted-foreground text-sm">
-          Herramienta de diagnóstico para testear Edge Functions directamente con fetch nativo.
-        </p>
+    <div style={{ padding: 16, maxWidth: 980 }}>
+      <h2>Debug - Supabase Edge Functions</h2>
 
-        {/* Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Configuración</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="baseUrl">Supabase Base URL</Label>
-              <Input
-                id="baseUrl"
-                value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
-                placeholder="https://xxxx.supabase.co"
-              />
-            </div>
+      <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
+        <div>
+          <div style={{ marginBottom: 6 }}>NCT ID (get-rich)</div>
+          <input
+            value={nctId}
+            onChange={(e) => setNctId(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+            placeholder="NCT00997893"
+          />
+          <button onClick={testGetRich} disabled={loading} style={{ marginTop: 8 }}>
+            Test get-rich (GET)
+          </button>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="anonKey">Anon Key (JWT)</Label>
-              <Input
-                id="anonKey"
-                value={anonKey}
-                onChange={(e) => setAnonKey(e.target.value)}
-                placeholder="eyJ..."
-                type="password"
-              />
-            </div>
+        <div>
+          <div style={{ marginBottom: 6 }}>NCT IDs (analyze-direction) - comma separated</div>
+          <input
+            value={nctIds}
+            onChange={(e) => setNctIds(e.target.value)}
+            style={{ width: "100%", padding: 8 }}
+            placeholder="NCT00997893,NCT05388656"
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button onClick={testAnalyzeDirection} disabled={loading}>
+              Test analyze-direction (fetch POST)
+            </button>
+            <button onClick={testSupabaseJsInvoke} disabled={loading}>
+              Test analyze-direction (supabase-js invoke)
+            </button>
+          </div>
+        </div>
+      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="nctIds">NCT IDs (uno por línea o separados por coma)</Label>
-              <Textarea
-                id="nctIds"
-                value={nctIdsRaw}
-                onChange={(e) => setNctIdsRaw(e.target.value)}
-                placeholder="NCT00997893&#10;NCT12345678"
-                rows={4}
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <hr />
 
-        {/* Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Acciones</CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-4">
-            <Button
-              onClick={() => callFunction("get-rich")}
-              disabled={loading !== null}
-              variant="outline"
-            >
-              {loading === "get-rich" ? "Calling..." : "Call get-rich"}
-            </Button>
-            <Button
-              onClick={() => callFunction("analyze-direction")}
-              disabled={loading !== null}
-            >
-              {loading === "analyze-direction" ? "Calling..." : "Call analyze-direction"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Results */}
-        {log && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Resultado</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Request Info */}
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-foreground">Request</h3>
-                <div className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto">
+      <h3>Latest results</h3>
+      <div style={{ display: "grid", gap: 12 }}>
+        {results.map((r, idx) => (
+          <div key={idx} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <div>
+                <div>
+                  <b>URL:</b> {r.url}
+                </div>
+                {"status" in r && r.status !== undefined && (
                   <div>
-                    <span className="text-muted-foreground">URL:</span> {log.url}
+                    <b>Status:</b> {r.status}
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Method:</span> {log.method}
-                  </div>
-                </div>
+                )}
               </div>
-
-              {/* Headers */}
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-foreground">Headers</h3>
-                <pre className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap">
-                  {JSON.stringify(log.headers, null, 2)}
-                </pre>
+              <div>
+                <b>{r.ok ? "OK" : "FAIL"}</b>
               </div>
+            </div>
 
-              {/* Body */}
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-foreground">Body</h3>
-                <pre className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap">
-                  {log.body}
-                </pre>
-              </div>
-
-              {/* Response */}
-              {(log.status !== undefined || log.error) && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm text-foreground">Response</h3>
-                  <div className="bg-muted p-3 rounded text-xs font-mono space-y-1">
-                    {log.status !== undefined && (
-                      <div>
-                        <span className="text-muted-foreground">Status:</span>{" "}
-                        <span
-                          className={
-                            log.status >= 200 && log.status < 300
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }
-                        >
-                          {log.status}
-                        </span>
-                      </div>
-                    )}
-                    {log.responseTime !== undefined && (
-                      <div>
-                        <span className="text-muted-foreground">Time:</span> {log.responseTime}ms
-                      </div>
-                    )}
-                    {log.error && (
-                      <div className="text-red-600">
-                        <span className="text-muted-foreground">Error:</span> {log.error}
-                      </div>
-                    )}
-                  </div>
+            {r.request && (
+              <>
+                <div style={{ marginTop: 8 }}>
+                  <b>Request</b>
                 </div>
-              )}
+                <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(r.request, null, 2)}</pre>
+              </>
+            )}
 
-              {/* Response Body */}
-              {log.response && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm text-foreground">Response Body (raw)</h3>
-                  <pre className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto">
-                    {log.response}
-                  </pre>
+            {r.error && (
+              <>
+                <div style={{ marginTop: 8 }}>
+                  <b>Error</b>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                <pre style={{ whiteSpace: "pre-wrap" }}>{r.error}</pre>
+              </>
+            )}
+
+            {r.responseJson !== undefined ? (
+              <>
+                <div style={{ marginTop: 8 }}>
+                  <b>Response (JSON)</b>
+                </div>
+                <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(r.responseJson, null, 2)}</pre>
+              </>
+            ) : r.responseText ? (
+              <>
+                <div style={{ marginTop: 8 }}>
+                  <b>Response (text)</b>
+                </div>
+                <pre style={{ whiteSpace: "pre-wrap" }}>{r.responseText}</pre>
+              </>
+            ) : null}
+          </div>
+        ))}
       </div>
     </div>
   );
