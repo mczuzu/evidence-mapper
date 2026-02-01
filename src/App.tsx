@@ -1,3 +1,4 @@
+console.log("APP_TSX_LOADED");
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
