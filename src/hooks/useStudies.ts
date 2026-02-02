@@ -9,12 +9,64 @@ interface UseStudiesParams {
   selectedLabels: string[];
   selectedParamTypes: string[];
   page: number;
+  advancedSearch?: boolean;
 }
 
-export function useStudies({ searchQuery, selectedLabels, selectedParamTypes, page }: UseStudiesParams) {
+interface RpcSearchResult {
+  nct_id: string;
+  brief_title: string;
+  official_title: string | null;
+  rank: number;
+}
+
+// Normalize RPC results to StudyListItem structure
+function normalizeRpcResult(item: RpcSearchResult): StudyListItem {
+  return {
+    nct_id: item.nct_id,
+    brief_title: item.brief_title,
+    official_title: item.official_title,
+    n_result_rows: null,
+    n_unique_outcomes: null,
+    total_n_reported: null,
+    max_n_reported: null,
+    has_placebo_or_control_label: null,
+    semantic_labels: null,
+    param_type_set: null,
+  };
+}
+
+export function useStudies({ searchQuery, selectedLabels, selectedParamTypes, page, advancedSearch = false }: UseStudiesParams) {
   return useQuery({
-    queryKey: ['studies', searchQuery, selectedLabels, selectedParamTypes, page],
+    queryKey: ['studies', searchQuery, selectedLabels, selectedParamTypes, page, advancedSearch],
     queryFn: async () => {
+      // Advanced search using RPC
+      if (advancedSearch && searchQuery.trim()) {
+        const { data, error } = await supabaseExternal
+          .rpc('search_menopause_anxiety', { search_term: searchQuery.trim() });
+
+        if (error) {
+          console.error('Error fetching studies via RPC:', error);
+          throw error;
+        }
+
+        const rpcResults = (data as RpcSearchResult[]) || [];
+        const studies = rpcResults.map(normalizeRpcResult);
+        
+        // Apply pagination client-side for RPC results
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE;
+        const paginatedStudies = studies.slice(from, to);
+
+        return {
+          studies: paginatedStudies,
+          totalCount: studies.length,
+          pageSize: PAGE_SIZE,
+          currentPage: page,
+          totalPages: Math.ceil(studies.length / PAGE_SIZE),
+        };
+      }
+
+      // Standard query
       let query = supabaseExternal
         .from('v_ui_study_list')
         .select('*', { count: 'exact' })
