@@ -162,7 +162,7 @@ const AnalysisPage = () => {
                 </div>
               )}
 
-              {schemaVersion === "v1" && (
+{schemaVersion === "v1" && (
   <LegacyAnalysisContent
     analysis={{
       direction:
