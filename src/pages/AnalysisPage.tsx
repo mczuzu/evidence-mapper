@@ -39,7 +39,7 @@ function useAnalysisRun(analysisId: string | undefined) {
 
       const { data, error } = await supabaseExternalPublic
         .from("analysis_runs")
-        .select("id, created_at, nct_ids, result")
+        .select("id, created_at, nct_ids, dataset_query, prompt_version, schema_version, analysis")
         .eq("id", analysisId)
         .single();
 
@@ -70,6 +70,7 @@ const AnalysisPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
   const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; result: any } | undefined;
   const stateRunMatches = !!analysisId && stateRun?.id === analysisId;
 
@@ -84,7 +85,7 @@ const AnalysisPage = () => {
           id: stateRun.id,
           created_at: new Date().toISOString(),
           nct_ids: stateRun.nct_ids,
-          result: stateRun.result,
+          analysis: stateRun.analysis,
         }
       : undefined);
 
