@@ -59,7 +59,7 @@ function parseAnalysisResult(input: any): AnalysisResult | null {
       return null;
     }
   }
-  return input;
+  return input as AnalysisResult;
 }
 
 const AnalysisPage = () => {
@@ -67,7 +67,9 @@ const AnalysisPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
+  const stateRun = (location.state as any)?.run as
+    | { id: string; nct_ids: string[]; analysis: any; prompt_version?: string; schema_version?: string }
+    | undefined;
 
   const stateRunMatches = !!analysisId && stateRun?.id === analysisId;
 
@@ -81,14 +83,14 @@ const AnalysisPage = () => {
           created_at: new Date().toISOString(),
           nct_ids: stateRun.nct_ids,
           analysis: stateRun.analysis,
+          prompt_version: stateRun.prompt_version ?? null,
+          schema_version: stateRun.schema_version ?? null,
         }
       : undefined);
 
-  const parsedAnalysis = parseAnalysisResult(analysisRun?.analysis);
-  const analysis = parsedAnalysis;
+  const analysis = parseAnalysisResult(analysisRun?.analysis);
 
   const schemaVersion: SchemaVersion = analysis ? detectSchemaVersion(analysis) : "v1";
-
   const nFound = analysisRun?.nct_ids?.length ?? 0;
   const firstThree = analysisRun?.nct_ids?.slice(0, 3) ?? [];
 
@@ -123,7 +125,7 @@ const AnalysisPage = () => {
             <CardContent className="pt-6 space-y-2">
               <div className="text-sm">
                 <span className="text-muted-foreground">Analysis ID:</span>{" "}
-                <span className="font-mono text-xs">{analysisId}</span>
+                <span className="font-mono text-xs">{analysisId || "—"}</span>
               </div>
               <div className="text-sm">
                 <span className="text-muted-foreground">Schema detected:</span>{" "}
@@ -155,30 +157,39 @@ const AnalysisPage = () => {
 
               {schemaVersion === "v2" && (
                 <div className="space-y-6">
-                  <HypothesisSection hypotheses={analysis.direction_hypotheses || []} />
-                  <PatternsSection patterns={analysis.patterns || []} />
-                  <GapsSection gaps={analysis.opportunity_gaps || []} />
-                  <NextStudiesSection studies={analysis.next_studies || []} />
+                  <HypothesisSection hypotheses={(analysis as any).direction_hypotheses || []} />
+                  <PatternsSection patterns={(analysis as any).patterns || []} />
+                  <GapsSection gaps={(analysis as any).opportunity_gaps || []} />
+                  <NextStudiesSection studies={(analysis as any).next_studies || []} />
                 </div>
               )}
 
-{schemaVersion === "v1" && (
-  <LegacyAnalysisContent
-    analysis={{
-      direction:
-        Array.isArray((analysis as any)?.research_directions) && (analysis as any).research_directions.length > 0
-          ? (analysis as any).research_directions
-              .map(
-                (d: any, i: number) =>
-                  `${i + 1}. ${d.condition}\n${d.direction}\n${d.rationale ?? ""}`
-              )
-              .join("\n\n")
-          : undefined,
-      themes: undefined,
-      gaps: undefined,
-      suggested_next_steps: undefined,
-    }}
-  />
-)}
+              {schemaVersion === "v1" && (
+                <LegacyAnalysisContent
+                  analysis={{
+                    direction:
+                      Array.isArray((analysis as any)?.research_directions) &&
+                      (analysis as any).research_directions.length > 0
+                        ? (analysis as any).research_directions
+                            .map((d: any, i: number) =>
+                              `${i + 1}. ${d.condition}\n${d.direction}\n${d.rationale ?? ""}`.trim(),
+                            )
+                            .join("\n\n")
+                        : typeof (analysis as any)?.direction === "string"
+                          ? (analysis as any).direction
+                          : undefined,
+                    themes: (analysis as any)?.themes,
+                    gaps: Array.isArray((analysis as any)?.gaps) ? (analysis as any).gaps : undefined,
+                    suggested_next_steps: (analysis as any)?.suggested_next_steps,
+                  }}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
 
 export default AnalysisPage;
