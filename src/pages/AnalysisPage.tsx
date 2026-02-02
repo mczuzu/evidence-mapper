@@ -1,7 +1,7 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabaseExternalPublic } from "@/lib/supabase-external";
@@ -20,7 +20,7 @@ type AnalysisRunRow = {
   id: string;
   created_at: string;
   nct_ids: string[];
-  analysis: any; // jsonb
+  analysis: any; // o Json si usas Database types
   dataset_query?: string | null;
   prompt_version?: string | null;
   schema_version?: string | null;
@@ -50,18 +50,19 @@ function useAnalysisRun(analysisId: string | undefined) {
 }
 
 // Helper to safely parse analysis result (handles string or object)
-function parseAnalysisResult(input: any): AnalysisResult | null {
-  if (!input) return null;
+function parseAnalysisResult(result: any): AnalysisResult | null {
+  if (!result) return null;
 
-  if (typeof input === "string") {
+  // If result is a string, try to parse it
+  if (typeof result === "string") {
     try {
-      return JSON.parse(input) as AnalysisResult;
+      return JSON.parse(result) as AnalysisResult;
     } catch {
       return null;
     }
   }
 
-  return input as AnalysisResult;
+  return result as AnalysisResult;
 }
 
 const AnalysisPage = () => {
@@ -69,24 +70,14 @@ const AnalysisPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Navigation state (optimistic render)
-  const stateRun = (location.state as any)?.run as
-    | {
-        id: string;
-        nct_ids: string[];
-        analysis: any;
-        prompt_version?: string;
-        schema_version?: string;
-        status?: string;
-      }
-    | undefined;
-
+  const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
+  cconst stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any; prompt_version?: string; schema_version?: string } | undefined;onst stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; result: any } | undefined;
   const stateRunMatches = !!analysisId && stateRun?.id === analysisId;
 
   const { data, isLoading, error } = useAnalysisRun(analysisId);
 
-  // Source of truth: DB row.
-  // While loading, allow optimistic render from navigation state.
+  // Source of truth: DB row filtered strictly by analysisId.
+  // While loading, we can optimistically render the payload passed via navigation state (also bound to analysisId).
   const analysisRun: AnalysisRunRow | undefined =
     data ??
     (stateRunMatches
@@ -95,9 +86,6 @@ const AnalysisPage = () => {
           created_at: new Date().toISOString(),
           nct_ids: stateRun.nct_ids,
           analysis: stateRun.analysis,
-          prompt_version: stateRun.prompt_version ?? null,
-          schema_version: stateRun.schema_version ?? null,
-          dataset_query: null,
         }
       : undefined);
 
@@ -113,13 +101,10 @@ const AnalysisPage = () => {
     navigate(-1);
   };
 
-  // Parse analysis payload (DB column = analysis)
+  // Parse and extract data
   const parsedResult = parseAnalysisResult(analysisRun?.analysis);
-
-  // In V3 we store the analysis object directly.
-  // Keep backward compatibility if payload is wrapped.
-  const analysis = (parsedResult as any)?.analysis ?? parsedResult;
-  const metadata = (parsedResult as any)?.metadata;
+  const analysis = parsedResult;
+  const metadata = null;
 
   const nFound = metadata?.n_found ?? metadata?.study_count ?? analysisRun?.nct_ids?.length ?? 0;
   const firstThree = (analysisRun?.nct_ids ?? []).slice(0, 3);
@@ -184,21 +169,20 @@ const AnalysisPage = () => {
 
               {schemaVersion === "v2" && (
                 <div className="space-y-6">
-                  <HypothesisSection hypotheses={(analysis as any).direction_hypotheses || []} />
-                  <PatternsSection patterns={(analysis as any).patterns || []} />
-                  <GapsSection gaps={(analysis as any).opportunity_gaps || []} />
-                  <NextStudiesSection studies={(analysis as any).next_studies || []} />
+                  <HypothesisSection hypotheses={analysis.direction_hypotheses || []} />
+                  <PatternsSection patterns={analysis.patterns || []} />
+                  <GapsSection gaps={analysis.opportunity_gaps || []} />
+                  <NextStudiesSection studies={analysis.next_studies || []} />
                 </div>
               )}
 
               {schemaVersion === "v1" && (
                 <LegacyAnalysisContent
                   analysis={{
-                    direction:
-                      typeof (analysis as any).direction === "string" ? (analysis as any).direction : undefined,
-                    themes: (analysis as any).themes,
-                    gaps: Array.isArray((analysis as any).gaps) ? (analysis as any).gaps : undefined,
-                    suggested_next_steps: (analysis as any).suggested_next_steps,
+                    direction: typeof analysis.direction === "string" ? analysis.direction : undefined,
+                    themes: analysis.themes,
+                    gaps: Array.isArray(analysis.gaps) ? analysis.gaps : undefined,
+                    suggested_next_steps: analysis.suggested_next_steps,
                   }}
                 />
               )}
