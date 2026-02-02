@@ -113,7 +113,7 @@ const DatasetPage = () => {
         throw new Error("No data returned from analysis");
       }
 
-      // Interpret V3 response shape:
+      // Interpret response shape:
       // - missing: string[]
       // - found_paths: Record<nct_id, filePath>
       const missing: string[] = Array.isArray(result.missing) ? result.missing : [];
@@ -131,24 +131,28 @@ const DatasetPage = () => {
         toast.info(`Análisis completado. ${missing.length} estudio(s) sin datos disponibles.`);
       }
 
+      // The Edge Function should return { analysis: ... }
+      const analysisPayload = result.analysis;
+      if (!analysisPayload) {
+        throw new Error("Missing analysis in response payload");
+      }
+
       // Generate a NEW analysisId per run (no reuse)
       const analysisId = crypto.randomUUID();
 
-      // Persist the FULL response payload to the external project
+      // Persist to analysis_runs (matches your table columns)
       const { error: insertError } = await supabaseExternalPublic.from("analysis_runs").insert({
         id: analysisId,
         nct_ids: available, // text[]
-        dataset_query: isIdsMode ? null : searchParams.toString(), // opcional, útil
+        dataset_query: isIdsMode ? null : searchParams.toString(), // optional
         prompt_version: result.prompt_version ?? "v3.1.0",
         schema_version: result.schema_version ?? "V3",
-        analysis: result.analysis ?? result, // si viene envuelto, guarda solo analysis
-        status: "completed",
-        error: null,
+        analysis: analysisPayload, // jsonb
       });
 
       if (insertError) {
         console.error("Error saving analysis:", insertError);
-        throw new Error("Failed to save analysis results");
+        throw new Error(insertError.message || "Failed to save analysis results");
       }
 
       // Navigate to the analysis page using the NEW analysisId
@@ -157,10 +161,9 @@ const DatasetPage = () => {
           run: {
             id: analysisId,
             nct_ids: available,
-            analysis: result.analysis ?? result,
+            analysis: analysisPayload,
             prompt_version: result.prompt_version ?? "v3.1.0",
             schema_version: result.schema_version ?? "V3",
-            status: "completed",
           },
         },
       });
