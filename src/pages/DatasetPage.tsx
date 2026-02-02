@@ -137,8 +137,13 @@ const DatasetPage = () => {
       // Persist the FULL response payload to the external project
       const { error: insertError } = await supabaseExternalPublic.from("analysis_runs").insert({
         id: analysisId,
-        nct_ids: available, // store only those with data
-        result, // store full payload
+        nct_ids: available, // text[]
+        dataset_query: isIdsMode ? null : searchParams.toString(), // opcional, útil
+        prompt_version: result.prompt_version ?? "v3.1.0",
+        schema_version: result.schema_version ?? "V3",
+        analysis: result.analysis ?? result, // si viene envuelto, guarda solo analysis
+        status: "completed",
+        error: null,
       });
 
       if (insertError) {
@@ -152,7 +157,10 @@ const DatasetPage = () => {
           run: {
             id: analysisId,
             nct_ids: available,
-            result,
+            analysis: result.analysis ?? result,
+            prompt_version: result.prompt_version ?? "v3.1.0",
+            schema_version: result.schema_version ?? "V3",
+            status: "completed",
           },
         },
       });
