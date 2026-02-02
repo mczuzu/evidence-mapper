@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabaseExternal } from '@/lib/supabase-external';
-import { StudyListItem } from '@/types/database';
+import { useQuery } from "@tanstack/react-query";
+import { supabaseExternal } from "@/lib/supabase-external";
+import { StudyListItem } from "@/types/database";
 
 const DATASET_PAGE_SIZE = 50;
 
@@ -11,19 +11,14 @@ interface UseDatasetStudiesParams {
   page: number;
 }
 
-export function useDatasetStudies({ 
-  searchQuery, 
-  selectedLabels, 
-  selectedParamTypes, 
-  page 
-}: UseDatasetStudiesParams) {
+export function useDatasetStudies({ searchQuery, selectedLabels, selectedParamTypes, page }: UseDatasetStudiesParams) {
   return useQuery({
-    queryKey: ['dataset-studies', searchQuery, selectedLabels, selectedParamTypes, page],
+    queryKey: ["dataset-studies", searchQuery, selectedLabels, selectedParamTypes, page],
     queryFn: async () => {
       let query = supabaseExternal
-        .from('v_ui_study_list')
-        .select('*', { count: 'exact' })
-        .order('nct_id', { ascending: false });
+        .from("em.v_ui_study_list")
+        .select("*", { count: "exact" })
+        .order("nct_id", { ascending: false });
 
       // Text search on brief_title and official_title
       if (searchQuery.trim()) {
@@ -33,12 +28,12 @@ export function useDatasetStudies({
 
       // Filter by semantic labels (overlaps any of the selected)
       if (selectedLabels.length > 0) {
-        query = query.overlaps('semantic_labels', selectedLabels);
+        query = query.overlaps("semantic_labels", selectedLabels);
       }
 
       // Filter by param types (overlaps any of the selected)
       if (selectedParamTypes.length > 0) {
-        query = query.overlaps('param_type_set', selectedParamTypes);
+        query = query.overlaps("param_type_set", selectedParamTypes);
       }
 
       // Pagination with limit 50
@@ -49,7 +44,7 @@ export function useDatasetStudies({
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Error fetching dataset studies:', error);
+        console.error("Error fetching dataset studies:", error);
         throw error;
       }
 
@@ -67,7 +62,7 @@ export function useDatasetStudies({
 // Hook for fetching specific studies by IDs
 export function useDatasetStudiesByIds(nctIds: string[]) {
   return useQuery({
-    queryKey: ['dataset-studies-by-ids', nctIds],
+    queryKey: ["dataset-studies-by-ids", nctIds],
     queryFn: async () => {
       if (nctIds.length === 0) {
         return {
@@ -80,13 +75,13 @@ export function useDatasetStudiesByIds(nctIds: string[]) {
       }
 
       const { data, error } = await supabaseExternal
-        .from('v_ui_study_list')
-        .select('*')
-        .in('nct_id', nctIds)
-        .order('nct_id', { ascending: false });
+        .from("em.v_ui_study_list")
+        .select("*")
+        .in("nct_id", nctIds)
+        .order("nct_id", { ascending: false });
 
       if (error) {
-        console.error('Error fetching studies by IDs:', error);
+        console.error("Error fetching studies by IDs:", error);
         throw error;
       }
 
