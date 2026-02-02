@@ -1,90 +1,102 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabaseExternal } from '@/lib/supabase-external';
-import { supabase } from '@/integrations/supabase/client';
+// src/hooks/useStudyDetail.ts
+import { useQuery } from "@tanstack/react-query";
+import { supabaseExternal } from "@/lib/supabase-external";
 
-export interface StudyBasicInfo {
+export type StudyBasicInfo = {
   nct_id: string;
   brief_title: string;
-  official_title: string | null;
-  semantic_labels: string[] | null;
-  param_type_set: string[] | null;
-  n_result_rows: number | null;
-  n_unique_outcomes: number | null;
+  official_title?: string | null;
+  semantic_labels?: string[] | null;
+  param_type_set?: string[] | null;
+  n_result_rows: number;
+  n_unique_outcomes: number;
   total_n_reported: number | null;
   max_n_reported: number | null;
-  has_placebo_or_control_label: boolean | null;
-}
+};
 
-export interface PrimaryOutcome {
+export type PrimaryOutcome = {
   title: string;
-  time_frame: string;
+  time_frame?: string | null;
+  description?: string | null;
+};
+
+export type StudyRichInfo = {
+  nct_id: string;
+  titles?: { brief?: string; official?: string };
+  conditions?: string[];
+  enrollment?: number | null;
+  updated_at?: string | null;
+  brief_summary?: string | null;
+  primary_outcomes?: PrimaryOutcome[];
+  eligibility_preview?: string | null;
+  detailed_description_preview?: string | null;
+};
+
+async function fetchRich(nctId: string): Promise<StudyRichInfo | null> {
+  // Llamada directa al endpoint de Edge Function con headers correctos desde supabase client
+  // Nota: usamos fetch nativo para poder manejar 404 sin lanzar "error" de supabase-js
+  const url = `https://dxtgnfmtuvxbpnvxzxal.supabase.co/functions/v1/get-rich?nct_id=${encodeURIComponent(nctId)}`;
+
+  const anon = (supabaseExternal as any).supabaseKey as string | undefined;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      apikey: anon ?? "",
+      Authorization: `Bearer ${anon ?? ""}`,
+    },
+  });
+
+  // 404 = “no hay rich para este estudio” (caso esperado)
+  if (res.status === 404) return null;
+
+  // Cualquier otro no-2xx sí es error real
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`get-rich failed: ${res.status} ${txt}`);
+  }
+
+  const json = (await res.json()) as StudyRichInfo;
+  return json;
 }
 
-export interface StudyRichInfo {
-  primary_outcomes: PrimaryOutcome[] | null;
-  eligibility_preview: string | null;
-  detailed_description_preview: string | null;
-}
-
-// Hook for basic study info from the list view
 export function useStudyBasicInfo(nctId: string | undefined) {
   return useQuery({
-    queryKey: ['study-basic', nctId],
+    queryKey: ["study-basic", nctId],
+    enabled: !!nctId,
     queryFn: async () => {
-      if (!nctId) throw new Error('No NCT ID provided');
+      if (!nctId) throw new Error("Missing nctId");
 
       const { data, error } = await supabaseExternal
-        .from('v_ui_study_list')
-        .select('*')
-        .eq('nct_id', nctId)
+        .from("v_ui_study_list")
+        .select(
+          "nct_id, brief_title, official_title, semantic_labels, param_type_set, n_result_rows, n_unique_outcomes, total_n_reported, max_n_reported",
+        )
+        .eq("nct_id", nctId)
         .single();
 
-      if (error) {
-        console.error('Error fetching study basic info:', error);
-        throw error;
-      }
-
-      return data as StudyBasicInfo;
+      if (error) throw error;
+      return data as unknown as StudyBasicInfo;
     },
-    enabled: !!nctId,
+    staleTime: 30_000,
   });
 }
 
-// Hook for rich study info from the edge function
 export function useStudyRichInfo(nctId: string | undefined) {
   return useQuery({
-    queryKey: ['study-rich', nctId],
-    queryFn: async () => {
-      if (!nctId) throw new Error('No NCT ID provided');
-
-      const { data, error } = await supabase.functions.invoke('get-rich', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: undefined,
-      });
-
-      // The invoke method doesn't support query params directly, so we use fetch
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-rich?nct_id=${encodeURIComponent(nctId)}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to fetch rich data');
-      }
-
-      return (await response.json()) as StudyRichInfo;
-    },
+    queryKey: ["study-rich", nctId],
+    // CLAVE: si nctId es undefined, NO llama nunca (evita get-rich 400)
     enabled: !!nctId,
-    retry: false, // Don't retry on failure - it's expected that rich data may not exist
+    queryFn: async () => {
+      if (!nctId) return null;
+      return fetchRich(nctId);
+    },
+    // No “reintentes” un 404 (no sirve)
+    retry: (failCount, err: any) => {
+      const msg = String(err?.message ?? "");
+      if (msg.includes("get-rich failed: 404")) return false;
+      return failCount < 1;
+    },
+    staleTime: 30_000,
   });
 }
