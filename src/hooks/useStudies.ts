@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabaseExternal } from '@/lib/supabase-external';
-import { StudyListItem, FacetSemanticLabel, FacetParamType } from '@/types/database';
+import { useQuery } from "@tanstack/react-query";
+import { supabaseExternal } from "@/lib/supabase-external";
+import { StudyListItem, FacetSemanticLabel, FacetParamType } from "@/types/database";
 
 const PAGE_SIZE = 20;
 
@@ -35,23 +35,31 @@ function normalizeRpcResult(item: RpcSearchResult): StudyListItem {
   };
 }
 
-export function useStudies({ searchQuery, selectedLabels, selectedParamTypes, page, advancedSearch = false }: UseStudiesParams) {
+export function useStudies({
+  searchQuery,
+  selectedLabels,
+  selectedParamTypes,
+  page,
+  advancedSearch = false,
+}: UseStudiesParams) {
   return useQuery({
-    queryKey: ['studies', searchQuery, selectedLabels, selectedParamTypes, page, advancedSearch],
+    queryKey: ["studies", searchQuery, selectedLabels, selectedParamTypes, page, advancedSearch],
     queryFn: async () => {
       // Advanced search using RPC
       if (advancedSearch && searchQuery.trim()) {
-        const { data, error } = await supabaseExternal
-          .rpc('search_menopause_anxiety', { search_term: searchQuery.trim() });
+        const { data, error } = await supabaseExternal.schema("em").rpc("search_menopause_anxiety", {
+          q: searchQuery.trim(),
+          limit_n: 500, // o 200/1000 según quieras
+        });
 
         if (error) {
-          console.error('Error fetching studies via RPC:', error);
+          console.error("Error fetching studies via RPC:", error);
           throw error;
         }
 
         const rpcResults = (data as RpcSearchResult[]) || [];
         const studies = rpcResults.map(normalizeRpcResult);
-        
+
         // Apply pagination client-side for RPC results
         const from = page * PAGE_SIZE;
         const to = from + PAGE_SIZE;
@@ -68,9 +76,9 @@ export function useStudies({ searchQuery, selectedLabels, selectedParamTypes, pa
 
       // Standard query
       let query = supabaseExternal
-        .from('v_ui_study_list')
-        .select('*', { count: 'exact' })
-        .order('nct_id', { ascending: false });
+        .from("v_ui_study_list")
+        .select("*", { count: "exact" })
+        .order("nct_id", { ascending: false });
 
       // Text search on brief_title and official_title
       if (searchQuery.trim()) {
@@ -80,12 +88,12 @@ export function useStudies({ searchQuery, selectedLabels, selectedParamTypes, pa
 
       // Filter by semantic labels (contains any of the selected)
       if (selectedLabels.length > 0) {
-        query = query.overlaps('semantic_labels', selectedLabels);
+        query = query.overlaps("semantic_labels", selectedLabels);
       }
 
       // Filter by param types (contains any of the selected)
       if (selectedParamTypes.length > 0) {
-        query = query.overlaps('param_type_set', selectedParamTypes);
+        query = query.overlaps("param_type_set", selectedParamTypes);
       }
 
       // Pagination
@@ -96,7 +104,7 @@ export function useStudies({ searchQuery, selectedLabels, selectedParamTypes, pa
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Error fetching studies:', error);
+        console.error("Error fetching studies:", error);
         throw error;
       }
 
@@ -113,15 +121,15 @@ export function useStudies({ searchQuery, selectedLabels, selectedParamTypes, pa
 
 export function useSemanticLabelsFacet() {
   return useQuery({
-    queryKey: ['facet-semantic-labels'],
+    queryKey: ["facet-semantic-labels"],
     queryFn: async () => {
       const { data, error } = await supabaseExternal
-        .from('v_ui_facet_semantic_labels')
-        .select('*')
-        .order('n_studies', { ascending: false });
+        .from("v_ui_facet_semantic_labels")
+        .select("*")
+        .order("n_studies", { ascending: false });
 
       if (error) {
-        console.error('Error fetching semantic labels facet:', error);
+        console.error("Error fetching semantic labels facet:", error);
         throw error;
       }
 
@@ -132,15 +140,15 @@ export function useSemanticLabelsFacet() {
 
 export function useParamTypeFacet() {
   return useQuery({
-    queryKey: ['facet-param-type'],
+    queryKey: ["facet-param-type"],
     queryFn: async () => {
       const { data, error } = await supabaseExternal
-        .from('v_ui_facet_param_type')
-        .select('*')
-        .order('n_studies', { ascending: false });
+        .from("v_ui_facet_param_type")
+        .select("*")
+        .order("n_studies", { ascending: false });
 
       if (error) {
-        console.error('Error fetching param type facet:', error);
+        console.error("Error fetching param type facet:", error);
         throw error;
       }
 
