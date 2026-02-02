@@ -71,7 +71,7 @@ const AnalysisPage = () => {
   const location = useLocation();
 
   const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
-  const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; result: any } | undefined;
+  cconst stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any; prompt_version?: string; schema_version?: string } | undefined;onst stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; result: any } | undefined;
   const stateRunMatches = !!analysisId && stateRun?.id === analysisId;
 
   const { data, isLoading, error } = useAnalysisRun(analysisId);
