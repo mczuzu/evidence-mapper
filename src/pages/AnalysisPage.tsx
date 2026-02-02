@@ -163,21 +163,22 @@ const AnalysisPage = () => {
               )}
 
               {schemaVersion === "v1" && (
-                <LegacyAnalysisContent
-                  analysis={{
-                    direction: typeof analysis.direction === "string" ? analysis.direction : undefined,
-                    themes: analysis.themes,
-                    gaps: Array.isArray(analysis.gaps) ? analysis.gaps : undefined,
-                    suggested_next_steps: analysis.suggested_next_steps,
-                  }}
-                />
-              )}
-            </>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-};
+  <LegacyAnalysisContent
+    analysis={{
+      direction:
+        Array.isArray((analysis as any)?.research_directions) && (analysis as any).research_directions.length > 0
+          ? (analysis as any).research_directions
+              .map(
+                (d: any, i: number) =>
+                  `${i + 1}. ${d.condition}\n${d.direction}\n${d.rationale ?? ""}`
+              )
+              .join("\n\n")
+          : undefined,
+      themes: undefined,
+      gaps: undefined,
+      suggested_next_steps: undefined,
+    }}
+  />
+)}
 
 export default AnalysisPage;
