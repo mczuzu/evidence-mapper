@@ -5,17 +5,11 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabaseExternalPublic } from "@/lib/supabase-external";
-
-import { V3AnalysisContent } from "@/components/analysis/V3AnalysisContent";
-import { HypothesisSection } from "@/components/analysis/HypothesisSection";
-import { PatternsSection } from "@/components/analysis/PatternsSection";
-import { GapsSection } from "@/components/analysis/GapsSection";
-import { NextStudiesSection } from "@/components/analysis/NextStudiesSection";
-import { LegacyAnalysisContent } from "@/components/analysis/LegacyAnalysisContent";
 import { AnalysisStatusBanner } from "@/components/analysis/AnalysisStatusBanner";
 
-import type { AnalysisResult, SchemaVersion } from "@/types/analysis";
-import { detectSchemaVersion } from "@/types/analysis";
+/* =========================
+   Types
+========================= */
 
 type AnalysisRunRow = {
   id: string;
@@ -26,6 +20,21 @@ type AnalysisRunRow = {
   prompt_version?: string | null;
   schema_version?: string | null;
 };
+
+type DirectionAnalysis = {
+  confidence?: "low" | "medium" | "high" | string;
+  direction_text?: string;
+  next_steps_text?: string;
+
+  // Optional (if you include later)
+  missing?: string[];
+  n_requested?: number;
+  n_found?: number;
+};
+
+/* =========================
+   Data
+========================= */
 
 function useAnalysisRun(analysisId: string | undefined) {
   return useQuery({
@@ -50,7 +59,7 @@ function useAnalysisRun(analysisId: string | undefined) {
   });
 }
 
-function parseAnalysisResult(input: any): AnalysisResult | null {
+function safeParseJSON(input: any): any {
   if (!input) return null;
   if (typeof input === "string") {
     try {
@@ -59,17 +68,171 @@ function parseAnalysisResult(input: any): AnalysisResult | null {
       return null;
     }
   }
-  return input as AnalysisResult;
+  return input;
 }
+
+/* =========================
+   UI helpers
+========================= */
+
+// Keep this list small and pragmatic. We can tune later based on real outputs.
+const KEYWORDS = [
+  "pattern",
+  "patterns",
+  "trend",
+  "trends",
+  "signal",
+  "signals",
+  "evidence",
+  "supporting evidence",
+  "gap",
+  "gaps",
+  "opportunity",
+  "opportunities",
+  "next steps",
+  "hypothesis",
+  "hypotheses",
+  "mechanism",
+  "mechanisms",
+  "biomarker",
+  "biomarkers",
+  "endpoint",
+  "endpoints",
+  "primary outcome",
+  "secondary outcome",
+  "randomized",
+  "placebo",
+  "phase",
+  "dose",
+  "safety",
+  "efficacy",
+  "menopause",
+  "vasomotor",
+  "sleep",
+  "anxiety",
+  "depression",
+];
+
+// Bold keywords inside text (case-insensitive), but do it safely as React nodes.
+function boldKeywords(text: string): React.ReactNode[] {
+  if (!text) return [text];
+
+  const escaped = KEYWORDS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const re = new RegExp(`\\b(${escaped.join("|")})\\b`, "gi");
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(re)) {
+    const index = match.index ?? 0;
+    const matched = match[0];
+
+    if (index > lastIndex) {
+      parts.push(text.slice(lastIndex, index));
+    }
+    parts.push(
+      <strong key={`${index}-${matched}`} className="font-semibold text-foreground">
+        {matched}
+      </strong>,
+    );
+    lastIndex = index + matched.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+}
+
+// Render text as readable structure:
+// - paragraphs split by blank lines
+// - detects bullets (-, *, •) and numbered lists (1., 2., ...)
+// - bolds keywords
+function StructuredText({ text }: { text?: string | null }) {
+  if (!text) return null;
+
+  const cleaned = String(text).replace(/\r\n/g, "\n").trim();
+  if (!cleaned) return null;
+
+  const blocks = cleaned
+    .split(/\n{2,}/g)
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="space-y-4">
+      {blocks.map((block, i) => {
+        const lines = block
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+
+        const isBullets = lines.every((l) => /^[-*•]\s+/.test(l));
+        const isNumbered = lines.every((l) => /^\d+\.\s+/.test(l));
+
+        if (isBullets) {
+          return (
+            <ul key={i} className="list-disc pl-5 space-y-2">
+              {lines.map((l, j) => {
+                const item = l.replace(/^[-*•]\s+/, "");
+                return (
+                  <li key={j} className="text-sm leading-6 text-foreground">
+                    {boldKeywords(item)}
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        }
+
+        if (isNumbered) {
+          return (
+            <ol key={i} className="list-decimal pl-5 space-y-2">
+              {lines.map((l, j) => {
+                const item = l.replace(/^\d+\.\s+/, "");
+                return (
+                  <li key={j} className="text-sm leading-6 text-foreground">
+                    {boldKeywords(item)}
+                  </li>
+                );
+              })}
+            </ol>
+          );
+        }
+
+        // default paragraph
+        return (
+          <p key={i} className="text-sm leading-6 text-foreground">
+            {boldKeywords(block)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConfidencePill({ value }: { value?: string }) {
+  const v = (value ?? "").toLowerCase();
+  const label = v ? `Confidence: ${v}` : "Confidence: —";
+  return (
+    <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+      {label}
+    </span>
+  );
+}
+
+/* =========================
+   Page
+========================= */
 
 const AnalysisPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const stateRun = (location.state as any)?.run as
-    | { id: string; nct_ids: string[]; analysis: any; prompt_version?: string; schema_version?: string }
-    | undefined;
+  // optimistic navigation state (optional)
+  const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
 
   const stateRunMatches = !!analysisId && stateRun?.id === analysisId;
 
@@ -83,24 +246,29 @@ const AnalysisPage = () => {
           created_at: new Date().toISOString(),
           nct_ids: stateRun.nct_ids,
           analysis: stateRun.analysis,
-          prompt_version: stateRun.prompt_version ?? null,
-          schema_version: stateRun.schema_version ?? null,
         }
       : undefined);
 
-  const analysis = parseAnalysisResult(analysisRun?.analysis);
+  const parsed = safeParseJSON(analysisRun?.analysis) as DirectionAnalysis | null;
 
-  const schemaVersion: SchemaVersion = analysis ? detectSchemaVersion(analysis) : "v1";
-  const nFound = analysisRun?.nct_ids?.length ?? 0;
-  const firstThree = analysisRun?.nct_ids?.slice(0, 3) ?? [];
+  // Where we expect the 2 MVP fields
+  const directionText = parsed?.direction_text ?? "";
+  const nextStepsText = parsed?.next_steps_text ?? "";
+
+  // Meta (defensive defaults)
+  const nRequested = parsed?.n_requested ?? analysisRun?.nct_ids?.length ?? 0;
+  const nFound = parsed?.n_found ?? analysisRun?.nct_ids?.length ?? 0;
+  const missing = Array.isArray(parsed?.missing) ? parsed!.missing! : [];
 
   const errorMessage = !analysisId
     ? "No analysis ID provided."
     : error
       ? `Error loading analysis: ${error.message}`
       : !isLoading && !analysisRun
-        ? "Este análisis no está disponible. Genera uno nuevo desde el dataset."
+        ? "This analysis is not available. Generate a new one from the dataset."
         : null;
+
+  const hasContent = !!directionText || !!nextStepsText;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -117,32 +285,16 @@ const AnalysisPage = () => {
               </Button>
               <h1 className="font-serif text-xl font-bold text-foreground">Direction Analysis</h1>
             </div>
-            {nFound > 0 && <span className="text-sm text-muted-foreground">{nFound} studies analyzed</span>}
-          </div>
 
-          {/* DEBUG – imprescindible ahora */}
-          <Card>
-            <CardContent className="pt-6 space-y-2">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Analysis ID:</span>{" "}
-                <span className="font-mono text-xs">{analysisId || "—"}</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Schema detected:</span>{" "}
-                <strong>{schemaVersion.toUpperCase()}</strong>
-              </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">First NCT IDs:</span>{" "}
-                <span className="font-mono text-xs">{firstThree.join(", ") || "—"}</span>
-              </div>
-              <div className="text-xs text-muted-foreground break-all">
-                <strong>analysis_runs.analysis (raw):</strong>
-                <pre className="mt-1 whitespace-pre-wrap">
-                  {analysisRun?.analysis ? JSON.stringify(analysisRun.analysis, null, 2) : "—"}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="flex items-center gap-3">
+              {nFound > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {nFound} studies analyzed{missing.length ? ` (${missing.length} missing)` : ""}
+                </span>
+              )}
+              <ConfidencePill value={parsed?.confidence} />
+            </div>
+          </div>
 
           {/* Loading */}
           {isLoading && <AnalysisStatusBanner type="loading" studyCount={analysisRun?.nct_ids?.length} />}
@@ -150,39 +302,56 @@ const AnalysisPage = () => {
           {/* Error */}
           {errorMessage && <AnalysisStatusBanner type="error" message={errorMessage} />}
 
-          {/* Analysis Content */}
-          {analysis && !isLoading && (
-            <>
-              {schemaVersion === "v3" && <V3AnalysisContent analysis={analysis} />}
-
-              {schemaVersion === "v2" && (
-                <div className="space-y-6">
-                  <HypothesisSection hypotheses={(analysis as any).direction_hypotheses || []} />
-                  <PatternsSection patterns={(analysis as any).patterns || []} />
-                  <GapsSection gaps={(analysis as any).opportunity_gaps || []} />
-                  <NextStudiesSection studies={(analysis as any).next_studies || []} />
+          {/* Missing list (only if present) */}
+          {!isLoading && missing.length > 0 && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-foreground">Missing studies</div>
+                  <div className="text-sm text-muted-foreground">
+                    These NCT IDs had no usable data in the current payload:
+                  </div>
+                  <div className="font-mono text-xs text-foreground break-all">{missing.join(", ")}</div>
                 </div>
-              )}
+              </CardContent>
+            </Card>
+          )}
 
-              {schemaVersion === "v1" && (
-                <LegacyAnalysisContent
-                  analysis={{
-                    direction:
-                      Array.isArray((analysis as any)?.research_directions) &&
-                      (analysis as any).research_directions.length > 0
-                        ? (analysis as any).research_directions
-                            .map((d: any, i: number) =>
-                              `${i + 1}. ${d.condition}\n${d.direction}\n${d.rationale ?? ""}`.trim(),
-                            )
-                            .join("\n\n")
-                        : typeof (analysis as any)?.direction === "string"
-                          ? (analysis as any).direction
-                          : undefined,
-                    themes: (analysis as any)?.themes,
-                    gaps: Array.isArray((analysis as any)?.gaps) ? (analysis as any).gaps : undefined,
-                    suggested_next_steps: (analysis as any)?.suggested_next_steps,
-                  }}
-                />
+          {/* Main content */}
+          {!isLoading && !errorMessage && (
+            <>
+              {!hasContent ? (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-sm text-muted-foreground">
+                      No analysis content available yet. Try running the analysis again with fewer studies or ensure
+                      rich JSON exists for the selected NCT IDs.
+                    </div>
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      Analysis ID: <span className="font-mono">{analysisId}</span>
+                      {nRequested ? ` - Requested: ${nRequested}` : ""}
+                      {nFound ? ` - Found: ${nFound}` : ""}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  {/* Direction */}
+                  <Card>
+                    <CardContent className="pt-6 space-y-3">
+                      <div className="text-base font-semibold text-foreground">Direction</div>
+                      <StructuredText text={directionText} />
+                    </CardContent>
+                  </Card>
+
+                  {/* Next steps */}
+                  <Card>
+                    <CardContent className="pt-6 space-y-3">
+                      <div className="text-base font-semibold text-foreground">Opportunities & next steps</div>
+                      <StructuredText text={nextStepsText} />
+                    </CardContent>
+                  </Card>
+                </div>
               )}
             </>
           )}
