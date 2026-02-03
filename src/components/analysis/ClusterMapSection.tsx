@@ -1,6 +1,7 @@
 import { Layers, Users, Target, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NctIdList } from './NctIdChip';
+import { MarkdownText } from './MarkdownText';
 import type { ClusterMap, ClusterItem } from '@/types/analysis';
 
 interface ClusterMapSectionProps {
@@ -26,7 +27,7 @@ function ClusterSubsection({ title, icon, items }: ClusterSubsectionProps) {
         {items.map((item, idx) => (
           <div key={idx} className="bg-muted/30 rounded-lg p-4 border border-border">
             <h5 className="font-medium text-foreground mb-1">{item.label}</h5>
-            <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+            <MarkdownText className="text-sm text-muted-foreground mb-2">{item.description}</MarkdownText>
             <NctIdList nctIds={item.supporting_nct_ids || []} />
           </div>
         ))}
