@@ -14,6 +14,7 @@ interface StudyListProps {
   searchQuery?: string;
   selectedLabels?: string[];
   selectedParamTypes?: string[];
+  advancedSearch?: boolean;
 }
 
 export function StudyList({
@@ -26,6 +27,7 @@ export function StudyList({
   searchQuery = '',
   selectedLabels = [],
   selectedParamTypes = [],
+  advancedSearch = false,
 }: StudyListProps) {
   const navigate = useNavigate();
 
@@ -34,6 +36,7 @@ export function StudyList({
     if (searchQuery) params.set('q', searchQuery);
     if (selectedLabels.length > 0) params.set('labels', selectedLabels.join(','));
     if (selectedParamTypes.length > 0) params.set('paramTypes', selectedParamTypes.join(','));
+    if (advancedSearch) params.set('advanced', '1');
     
     const queryString = params.toString();
     navigate(queryString ? `/dataset?${queryString}` : '/dataset');
