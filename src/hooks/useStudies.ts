@@ -4,6 +4,58 @@ import { StudyListItem, FacetSemanticLabel, FacetParamType } from "@/types/datab
 
 const PAGE_SIZE = 20;
 
+// Spanish → English term mapping for RPC normalization
+const TERM_MAP: Record<string, string> = {
+  menopausa: "menopause",
+  menopausia: "menopause",
+  perimenopausa: "perimenopause",
+  perimenopausia: "perimenopause",
+  posmenopausa: "postmenopausal",
+  posmenopausia: "postmenopausal",
+  postmenopausa: "postmenopausal",
+  postmenopausia: "postmenopausal",
+  ansiedad: "anxiety",
+  depresion: "depression",
+  depresión: "depression",
+  sofocos: "hot flashes",
+  insomnio: "insomnia",
+  tratamiento: "treatment",
+  terapia: "therapy",
+  cancer: "cancer",
+  cáncer: "cancer",
+  hormonal: "hormone",
+  hormonas: "hormone",
+  estrogeno: "estrogen",
+  estrógeno: "estrogen",
+  progesterona: "progesterone",
+};
+
+/**
+ * Normalize query for advanced RPC search:
+ * - Lowercase
+ * - Remove accents
+ * - Tokenize on whitespace/punctuation
+ * - Map Spanish → English terms
+ * - Re-join tokens
+ */
+function normalizeForAdvancedRpc(query: string): string {
+  // Lowercase and normalize unicode (NFD decomposes accents)
+  const normalized = query
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // Remove diacritics
+
+  // Tokenize on whitespace and punctuation
+  const tokens = normalized.split(/[\s,;:.]+/).filter(Boolean);
+
+  // Map tokens to English equivalents
+  const mappedTokens = tokens.map((token) => {
+    return TERM_MAP[token] || token;
+  });
+
+  return mappedTokens.join(" ");
+}
+
 interface UseStudiesParams {
   searchQuery: string;
   selectedLabels: string[];
@@ -47,9 +99,12 @@ export function useStudies({
     queryFn: async () => {
       // Advanced search using RPC
       if (advancedSearch && searchQuery.trim()) {
+        const normalizedQuery = normalizeForAdvancedRpc(searchQuery);
+        console.log("[Advanced Search] Original:", searchQuery, "→ Normalized:", normalizedQuery);
+        
         const { data, error } = await supabaseExternal.schema("em").rpc("search_menopause_anxiety", {
-          q: searchQuery.trim(),
-          limit_n: 500, // o 200/1000 según quieras
+          q: normalizedQuery,
+          limit_n: 500,
         });
 
         if (error) {
