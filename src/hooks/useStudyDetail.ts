@@ -68,7 +68,7 @@ export function useStudyBasicInfo(nctId: string | undefined) {
       if (!nctId) throw new Error("Missing nctId");
 
       const { data, error } = await supabaseExternal
-        .from("v_ui_study_list")
+        .from("v_study_summary_v1")
         .select(
           "nct_id, brief_title, official_title, semantic_labels, param_type_set, n_result_rows, n_unique_outcomes, total_n_reported, max_n_reported",
         )

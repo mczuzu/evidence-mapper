@@ -76,7 +76,7 @@ export function useStudies({
 
       // Standard query
       let query = supabaseExternal
-        .from("v_ui_study_list")
+        .from("v_study_summary_v1")
         .select("*", { count: "exact" })
         .order("nct_id", { ascending: false });
 

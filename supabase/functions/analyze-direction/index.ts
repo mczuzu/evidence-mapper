@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
     // Fetch study data for the selected NCT IDs (only columns that exist)
     const { data: studies, error: studiesError } = await supabaseExternal
-      .from("v_ui_study_list")
+      .from("v_study_summary_v1")
       .select("nct_id, brief_title")
       .in("nct_id", nctIds);
 

@@ -16,7 +16,7 @@ export function useDatasetStudies({ searchQuery, selectedLabels, selectedParamTy
     queryKey: ["dataset-studies", searchQuery, selectedLabels, selectedParamTypes, page],
     queryFn: async () => {
       let query = supabaseExternal
-        .from("v_ui_study_list")
+        .from("v_study_summary_v1")
         .select("*", { count: "exact" })
         .order("nct_id", { ascending: false });
 
@@ -75,7 +75,7 @@ export function useDatasetStudiesByIds(nctIds: string[]) {
       }
 
       const { data, error } = await supabaseExternal
-        .from("v_ui_study_list")
+        .from("v_study_summary_v1")
         .select("*")
         .in("nct_id", nctIds)
         .order("nct_id", { ascending: false });
