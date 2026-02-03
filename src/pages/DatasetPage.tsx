@@ -5,7 +5,8 @@ import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter } from "lucid
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useDatasetStudies, useDatasetStudiesByIds, useAdvancedStudyIds } from "@/hooks/useDatasetStudies";
+import { useStudies } from "@/hooks/useStudies";
+import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from "@/lib/filter-utils";
 import { supabaseExternalFunctions, supabaseExternalPublic } from "@/lib/supabase-external";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ const DatasetPage = () => {
   const [page, setPage] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Check if we're in "ids" mode (specific studies) or filter mode
+  // Check if we're in "ids" mode (specific studies from related studies link)
   const idsParam = searchParams.get("ids");
   const specificIds = useMemo(() => idsParam?.split(",").filter(Boolean) || [], [idsParam]);
   const isUrlIdsMode = specificIds.length > 0;
@@ -25,41 +26,28 @@ const DatasetPage = () => {
   // Check if we're in advanced search mode
   const isAdvanced = searchParams.get("advanced") === "1";
 
-  // Parse filters from query params (for filter mode)
+  // Parse filters from query params
   const { searchQuery, labels, paramTypes } = useMemo(() => parseFiltersFromQueryParams(searchParams), [searchParams]);
 
-  // Advanced search: first get IDs from RPC, then fetch full study data
-  const advancedIdsQuery = useAdvancedStudyIds(searchQuery, isAdvanced && !isUrlIdsMode);
-  const advancedIds = advancedIdsQuery.data || [];
-
-  // Determine effective IDs mode: either URL ids or advanced search ids
-  const effectiveIsIdsMode = isUrlIdsMode || (isAdvanced && advancedIds.length > 0);
-  const effectiveIds = isUrlIdsMode ? specificIds : advancedIds;
-
-  // Use appropriate hook based on mode
-  const filterQuery = useDatasetStudies({
+  // Use the unified useStudies hook for both normal and advanced modes
+  const studiesQuery = useStudies({
     searchQuery,
     selectedLabels: labels,
     selectedParamTypes: paramTypes,
     page,
+    advancedSearch: isAdvanced,
   });
 
-  const idsQuery = useDatasetStudiesByIds(effectiveIds);
+  // Only use IDs query when explicitly in URL IDs mode (from related studies link)
+  const idsQuery = useDatasetStudiesByIds(isUrlIdsMode ? specificIds : []);
 
-  // Determine which query to use
-  const activeQuery = effectiveIsIdsMode ? idsQuery : filterQuery;
-  
-  // Loading state considers advanced search loading
-  const isLoading = isAdvanced && !isUrlIdsMode
-    ? advancedIdsQuery.isLoading || (advancedIds.length > 0 && idsQuery.isLoading)
-    : activeQuery.isLoading;
-  
-  const error = advancedIdsQuery.error || activeQuery.error;
-  const data = activeQuery.data;
+  // Determine which query result to use
+  const activeQuery = isUrlIdsMode ? idsQuery : studiesQuery;
+  const { data, isLoading, error } = activeQuery;
 
-  const studies = data?.studies || [];
-  const totalCount = data?.totalCount || 0;
-  const totalPages = data?.totalPages || 0;
+  const studies = data?.studies ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const totalPages = data?.totalPages ?? 0;
 
   // Handle navigation back with preserved query params
   const handleBack = () => {
@@ -169,7 +157,7 @@ const DatasetPage = () => {
       const { error: insertError } = await supabaseExternalPublic.from("analysis_runs").insert({
         id: analysisId,
         nct_ids: available, // text[]
-        dataset_query: effectiveIsIdsMode ? null : searchParams.toString(), // optional
+        dataset_query: isUrlIdsMode ? null : searchParams.toString(), // optional
         prompt_version: result.prompt_version ?? "v3.1.0",
         schema_version: result.schema_version ?? "V3",
         analysis: analysisPayload, // jsonb
@@ -211,7 +199,7 @@ const DatasetPage = () => {
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                {effectiveIsIdsMode ? "Volver" : "Volver a filtros"}
+                {isUrlIdsMode ? "Volver" : "Volver a filtros"}
               </Button>
               <h1 className="font-serif text-xl font-bold text-foreground">
                 {isUrlIdsMode
@@ -333,7 +321,7 @@ const DatasetPage = () => {
               </div>
 
               {/* Pagination - only show in standard filter mode (not ids mode, not advanced) */}
-              {!effectiveIsIdsMode && !isAdvanced && totalPages > 1 && (
+              {!isUrlIdsMode && !isAdvanced && totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-4">
                   <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 0}>
                     Previous
