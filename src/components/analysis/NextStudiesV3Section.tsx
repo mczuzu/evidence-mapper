@@ -2,6 +2,7 @@ import { ArrowRight, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { NctIdList } from './NctIdChip';
+import { MarkdownText } from './MarkdownText';
 import type { NextStudies, StudyProposal, QuickWin } from '@/types/analysis';
 
 interface NextStudiesV3SectionProps {
@@ -51,9 +52,9 @@ function ProposalCard({ proposal, index }: { proposal: StudyProposal; index: num
 
           {/* Why it resolves a gap */}
           {proposal.why_it_resolves_a_gap && (
-            <p className="text-sm text-muted-foreground italic border-l-2 border-primary/30 pl-3">
-              {proposal.why_it_resolves_a_gap}
-            </p>
+            <div className="text-sm text-muted-foreground italic border-l-2 border-primary/30 pl-3">
+              <MarkdownText>{proposal.why_it_resolves_a_gap}</MarkdownText>
+            </div>
           )}
 
           {/* Supporting NCT IDs */}
@@ -70,7 +71,7 @@ function QuickWinCard({ quickWin, index }: { quickWin: QuickWin; index: number }
       <div className="flex items-start gap-3">
         <Zap className="h-4 w-4 text-green-600 dark:text-green-500 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-foreground mb-2">{quickWin.description}</p>
+          <MarkdownText className="text-foreground mb-2">{quickWin.description}</MarkdownText>
           <NctIdList nctIds={quickWin.supporting_nct_ids || []} />
         </div>
       </div>

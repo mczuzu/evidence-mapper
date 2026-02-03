@@ -1,6 +1,7 @@
 import { AlertTriangle, FileSearch, Wrench, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NctIdList } from './NctIdChip';
+import { MarkdownText } from './MarkdownText';
 import type { Gaps, GapItem } from '@/types/analysis';
 
 interface GapsV3SectionProps {
@@ -26,7 +27,7 @@ function GapSubsection({ title, icon, items, colorClass }: GapSubsectionProps) {
       <div className="space-y-3">
         {items.map((item, idx) => (
           <div key={idx} className={`rounded-lg p-4 border ${colorClass}`}>
-            <p className="text-foreground mb-2">{item.gap}</p>
+            <MarkdownText className="text-foreground mb-2">{item.gap}</MarkdownText>
             <NctIdList nctIds={item.supporting_nct_ids || []} />
           </div>
         ))}

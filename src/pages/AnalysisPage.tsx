@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabaseExternalPublic } from "@/lib/supabase-external";
 import { AnalysisStatusBanner } from "@/components/analysis/AnalysisStatusBanner";
+import { MarkdownText } from "@/components/analysis/MarkdownText";
 
 /* =========================
    Types
@@ -340,7 +341,7 @@ const AnalysisPage = () => {
                   <Card>
                     <CardContent className="pt-6 space-y-3">
                       <div className="text-base font-semibold text-foreground">Direction</div>
-                      <StructuredText text={directionText} />
+                      <MarkdownText>{directionText}</MarkdownText>
                     </CardContent>
                   </Card>
 
@@ -348,7 +349,7 @@ const AnalysisPage = () => {
                   <Card>
                     <CardContent className="pt-6 space-y-3">
                       <div className="text-base font-semibold text-foreground">Opportunities & next steps</div>
-                      <StructuredText text={nextStepsText} />
+                      <MarkdownText>{nextStepsText}</MarkdownText>
                     </CardContent>
                   </Card>
                 </div>

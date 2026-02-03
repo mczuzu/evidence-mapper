@@ -1,6 +1,7 @@
 import { Compass, TrendingUp, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NctIdList } from './NctIdChip';
+import { MarkdownText } from './MarkdownText';
 import type { Direction } from '@/types/analysis';
 
 interface DirectionSectionProps {
@@ -41,7 +42,7 @@ export function DirectionSection({ direction }: DirectionSectionProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-foreground leading-relaxed">{direction.summary}</p>
+          <MarkdownText className="text-foreground leading-relaxed">{direction.summary}</MarkdownText>
         </CardContent>
       </Card>
 
@@ -58,7 +59,7 @@ export function DirectionSection({ direction }: DirectionSectionProps) {
             <ul className="space-y-4">
               {direction.what_is_promising.map((item, idx) => (
                 <li key={idx} className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                  <p className="text-foreground mb-2">{item.rationale}</p>
+                  <MarkdownText className="text-foreground mb-2">{item.rationale}</MarkdownText>
                   <NctIdList nctIds={item.supporting_nct_ids || []} />
                 </li>
               ))}
@@ -84,7 +85,7 @@ export function DirectionSection({ direction }: DirectionSectionProps) {
             <ul className="space-y-4">
               {direction.what_is_uncertain.map((item, idx) => (
                 <li key={idx} className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
-                  <p className="text-foreground mb-2">{item.rationale}</p>
+                  <MarkdownText className="text-foreground mb-2">{item.rationale}</MarkdownText>
                   <NctIdList nctIds={item.supporting_nct_ids || []} />
                 </li>
               ))}
