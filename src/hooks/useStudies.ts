@@ -83,6 +83,71 @@ function normalizeRpcResult(item: RpcSearchResult): StudyListItem {
   };
 }
 
+/**
+ * Hook to fetch ALL study IDs matching the current query (for "Select All" functionality).
+ * Returns just the nct_id array, not the full study objects.
+ */
+export function useAllStudyIds({
+  searchQuery,
+  selectedLabels,
+  advancedSearch = false,
+  enabled = false,
+}: {
+  searchQuery: string;
+  selectedLabels: string[];
+  advancedSearch?: boolean;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ["all-study-ids", searchQuery, selectedLabels, advancedSearch],
+    queryFn: async (): Promise<string[]> => {
+      // Advanced search using RPC
+      if (advancedSearch && searchQuery.trim()) {
+        const { data, error } = await supabaseExternal.rpc("search_studies_advanced", {
+          q: searchQuery.trim(),
+          limit_n: 500,
+        });
+
+        if (error) {
+          console.error("Error fetching all study IDs via RPC:", error);
+          throw error;
+        }
+
+        return ((data as RpcSearchResult[]) || []).map((r) => r.nct_id);
+      }
+
+      // Standard query - fetch all IDs (up to 1000)
+      let query = supabaseExternal
+        .from("v_ui_study_list")
+        .select("nct_id")
+        .order("nct_id", { ascending: false })
+        .limit(1000);
+
+      // Text search
+      if (searchQuery.trim()) {
+        const searchTerm = `%${searchQuery.trim()}%`;
+        query = query.or(`brief_title.ilike.${searchTerm},official_title.ilike.${searchTerm}`);
+      }
+
+      // Filter by semantic labels
+      if (selectedLabels.length > 0) {
+        query = query.overlaps("semantic_labels", selectedLabels);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching all study IDs:", error);
+        throw error;
+      }
+
+      return (data || []).map((r) => r.nct_id);
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+}
+
 export function useStudies({
   searchQuery,
   selectedLabels,

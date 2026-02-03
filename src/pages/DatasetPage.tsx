@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter } from "lucide-react";
+import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useStudies } from "@/hooks/useStudies";
+import { useStudies, useAllStudyIds } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from "@/lib/filter-utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,15 @@ const DatasetPage = () => {
 
   // Only use IDs query when explicitly in URL IDs mode (from related studies link)
   const idsQuery = useDatasetStudiesByIds(isUrlIdsMode ? specificIds : []);
+
+  // Hook to fetch ALL study IDs for "Select All" functionality
+  const [selectAllRequested, setSelectAllRequested] = useState(false);
+  const allIdsQuery = useAllStudyIds({
+    searchQuery,
+    selectedLabels: labels,
+    advancedSearch: isAdvanced,
+    enabled: selectAllRequested && !isUrlIdsMode,
+  });
 
   // Determine which query result to use
   const activeQuery = isUrlIdsMode ? idsQuery : studiesQuery;
@@ -96,6 +105,31 @@ const DatasetPage = () => {
         return next;
       });
     }
+  };
+
+  // Select ALL studies in the result set
+  const handleSelectAll = async () => {
+    if (isUrlIdsMode) {
+      // In IDs mode, select all specific IDs
+      setSelectedIds(new Set(specificIds));
+    } else {
+      // Trigger the query to fetch all IDs
+      setSelectAllRequested(true);
+    }
+  };
+
+  // Effect to update selection when all IDs are fetched
+  useMemo(() => {
+    if (selectAllRequested && allIdsQuery.data && allIdsQuery.data.length > 0) {
+      setSelectedIds(new Set(allIdsQuery.data));
+      setSelectAllRequested(false);
+      toast.success(`${allIdsQuery.data.length} estudios seleccionados`);
+    }
+  }, [selectAllRequested, allIdsQuery.data]);
+
+  // Clear all selections
+  const handleClearSelection = () => {
+    setSelectedIds(new Set());
   };
 
   const allVisibleSelected = studies.length > 0 && studies.every((s) => selectedIds.has(s.nct_id));
@@ -222,6 +256,37 @@ const DatasetPage = () => {
             </div>
 
             <div className="flex items-center gap-4">
+              {/* Select All / Clear Selection buttons */}
+              {totalCount > 0 && (
+                <div className="flex items-center gap-2">
+                  {selectedIds.size < totalCount ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      disabled={allIdsQuery.isLoading}
+                      className="gap-1.5"
+                    >
+                      {allIdsQuery.isLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <CheckSquare className="h-3.5 w-3.5" />
+                      )}
+                      Seleccionar todos ({totalCount})
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearSelection}
+                      className="gap-1.5"
+                    >
+                      Limpiar selección
+                    </Button>
+                  )}
+                </div>
+              )}
+              
               <span className="text-sm text-muted-foreground">
                 Seleccionados: <span className="font-medium text-foreground">{selectedIds.size}</span>
               </span>
