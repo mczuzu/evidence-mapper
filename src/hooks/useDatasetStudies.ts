@@ -16,7 +16,7 @@ export function useDatasetStudies({ searchQuery, selectedLabels, selectedParamTy
     queryKey: ["dataset-studies", searchQuery, selectedLabels, selectedParamTypes, page],
     queryFn: async () => {
       let query = supabaseExternal
-        .from("em.v_study_summary_v1")
+        .from("v_study_summary_v1")
         .select("*", { count: "exact" })
         .order("nct_id", { ascending: false });
 
@@ -75,7 +75,7 @@ export function useDatasetStudiesByIds(nctIds: string[]) {
       }
 
       const { data, error } = await supabaseExternal
-        .from("em.v_study_summary_v1")
+        .from("v_study_summary_v1")
         .select("*")
         .in("nct_id", nctIds)
         .order("nct_id", { ascending: false });
@@ -94,5 +94,32 @@ export function useDatasetStudiesByIds(nctIds: string[]) {
       };
     },
     enabled: nctIds.length > 0,
+  });
+}
+
+// Hook for getting study IDs from advanced search RPC
+export function useAdvancedStudyIds(searchQuery: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["advanced-study-ids", searchQuery],
+    queryFn: async () => {
+      const { data, error } = await supabaseExternal.rpc("search_menopause_anxiety", {
+        q: searchQuery.trim(),
+        limit_n: 500,
+      });
+
+      if (error) {
+        console.error("Error fetching advanced study IDs:", error);
+        throw error;
+      }
+
+      // Extract and validate NCT IDs
+      const nctIdPattern = /^NCT\d{8}$/i;
+      const validIds: string[] = (data || [])
+        .map((item: { nct_id: string }) => item.nct_id?.toUpperCase())
+        .filter((id: string) => id && nctIdPattern.test(id));
+
+      return validIds;
+    },
+    enabled: enabled && searchQuery.trim().length > 0,
   });
 }

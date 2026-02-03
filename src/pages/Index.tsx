@@ -102,6 +102,7 @@ const Index = () => {
                 searchQuery={searchQuery}
                 selectedLabels={selectedLabels}
                 selectedParamTypes={selectedParamTypes}
+                advancedSearch={advancedSearch}
               />
             )}
           </div>

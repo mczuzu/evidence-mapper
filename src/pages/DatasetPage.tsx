@@ -5,7 +5,7 @@ import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter } from "lucid
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useDatasetStudies, useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
+import { useDatasetStudies, useDatasetStudiesByIds, useAdvancedStudyIds } from "@/hooks/useDatasetStudies";
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from "@/lib/filter-utils";
 import { supabaseExternalFunctions, supabaseExternalPublic } from "@/lib/supabase-external";
 import { toast } from "sonner";
@@ -20,10 +20,21 @@ const DatasetPage = () => {
   // Check if we're in "ids" mode (specific studies) or filter mode
   const idsParam = searchParams.get("ids");
   const specificIds = useMemo(() => idsParam?.split(",").filter(Boolean) || [], [idsParam]);
-  const isIdsMode = specificIds.length > 0;
+  const isUrlIdsMode = specificIds.length > 0;
+
+  // Check if we're in advanced search mode
+  const isAdvanced = searchParams.get("advanced") === "1";
 
   // Parse filters from query params (for filter mode)
   const { searchQuery, labels, paramTypes } = useMemo(() => parseFiltersFromQueryParams(searchParams), [searchParams]);
+
+  // Advanced search: first get IDs from RPC, then fetch full study data
+  const advancedIdsQuery = useAdvancedStudyIds(searchQuery, isAdvanced && !isUrlIdsMode);
+  const advancedIds = advancedIdsQuery.data || [];
+
+  // Determine effective IDs mode: either URL ids or advanced search ids
+  const effectiveIsIdsMode = isUrlIdsMode || (isAdvanced && advancedIds.length > 0);
+  const effectiveIds = isUrlIdsMode ? specificIds : advancedIds;
 
   // Use appropriate hook based on mode
   const filterQuery = useDatasetStudies({
@@ -33,9 +44,18 @@ const DatasetPage = () => {
     page,
   });
 
-  const idsQuery = useDatasetStudiesByIds(specificIds);
+  const idsQuery = useDatasetStudiesByIds(effectiveIds);
 
-  const { data, isLoading, error } = isIdsMode ? idsQuery : filterQuery;
+  // Determine which query to use
+  const activeQuery = effectiveIsIdsMode ? idsQuery : filterQuery;
+  
+  // Loading state considers advanced search loading
+  const isLoading = isAdvanced && !isUrlIdsMode
+    ? advancedIdsQuery.isLoading || (advancedIds.length > 0 && idsQuery.isLoading)
+    : activeQuery.isLoading;
+  
+  const error = advancedIdsQuery.error || activeQuery.error;
+  const data = activeQuery.data;
 
   const studies = data?.studies || [];
   const totalCount = data?.totalCount || 0;
@@ -43,7 +63,7 @@ const DatasetPage = () => {
 
   // Handle navigation back with preserved query params
   const handleBack = () => {
-    if (isIdsMode) {
+    if (isUrlIdsMode) {
       navigate(-1);
     } else {
       const queryString = buildQueryParamsFromFilters(searchQuery, labels, paramTypes);
@@ -144,7 +164,7 @@ const DatasetPage = () => {
       const { error: insertError } = await supabaseExternalPublic.from("analysis_runs").insert({
         id: analysisId,
         nct_ids: available, // text[]
-        dataset_query: isIdsMode ? null : searchParams.toString(), // optional
+        dataset_query: effectiveIsIdsMode ? null : searchParams.toString(), // optional
         prompt_version: result.prompt_version ?? "v3.1.0",
         schema_version: result.schema_version ?? "V3",
         analysis: analysisPayload, // jsonb
@@ -186,12 +206,14 @@ const DatasetPage = () => {
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                {isIdsMode ? "Volver" : "Volver a filtros"}
+                {effectiveIsIdsMode ? "Volver" : "Volver a filtros"}
               </Button>
               <h1 className="font-serif text-xl font-bold text-foreground">
-                {isIdsMode
+                {isUrlIdsMode
                   ? `Estudios seleccionados: ${specificIds.length}`
-                  : `Dataset: ${totalCount.toLocaleString()} estudios`}
+                  : isAdvanced
+                    ? `Búsqueda expandida: ${totalCount.toLocaleString()} estudios`
+                    : `Dataset: ${totalCount.toLocaleString()} estudios`}
               </h1>
             </div>
 
@@ -206,16 +228,20 @@ const DatasetPage = () => {
             </div>
           </div>
 
-          {/* Banner for IDs mode */}
-          {isIdsMode && (
+          {/* Banner for IDs mode or Advanced mode */}
+          {(isUrlIdsMode || isAdvanced) && (
             <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
               <div className="flex items-center gap-2 text-primary">
                 <Filter className="h-4 w-4" />
-                <span className="text-sm font-medium">Vista filtrada por estudios relacionados</span>
+                <span className="text-sm font-medium">
+                  {isUrlIdsMode 
+                    ? "Vista filtrada por estudios relacionados" 
+                    : "Búsqueda expandida (título + resumen + condiciones)"}
+                </span>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="gap-2">
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Volver al dataset anterior
+                Volver
               </Button>
             </div>
           )}
@@ -301,8 +327,8 @@ const DatasetPage = () => {
                 </Table>
               </div>
 
-              {/* Pagination - only show in filter mode */}
-              {!isIdsMode && totalPages > 1 && (
+              {/* Pagination - only show in standard filter mode (not ids mode, not advanced) */}
+              {!effectiveIsIdsMode && !isAdvanced && totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-4">
                   <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 0}>
                     Previous
