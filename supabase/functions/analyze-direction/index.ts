@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     // Connect to external Supabase to fetch study data
     const externalUrl = "https://dxtgnfmtuvxbpnvxzxal.supabase.co";
-    const externalKey = "sb_publishable_9XTutsu4Dmnk68u13bcPWA_VUIF2Kk0";
+    const externalKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4dGduZm10dXZ4YnBudnh6eGFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTg0OTksImV4cCI6MjA4NDQ3NDQ5OX0.Reya82SFyWxJFwdHwAR_pdgttqKuAGyC3xxngwvTQto";
 
     const supabaseExternal = createClient(externalUrl, externalKey, {
       db: { schema: "em" },
