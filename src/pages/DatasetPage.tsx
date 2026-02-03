@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useStudies } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
 import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from "@/lib/filter-utils";
-import { supabaseExternalFunctions, supabaseExternalPublic } from "@/lib/supabase-external";
+import { supabase } from "@/integrations/supabase/client";
+import { supabaseExternalPublic } from "@/lib/supabase-external";
 import { toast } from "sonner";
 
 const DatasetPage = () => {
@@ -113,8 +114,8 @@ const DatasetPage = () => {
     setIsAnalyzing(true);
 
     try {
-      // Call analyze-direction (external Supabase Edge Function)
-      const { data: result, error: fnError } = await supabaseExternalFunctions.functions.invoke("analyze-direction", {
+      // Call analyze-direction (Lovable Cloud backend function)
+      const { data: result, error: fnError } = await supabase.functions.invoke("analyze-direction", {
         body: { nct_ids: nctIds },
       });
 
@@ -126,14 +127,24 @@ const DatasetPage = () => {
         throw new Error("No data returned from analysis");
       }
 
-      // Interpret response shape:
-      // - missing: string[]
-      // - found_paths: Record<nct_id, filePath>
-      const missing: string[] = Array.isArray(result.missing) ? result.missing : [];
-      const foundPaths: Record<string, string> =
-        result.found_paths && typeof result.found_paths === "object" ? result.found_paths : {};
+      // If backend explicitly reports a DB issue, surface it clearly.
+      if (typeof result.db_error === "string" && result.db_error) {
+        throw new Error(result.db_error);
+      }
 
-      const available = Object.keys(foundPaths);
+      // Normalize response across formats:
+      // - Legacy: { missing: (string|{nct_id})[], found_paths: Record<nct_id,string>, analysis, ... }
+      // - V3: { schema: 'v3', available: string[], missing: string[], analysis, metadata, ... }
+      const missing: string[] = Array.isArray(result.missing)
+        ? result.missing
+            .map((m: any) => (typeof m === "string" ? m : m?.nct_id))
+            .filter((x: any) => typeof x === "string" && x.length > 0)
+        : [];
+
+      const isV3 = result.schema === "v3";
+      const available: string[] = isV3
+        ? (Array.isArray(result.available) ? result.available : [])
+        : Object.keys(result.found_paths && typeof result.found_paths === "object" ? result.found_paths : {});
 
       if (available.length === 0) {
         toast.warning(`No se encontraron datos para los ${missing.length || nctIds.length} estudios seleccionados.`);
@@ -158,8 +169,8 @@ const DatasetPage = () => {
         id: analysisId,
         nct_ids: available, // text[]
         dataset_query: isUrlIdsMode ? null : searchParams.toString(), // optional
-        prompt_version: result.prompt_version ?? "v3.1.0",
-        schema_version: result.schema_version ?? "V3",
+        prompt_version: result.prompt_version ?? result?.metadata?.model ?? "v3",
+        schema_version: result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
         analysis: analysisPayload, // jsonb
       });
 
@@ -175,8 +186,8 @@ const DatasetPage = () => {
             id: analysisId,
             nct_ids: available,
             analysis: analysisPayload,
-            prompt_version: result.prompt_version ?? "v3.1.0",
-            schema_version: result.schema_version ?? "V3",
+            prompt_version: result.prompt_version ?? result?.metadata?.model ?? "v3",
+            schema_version: result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
           },
         },
       });
