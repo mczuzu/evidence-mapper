@@ -102,7 +102,7 @@ export function useAdvancedStudyIds(searchQuery: string, enabled: boolean) {
   return useQuery({
     queryKey: ["advanced-study-ids", searchQuery],
     queryFn: async () => {
-      const { data, error } = await supabaseExternal.rpc("search_menopause_anxiety", {
+      const { data, error } = await supabaseExternal.rpc("search_studies_advanced", {
         q: searchQuery.trim(),
         limit_n: 500,
       });

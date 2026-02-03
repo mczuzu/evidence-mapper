@@ -66,7 +66,12 @@ const DatasetPage = () => {
     if (isUrlIdsMode) {
       navigate(-1);
     } else {
-      const queryString = buildQueryParamsFromFilters(searchQuery, labels, paramTypes);
+      let queryString = buildQueryParamsFromFilters(searchQuery, labels, paramTypes);
+      if (isAdvanced && queryString) {
+        queryString += '&advanced=1';
+      } else if (isAdvanced) {
+        queryString = 'advanced=1';
+      }
       navigate(queryString ? `/?${queryString}` : "/");
     }
   };
