@@ -7,6 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabaseExternalPublic } from "@/lib/supabase-external";
 import { AnalysisStatusBanner } from "@/components/analysis/AnalysisStatusBanner";
 import { MarkdownText } from "@/components/analysis/MarkdownText";
+import { V3AnalysisContent } from "@/components/analysis/V3AnalysisContent";
+import { LegacyAnalysisContent } from "@/components/analysis/LegacyAnalysisContent";
+import type { AnalysisV3 } from "@/types/analysis";
 
 /* =========================
    Types
@@ -70,6 +73,113 @@ function safeParseJSON(input: any): any {
     }
   }
   return input;
+}
+
+function toMarkdownTitleBlock(title?: string, description?: string) {
+  const t = (title ?? "").trim();
+  const d = (description ?? "").trim();
+  if (t && d) return `**${t}**\n\n${d}`;
+  if (t) return `**${t}**`;
+  return d;
+}
+
+// Coerce the "direction_summary" V3 payload (produced by the analyze-direction backend)
+// into the UI's current AnalysisV3 shape (direction.summary + supporting_nct_ids, etc.)
+function coerceToAnalysisV3(raw: any): AnalysisV3 | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  // If it already matches the UI's V3 shape, keep it.
+  if (raw.direction && typeof raw.direction === "object" && "summary" in raw.direction) {
+    return raw as AnalysisV3;
+  }
+
+  // Detect the backend V3 shape (direction_summary + what_is_promising/uncertain)
+  const looksLikeBackendV3 =
+    typeof raw.direction_summary === "string" ||
+    Array.isArray(raw.what_is_promising) ||
+    Array.isArray(raw.what_is_uncertain) ||
+    (raw.cluster_map && typeof raw.cluster_map === "object") ||
+    (raw.next_studies && typeof raw.next_studies === "object") ||
+    (raw.gaps && typeof raw.gaps === "object");
+
+  if (!looksLikeBackendV3) return null;
+
+  const directionSummary = typeof raw.direction_summary === "string" ? raw.direction_summary : "";
+
+  const mapPromising = (items: any[]) =>
+    (Array.isArray(items) ? items : []).map((it: any) => ({
+      rationale: toMarkdownTitleBlock(it?.title, it?.description),
+      supporting_nct_ids: Array.isArray(it?.study_ids) ? it.study_ids : [],
+    }));
+
+  const mapCluster = (items: any[]) =>
+    (Array.isArray(items) ? items : []).map((it: any) => ({
+      label: String(it?.label ?? "").trim(),
+      description: typeof it?.description === "string" ? it.description : "",
+      supporting_nct_ids: Array.isArray(it?.study_ids)
+        ? it.study_ids
+        : Array.isArray(it?.supporting_nct_ids)
+          ? it.supporting_nct_ids
+          : [],
+    }));
+
+  const mapGaps = (items: any[]) =>
+    (Array.isArray(items) ? items : []).map((it: any) => ({
+      gap: toMarkdownTitleBlock(it?.title, it?.description),
+      supporting_nct_ids: Array.isArray(it?.study_ids) ? it.study_ids : [],
+    }));
+
+  const mapProposals = (items: any[]) =>
+    (Array.isArray(items) ? items : []).map((it: any) => ({
+      population: String(it?.population ?? "").trim(),
+      intervention: String(it?.intervention ?? "").trim(),
+      comparator: String(it?.comparator ?? "").trim(),
+      primary_outcomes: Array.isArray(it?.primary_outcomes) ? it.primary_outcomes : [],
+      follow_up_horizon: String(it?.follow_up_horizon ?? it?.follow_up ?? "").trim(),
+      why_it_resolves_a_gap: String(it?.why_it_resolves_a_gap ?? it?.rationale ?? "").trim(),
+      supporting_nct_ids: Array.isArray(it?.supporting_nct_ids)
+        ? it.supporting_nct_ids
+        : Array.isArray(it?.study_ids)
+          ? it.study_ids
+          : [],
+    }));
+
+  const mapQuickWins = (items: any[]) =>
+    (Array.isArray(items) ? items : []).map((it: any) => ({
+      description: toMarkdownTitleBlock(it?.title, it?.description),
+      supporting_nct_ids: Array.isArray(it?.supporting_nct_ids)
+        ? it.supporting_nct_ids
+        : Array.isArray(it?.study_ids)
+          ? it.study_ids
+          : [],
+    }));
+
+  const clusterMap = raw.cluster_map ?? {};
+  const gaps = raw.gaps ?? {};
+  const nextStudies = raw.next_studies ?? {};
+
+  return {
+    direction: {
+      summary: directionSummary,
+      what_is_promising: mapPromising(raw.what_is_promising),
+      what_is_uncertain: mapPromising(raw.what_is_uncertain),
+    },
+    cluster_map: {
+      interventions: mapCluster(clusterMap.interventions),
+      populations: mapCluster(clusterMap.populations),
+      outcomes: mapCluster(clusterMap.outcomes),
+      mechanisms_or_rationale: mapCluster(clusterMap.mechanisms ?? clusterMap.mechanisms_or_rationale),
+    },
+    gaps: {
+      evidence_gaps: mapGaps(gaps.evidence),
+      design_gaps: mapGaps(gaps.design),
+      missing_subgroups: mapGaps(gaps.missing_subgroups),
+    },
+    next_studies: {
+      proposals: mapProposals(nextStudies.proposals),
+      quick_wins: mapQuickWins(nextStudies.quick_wins),
+    },
+  };
 }
 
 /* =========================
@@ -250,16 +360,18 @@ const AnalysisPage = () => {
         }
       : undefined);
 
-  const parsed = safeParseJSON(analysisRun?.analysis) as DirectionAnalysis | null;
+  const parsedRaw = safeParseJSON(analysisRun?.analysis) as any;
+  const parsedLegacyText = parsedRaw as DirectionAnalysis | null;
+  const parsedV3 = coerceToAnalysisV3(parsedRaw);
 
   // Where we expect the 2 MVP fields
-  const directionText = parsed?.direction_text ?? "";
-  const nextStepsText = parsed?.next_steps_text ?? "";
+  const directionText = parsedLegacyText?.direction_text ?? "";
+  const nextStepsText = parsedLegacyText?.next_steps_text ?? "";
 
   // Meta (defensive defaults)
-  const nRequested = parsed?.n_requested ?? analysisRun?.nct_ids?.length ?? 0;
-  const nFound = parsed?.n_found ?? analysisRun?.nct_ids?.length ?? 0;
-  const missing = Array.isArray(parsed?.missing) ? parsed!.missing! : [];
+  const nRequested = parsedLegacyText?.n_requested ?? analysisRun?.nct_ids?.length ?? 0;
+  const nFound = parsedLegacyText?.n_found ?? analysisRun?.nct_ids?.length ?? 0;
+  const missing = Array.isArray(parsedLegacyText?.missing) ? parsedLegacyText!.missing! : [];
 
   const errorMessage = !analysisId
     ? "No analysis ID provided."
@@ -269,7 +381,8 @@ const AnalysisPage = () => {
         ? "This analysis is not available. Generate a new one from the dataset."
         : null;
 
-  const hasContent = !!directionText || !!nextStepsText;
+  const hasLegacyTextContent = !!directionText || !!nextStepsText;
+  const hasV3Content = !!parsedV3;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -293,7 +406,7 @@ const AnalysisPage = () => {
                   {nFound} studies analyzed{missing.length ? ` (${missing.length} missing)` : ""}
                 </span>
               )}
-              <ConfidencePill value={parsed?.confidence} />
+              <ConfidencePill value={parsedLegacyText?.confidence} />
             </div>
           </div>
 
@@ -321,7 +434,7 @@ const AnalysisPage = () => {
           {/* Main content */}
           {!isLoading && !errorMessage && (
             <>
-              {!hasContent ? (
+              {!hasLegacyTextContent && !hasV3Content ? (
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-sm text-muted-foreground">
@@ -337,21 +450,27 @@ const AnalysisPage = () => {
                 </Card>
               ) : (
                 <div className="space-y-6">
-                  {/* Direction */}
-                  <Card>
-                    <CardContent className="pt-6 space-y-3">
-                      <div className="text-base font-semibold text-foreground">Direction</div>
-                      <MarkdownText>{directionText}</MarkdownText>
-                    </CardContent>
-                  </Card>
+                  {hasV3Content ? (
+                    <V3AnalysisContent analysis={parsedV3!} />
+                  ) : (
+                    <>
+                      {/* Direction */}
+                      <Card>
+                        <CardContent className="pt-6 space-y-3">
+                          <div className="text-base font-semibold text-foreground">Direction</div>
+                          <MarkdownText>{directionText}</MarkdownText>
+                        </CardContent>
+                      </Card>
 
-                  {/* Next steps */}
-                  <Card>
-                    <CardContent className="pt-6 space-y-3">
-                      <div className="text-base font-semibold text-foreground">Opportunities & next steps</div>
-                      <MarkdownText>{nextStepsText}</MarkdownText>
-                    </CardContent>
-                  </Card>
+                      {/* Next steps */}
+                      <Card>
+                        <CardContent className="pt-6 space-y-3">
+                          <div className="text-base font-semibold text-foreground">Opportunities & next steps</div>
+                          <MarkdownText>{nextStepsText}</MarkdownText>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
                 </div>
               )}
             </>
