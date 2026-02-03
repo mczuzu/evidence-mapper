@@ -37,10 +37,10 @@ Deno.serve(async (req) => {
       db: { schema: "em" },
     });
 
-    // Fetch study data for the selected NCT IDs (only columns that exist)
+    // Fetch study data for the selected NCT IDs from the full dataset view
     const { data: studies, error: studiesError } = await supabaseExternal
-      .from("v_study_summary_v1")
-      .select("nct_id, brief_title")
+      .from("v_ui_study_list")
+      .select("nct_id, brief_title, official_title")
       .in("nct_id", nctIds);
 
     if (studiesError) {
