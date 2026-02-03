@@ -15,8 +15,9 @@ export function useDatasetStudies({ searchQuery, selectedLabels, selectedParamTy
   return useQuery({
     queryKey: ["dataset-studies", searchQuery, selectedLabels, selectedParamTypes, page],
     queryFn: async () => {
+      // Using v_ui_study_list for full dataset (63k+ studies)
       let query = supabaseExternal
-        .from("v_study_summary_v1")
+        .from("v_ui_study_list")
         .select("*", { count: "exact" })
         .order("nct_id", { ascending: false });
 
@@ -31,10 +32,7 @@ export function useDatasetStudies({ searchQuery, selectedLabels, selectedParamTy
         query = query.overlaps("semantic_labels", selectedLabels);
       }
 
-      // Filter by param types (overlaps any of the selected)
-      if (selectedParamTypes.length > 0) {
-        query = query.overlaps("param_type_set", selectedParamTypes);
-      }
+      // Note: param_type_set filter removed - not available in v_ui_study_list
 
       // Pagination with limit 50
       const from = page * DATASET_PAGE_SIZE;
@@ -75,7 +73,7 @@ export function useDatasetStudiesByIds(nctIds: string[]) {
       }
 
       const { data, error } = await supabaseExternal
-        .from("v_study_summary_v1")
+        .from("v_ui_study_list")
         .select("*")
         .in("nct_id", nctIds)
         .order("nct_id", { ascending: false });

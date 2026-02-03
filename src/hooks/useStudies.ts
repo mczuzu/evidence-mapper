@@ -77,13 +77,9 @@ function normalizeRpcResult(item: RpcSearchResult): StudyListItem {
     nct_id: item.nct_id,
     brief_title: item.brief_title,
     official_title: item.official_title,
-    n_result_rows: null,
-    n_unique_outcomes: null,
-    total_n_reported: null,
-    max_n_reported: null,
-    has_placebo_or_control_label: null,
     semantic_labels: null,
-    param_type_set: null,
+    n_semantic_labels: null,
+    n_total_mentions: null,
   };
 }
 
@@ -130,9 +126,9 @@ export function useStudies({
         };
       }
 
-      // Standard query
+      // Standard query - using v_ui_study_list for full dataset (63k+ studies)
       let query = supabaseExternal
-        .from("v_study_summary_v1")
+        .from("v_ui_study_list")
         .select("*", { count: "exact" })
         .order("nct_id", { ascending: false });
 
@@ -147,10 +143,7 @@ export function useStudies({
         query = query.overlaps("semantic_labels", selectedLabels);
       }
 
-      // Filter by param types (contains any of the selected)
-      if (selectedParamTypes.length > 0) {
-        query = query.overlaps("param_type_set", selectedParamTypes);
-      }
+      // Note: param_type_set filter removed - not available in v_ui_study_list
 
       // Pagination
       const from = page * PAGE_SIZE;
