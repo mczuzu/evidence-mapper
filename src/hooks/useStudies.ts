@@ -99,12 +99,12 @@ export function useStudies({
     queryFn: async () => {
       // Advanced search using RPC
       if (advancedSearch && searchQuery.trim()) {
-        const normalizedQuery = normalizeForAdvancedRpc(searchQuery);
-        console.log("[Advanced Search] Original:", searchQuery, "→ Normalized:", normalizedQuery);
+        const trimmedQuery = searchQuery.trim();
+        console.log("[Advanced Search] Query:", trimmedQuery);
         
         // Use the generic search_studies_advanced RPC that supports multi-term queries
         const { data, error } = await supabaseExternal.rpc("search_studies_advanced", {
-          q: normalizedQuery,
+          q: trimmedQuery,
           limit_n: 500,
         });
 
