@@ -102,7 +102,8 @@ export function useStudies({
         const normalizedQuery = normalizeForAdvancedRpc(searchQuery);
         console.log("[Advanced Search] Original:", searchQuery, "→ Normalized:", normalizedQuery);
         
-        const { data, error } = await supabaseExternal.schema("em").rpc("search_menopause_anxiety", {
+        // Use the generic search_studies_advanced RPC that supports multi-term queries
+        const { data, error } = await supabaseExternal.rpc("search_studies_advanced", {
           q: normalizedQuery,
           limit_n: 500,
         });
