@@ -1,7 +1,9 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import { Header } from "@/components/Header";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabaseExternalPublic } from "@/lib/supabase-external";
@@ -341,6 +343,19 @@ const AnalysisPage = () => {
   const { analysisId } = useParams<{ analysisId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Analysis-${analysisId ?? "report"}`,
+    pageStyle: `
+      @page { margin: 20mm; }
+      @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .no-print { display: none !important; }
+      }
+    `,
+  });
 
   // optimistic navigation state (optional)
   const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
@@ -400,13 +415,19 @@ const AnalysisPage = () => {
               <h1 className="font-serif text-xl font-bold text-foreground">Direction Analysis</h1>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 no-print">
               {nFound > 0 && (
                 <span className="text-sm text-muted-foreground">
                   {nFound} studies analyzed{missing.length ? ` (${missing.length} missing)` : ""}
                 </span>
               )}
               <ConfidencePill value={parsedLegacyText?.confidence} />
+              {(hasLegacyTextContent || hasV3Content) && !isLoading && !errorMessage && (
+                <Button variant="outline" size="sm" onClick={() => handlePrint()}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Imprimir PDF
+                </Button>
+              )}
             </div>
           </div>
 
@@ -449,7 +470,15 @@ const AnalysisPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-6">
+                <div ref={printRef} className="space-y-6 print:p-0">
+                  {/* Print header (only visible when printing) */}
+                  <div className="hidden print:block print:mb-6">
+                    <h1 className="text-2xl font-bold text-foreground">Direction Analysis Report</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {nFound} studies analyzed • Generated {analysisRun?.created_at ? new Date(analysisRun.created_at).toLocaleDateString() : ""}
+                    </p>
+                  </div>
+                  
                   {hasV3Content ? (
                     <V3AnalysisContent analysis={parsedV3!} />
                   ) : (
