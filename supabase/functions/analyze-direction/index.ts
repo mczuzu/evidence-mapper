@@ -101,33 +101,34 @@ Deno.serve(async (req) => {
       title_summary: titleSummary,
     };
 
-    const systemPrompt = `
+const systemPrompt = `
+You are an evidence analysis assistant working on top of a curated dataset of clinical studies.
+Your task is to analyze the selected set of studies and produce structured analytical outputs plus a decision-oriented narrative report.
 
-You are a rigorous evidence analyst.
-Return VALID JSON only (no markdown).
+Return VALID JSON only (no markdown fences).
 Use ONLY the provided payload. Do not invent details.
 Output must match the V3 schema described in the user message.
 `.trim();
 
-    // V3 contract (lightweight, aligned with your new UI sections)
+    // V3 contract (full Evidence Radar schema)
     const userPrompt = {
       task: "Generate a V3 direction analysis from the provided studies payload.",
       required_output_v3: {
         schema: "v3",
         analysis: {
-          direction_summary: "string",
-          what_is_promising: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
-          what_is_uncertain: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
+          direction_summary: "Concise summary: main intervention categories, target populations, outcomes addressed, high-level conclusions on what appears promising vs uncertain.",
+          what_is_promising: [{ title: "string", description: "Describe intervention and observed benefits", study_ids: ["NCT00000000"] }],
+          what_is_uncertain: [{ title: "string", description: "Explain why uncertainty remains", study_ids: ["NCT00000000"] }],
           cluster_map: {
-            interventions: [{ label: "string", study_ids: ["NCT00000000"] }],
-            populations: [{ label: "string", study_ids: ["NCT00000000"] }],
-            outcomes: [{ label: "string", study_ids: ["NCT00000000"] }],
-            mechanisms: [{ label: "string", study_ids: ["NCT00000000"] }],
+            interventions: [{ label: "string", description: "optional", study_ids: ["NCT00000000"] }],
+            populations: [{ label: "string", description: "optional", study_ids: ["NCT00000000"] }],
+            outcomes: [{ label: "string", description: "optional", study_ids: ["NCT00000000"] }],
+            mechanisms: [{ label: "string", description: "optional", study_ids: ["NCT00000000"] }],
           },
           gaps: {
-            evidence: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
-            design: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
-            missing_subgroups: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
+            evidence: [{ title: "string", description: "e.g. long-term outcomes, efficacy uncertainty", study_ids: ["NCT00000000"] }],
+            design: [{ title: "string", description: "e.g. lack of RCTs, heterogeneity of measures", study_ids: ["NCT00000000"] }],
+            missing_subgroups: [{ title: "string", description: "underrepresented populations", study_ids: ["NCT00000000"] }],
           },
           next_studies: {
             proposals: [
@@ -142,7 +143,10 @@ Output must match the V3 schema described in the user message.
                 study_ids: ["NCT00000000"],
               },
             ],
-            quick_wins: [{ title: "string", description: "string", study_ids: ["NCT00000000"] }],
+            quick_wins: [{ title: "string", description: "Practical quick-win opportunities including digital/telehealth", study_ids: ["NCT00000000"] }],
+          },
+          decision_assessment: {
+            markdown_report: "A SINGLE continuous Markdown narrative (self-contained, suitable for PDF export) that explicitly answers: Is there sufficient scientific evidence to justify development of a product/service OR need for additional research? MUST include: (1) Evidence Weight: approx study count, % of total analyzed, signal strength (strong/moderate/weak/inconsistent). (2) Population Impact: estimated prevalence, % of population affected, scope (global/regional/country). (3) Product Implications: assess if evidence justifies therapeutic product, symptom-management product, digital monitoring product, or no product yet; include key risks. (4) Final Recommendation: ONE of ✅ Evidence sufficient to justify product/service development | ⚠️ Evidence promising but insufficient – product + evidence generation recommended | ❌ Evidence insufficient – research should precede | ❌ Evidence negative/inconsistent – not recommended. Use clear headings, bullets where useful, decisive tone. Avoid vague statements."
           },
         },
         metadata: {
@@ -154,7 +158,9 @@ Output must match the V3 schema described in the user message.
       constraints: [
         "Use ONLY the provided payload. Do not browse or invent.",
         "Every item that references studies must include study_ids from payload.nct_ids.",
-        "Keep text concise and non-generic.",
+        "Keep sections 1-6 compatible with structured UI fields.",
+        "Section decision_assessment.markdown_report must be a SINGLE Markdown block, not split into sub-fields.",
+        "Be decisive. Avoid vague statements like 'more research is needed' without specifying why.",
       ],
       payload: llmPayload,
     };
