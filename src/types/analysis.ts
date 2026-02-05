@@ -66,11 +66,16 @@ export interface NextStudies {
   quick_wins: QuickWin[];
 }
 
+export interface DecisionAssessment {
+  markdown_report: string;
+}
+
 export interface AnalysisV3 {
   direction?: Direction;
   cluster_map?: ClusterMap;
   gaps?: Gaps;
   next_studies?: NextStudies;
+  decision_assessment?: DecisionAssessment;
 }
 
 // ─────────────────────────────────────────────────────────────────

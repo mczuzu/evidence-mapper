@@ -2,6 +2,7 @@ import { DirectionSection } from './DirectionSection';
 import { ClusterMapSection } from './ClusterMapSection';
 import { GapsV3Section } from './GapsV3Section';
 import { NextStudiesV3Section } from './NextStudiesV3Section';
+import { DecisionAssessmentSection } from './DecisionAssessmentSection';
 import { AnalysisStatusBanner } from './AnalysisStatusBanner';
 import type { AnalysisV3 } from '@/types/analysis';
 
@@ -27,9 +28,10 @@ export function V3AnalysisContent({ analysis }: V3AnalysisContentProps) {
     (analysis.next_studies.proposals?.length ?? 0) > 0 ||
     (analysis.next_studies.quick_wins?.length ?? 0) > 0
   );
+  const hasDecisionAssessment = analysis.decision_assessment && analysis.decision_assessment.markdown_report;
 
   // Completely empty analysis
-  if (!hasDirection && !hasClusterMap && !hasGaps && !hasNextStudies) {
+  if (!hasDirection && !hasClusterMap && !hasGaps && !hasNextStudies && !hasDecisionAssessment) {
     return <AnalysisStatusBanner type="empty" />;
   }
 
@@ -51,6 +53,9 @@ export function V3AnalysisContent({ analysis }: V3AnalysisContentProps) {
 
       {/* 4. Next Studies (optional) */}
       <NextStudiesV3Section nextStudies={analysis.next_studies} />
+
+      {/* 5. Decision-Oriented Evidence Assessment (MANDATORY section 7) */}
+      <DecisionAssessmentSection decisionAssessment={analysis.decision_assessment} />
     </div>
   );
 }

@@ -181,6 +181,13 @@ function coerceToAnalysisV3(raw: any): AnalysisV3 | null {
       proposals: mapProposals(nextStudies.proposals),
       quick_wins: mapQuickWins(nextStudies.quick_wins),
     },
+    decision_assessment: raw.decision_assessment
+      ? {
+          markdown_report: typeof raw.decision_assessment.markdown_report === "string"
+            ? raw.decision_assessment.markdown_report
+            : "",
+        }
+      : undefined,
   };
 }
 
