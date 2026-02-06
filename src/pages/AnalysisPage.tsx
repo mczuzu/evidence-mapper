@@ -391,8 +391,12 @@ const AnalysisPage = () => {
   const nextStepsText = parsedLegacyText?.next_steps_text ?? "";
 
   // Meta (defensive defaults)
-  const nRequested = parsedLegacyText?.n_requested ?? analysisRun?.nct_ids?.length ?? 0;
-  const nFound = parsedLegacyText?.n_found ?? analysisRun?.nct_ids?.length ?? 0;
+  // For V3, nct_ids in the DB already represents the "available" studies (stored after edge fn filter)
+  // parsedRaw might also have metadata with study_count
+  const storedIds = analysisRun?.nct_ids ?? [];
+  const metadataCount = parsedRaw?.metadata?.study_count;
+  const nFound = metadataCount ?? parsedLegacyText?.n_found ?? storedIds.length ?? 0;
+  const nRequested = parsedLegacyText?.n_requested ?? nFound;
   const missing = Array.isArray(parsedLegacyText?.missing) ? parsedLegacyText!.missing! : [];
 
   const errorMessage = !analysisId

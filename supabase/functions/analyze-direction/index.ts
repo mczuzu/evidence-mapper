@@ -37,19 +37,36 @@ Deno.serve(async (req) => {
       db: { schema: "em" },
     });
 
-    // Fetch study data for the selected NCT IDs from the full dataset view
-    const { data: studies, error: studiesError } = await supabaseExternal
-      .from("v_ui_study_list")
-      .select("nct_id, brief_title, official_title")
-      .in("nct_id", nctIds);
+    console.log(`[analyze-direction] Received ${nctIds.length} NCT IDs to analyze`);
 
-    if (studiesError) {
-      console.error("Error fetching studies:", studiesError);
-      return new Response(JSON.stringify({ error: "Failed to fetch study data", details: studiesError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Fetch study data for the selected NCT IDs from the full dataset view
+    // IMPORTANT: Supabase default limit is 1000, but we need to handle larger selections
+    // For very large selections (>500), we may need to batch the queries
+    const MAX_IDS_PER_QUERY = 500;
+    let allStudies: any[] = [];
+    
+    // Batch the IDs to avoid hitting query limits
+    for (let i = 0; i < nctIds.length; i += MAX_IDS_PER_QUERY) {
+      const batchIds = nctIds.slice(i, i + MAX_IDS_PER_QUERY);
+      const { data: batchStudies, error: batchError } = await supabaseExternal
+        .from("v_ui_study_list")
+        .select("nct_id, brief_title, official_title")
+        .in("nct_id", batchIds);
+      
+      if (batchError) {
+        console.error(`Error fetching batch ${i / MAX_IDS_PER_QUERY + 1}:`, batchError);
+        return new Response(JSON.stringify({ error: "Failed to fetch study data", details: batchError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      allStudies = allStudies.concat(batchStudies ?? []);
     }
+    
+    const studies = allStudies;
+    console.log(`[analyze-direction] Fetched ${studies.length} studies from database`);
+
 
     // Determine which studies are available vs missing
     const foundIds = new Set((studies ?? []).map((s) => s.nct_id));
