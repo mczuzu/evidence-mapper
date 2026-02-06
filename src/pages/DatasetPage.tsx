@@ -13,6 +13,7 @@ import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from "@/lib/
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseExternalPublic } from "@/lib/supabase-external";
 import { toast } from "sonner";
+import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
 
 const DatasetPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +21,8 @@ const DatasetPage = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [analysisError, setAnalysisError] = useState<{ message: string; details?: string } | null>(null);
 
   // Explicit column filters (replaces toggles)
   const [filterAnalyzable, setFilterAnalyzable] = useState<string>("all");
@@ -162,30 +165,51 @@ const DatasetPage = () => {
     navigate(`/study/${nctId}`);
   };
 
-  // Analyze selected studies
-  const handleAnalyze = async () => {
+  // Open analysis modal
+  const handleOpenAnalysisModal = () => {
+    setAnalysisError(null);
+    setShowAnalysisModal(true);
+  };
+
+  // Run analysis with optional context (called from modal)
+  const runAnalysis = async (context?: AnalysisContext) => {
     const nctIds = Array.from(selectedIds);
     if (nctIds.length === 0) return;
 
     setIsAnalyzing(true);
+    setAnalysisError(null);
 
     try {
+      // Build request body
+      const requestBody: { nct_ids: string[]; context?: AnalysisContext } = { nct_ids: nctIds };
+      
+      // Only include context if product_idea is provided
+      if (context?.product_idea && context.product_idea.trim().length > 0) {
+        requestBody.context = context;
+      }
+
       // Call analyze-direction (Lovable Cloud backend function)
       const { data: result, error: fnError } = await supabase.functions.invoke("analyze-direction", {
-        body: { nct_ids: nctIds },
+        body: requestBody,
       });
 
       if (fnError) {
-        throw new Error(fnError.message || "Analysis failed");
+        const errorDetails = fnError.message || "Analysis failed";
+        throw { message: "Analysis failed", details: errorDetails };
       }
 
       if (!result) {
-        throw new Error("No data returned from analysis");
+        throw { message: "No data returned from analysis" };
       }
 
       // If backend explicitly reports a DB issue, surface it clearly.
       if (typeof result.db_error === "string" && result.db_error) {
-        throw new Error(result.db_error);
+        throw { message: "Database error", details: result.db_error };
+      }
+
+      // Check for error in response body
+      if (result.error) {
+        throw { message: result.error, details: result.details || undefined };
       }
 
       // Normalize response across formats:
@@ -204,6 +228,7 @@ const DatasetPage = () => {
 
       if (available.length === 0) {
         toast.warning(`No se encontraron datos para los ${missing.length || nctIds.length} estudios seleccionados.`);
+        setShowAnalysisModal(false);
         return;
       }
 
@@ -214,7 +239,7 @@ const DatasetPage = () => {
       // The Edge Function should return { analysis: ... }
       const analysisPayload = result.analysis;
       if (!analysisPayload) {
-        throw new Error("Missing analysis in response payload");
+        throw { message: "Missing analysis in response payload" };
       }
 
       // Generate a NEW analysisId per run (no reuse)
@@ -232,8 +257,10 @@ const DatasetPage = () => {
 
       if (insertError) {
         console.error("Error saving analysis:", insertError);
-        throw new Error(insertError.message || "Failed to save analysis results");
+        throw { message: "Failed to save analysis results", details: insertError.message };
       }
+
+      setShowAnalysisModal(false);
 
       // Navigate to the analysis page using the NEW analysisId
       navigate(`/analysis/${analysisId}`, {
@@ -249,7 +276,12 @@ const DatasetPage = () => {
       });
     } catch (err) {
       console.error("Analysis error:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to analyze studies");
+      const errorObj = err as { message?: string; details?: string };
+      setAnalysisError({
+        message: errorObj.message || (err instanceof Error ? err.message : "Failed to analyze studies"),
+        details: errorObj.details,
+      });
+      toast.error(errorObj.message || "Failed to analyze studies");
     } finally {
       setIsAnalyzing(false);
     }
@@ -312,9 +344,9 @@ const DatasetPage = () => {
               <span className="text-sm text-muted-foreground">
                 Seleccionados: <span className="font-medium text-foreground">{selectedIds.size}</span>
               </span>
-              <Button onClick={handleAnalyze} disabled={selectedIds.size === 0 || isAnalyzing} className="gap-2">
-                {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />}
-                {isAnalyzing ? "Analizando..." : "Analizar seleccionados"}
+              <Button onClick={handleOpenAnalysisModal} disabled={selectedIds.size === 0} className="gap-2">
+                <FlaskConical className="h-4 w-4" />
+                Analizar seleccionados
               </Button>
             </div>
           </div>
@@ -557,6 +589,16 @@ const DatasetPage = () => {
           )}
         </div>
       </main>
+
+      {/* Analysis Modal */}
+      <AnalysisModal
+        open={showAnalysisModal}
+        onOpenChange={setShowAnalysisModal}
+        selectedCount={selectedIds.size}
+        onConfirm={runAnalysis}
+        isLoading={isAnalyzing}
+        error={analysisError}
+      />
     </div>
   );
 };
