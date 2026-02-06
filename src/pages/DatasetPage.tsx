@@ -320,53 +320,68 @@ const DatasetPage = () => {
           </div>
 
           {/* Explicit Column Filters */}
-          <div className="flex items-center gap-6 bg-muted/30 border border-border rounded-lg px-4 py-3">
-            <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
-            
-            {/* Analyzable filter */}
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              <Select value={filterAnalyzable} onValueChange={setFilterAnalyzable}>
-                <SelectTrigger className="w-36 h-8 text-sm">
-                  <SelectValue placeholder="Analyzable" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="yes">Con datos numéricos</SelectItem>
-                  <SelectItem value="no">Sin datos numéricos</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
+            <div className="flex items-center gap-6">
+              <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
+              
+              {/* Analyzable filter */}
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <Select value={filterAnalyzable} onValueChange={setFilterAnalyzable}>
+                  <SelectTrigger className="w-36 h-8 text-sm">
+                    <SelectValue placeholder="Analyzable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="yes">Con datos numéricos</SelectItem>
+                    <SelectItem value="no">Sin datos numéricos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Comparable filter */}
+              <div className="flex items-center gap-2">
+                <GitCompare className="h-4 w-4 text-muted-foreground" />
+                <Select value={filterComparable} onValueChange={setFilterComparable}>
+                  <SelectTrigger className="w-36 h-8 text-sm">
+                    <SelectValue placeholder="Comparable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="yes">Con comparación A vs B</SelectItem>
+                    <SelectItem value="no">Sin comparación</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Clear filters */}
+              {(filterAnalyzable !== "all" || filterComparable !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFilterAnalyzable("all");
+                    setFilterComparable("all");
+                  }}
+                  className="text-xs"
+                >
+                  Limpiar filtros
+                </Button>
+              )}
             </div>
 
-            {/* Comparable filter */}
+            {/* Filter result counter */}
             <div className="flex items-center gap-2">
-              <GitCompare className="h-4 w-4 text-muted-foreground" />
-              <Select value={filterComparable} onValueChange={setFilterComparable}>
-                <SelectTrigger className="w-36 h-8 text-sm">
-                  <SelectValue placeholder="Comparable" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="yes">Con comparación A vs B</SelectItem>
-                  <SelectItem value="no">Sin comparación</SelectItem>
-                </SelectContent>
-              </Select>
+              {(filterAnalyzable !== "all" || filterComparable !== "all") && (
+                <Badge variant="secondary" className="text-xs px-2 py-1">
+                  {isLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <span>{totalCount.toLocaleString()} estudios con filtros aplicados</span>
+                  )}
+                </Badge>
+              )}
             </div>
-
-            {/* Clear filters */}
-            {(filterAnalyzable !== "all" || filterComparable !== "all") && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setFilterAnalyzable("all");
-                  setFilterComparable("all");
-                }}
-                className="text-xs"
-              >
-                Limpiar filtros
-              </Button>
-            )}
           </div>
 
           {/* Banner for IDs mode or Advanced mode */}
