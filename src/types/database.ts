@@ -15,8 +15,6 @@ export interface StudyListItem {
   n_numeric_outcomes: number | null;
   n_groups: number | null;
   n_comparisons: number | null;
-  conditions_top: string[] | null;
-  outcomes_top: string[] | null;
 }
 
 export interface FacetSemanticLabel {
