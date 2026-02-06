@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       const batchIds = nctIds.slice(i, i + MAX_IDS_PER_QUERY);
       const { data: batchStudies, error: batchError } = await supabaseExternal
         .from("v_ui_study_list_v2")
-        .select("nct_id, brief_title, brief_summary, conditions_top, outcomes_top, has_numeric_results, has_group_comparison, measurement_clusters")
+        .select("nct_id, brief_title, brief_summary, semantic_labels, has_numeric_results, has_group_comparison, measurement_clusters")
         .in("nct_id", batchIds);
       
       if (batchError) {
@@ -111,8 +111,7 @@ Deno.serve(async (req) => {
         nct_id: s.nct_id,
         brief_title: s.brief_title ?? null,
         brief_summary: s.brief_summary ?? null,
-        conditions_top: s.conditions_top ?? [],
-        outcomes_top: s.outcomes_top ?? [],
+        semantic_labels: s.semantic_labels ?? [],
         has_numeric_results: s.has_numeric_results ?? false,
         has_group_comparison: s.has_group_comparison ?? false,
         measurement_clusters: s.measurement_clusters ?? [],

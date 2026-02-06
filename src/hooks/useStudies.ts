@@ -92,8 +92,6 @@ function normalizeRpcResult(item: RpcSearchResult): StudyListItem {
     n_numeric_outcomes: null,
     n_groups: null,
     n_comparisons: null,
-    conditions_top: null,
-    outcomes_top: null,
   };
 }
 

@@ -1,11 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter, CheckSquare, BarChart3, GitCompare } from "lucide-react";
+import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter, CheckSquare, BarChart3, GitCompare, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useStudies, useAllStudyIds } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
@@ -15,15 +15,15 @@ import { supabaseExternalPublic } from "@/lib/supabase-external";
 import { toast } from "sonner";
 
 const DatasetPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Study Profile V2 filters
-  const [onlyAnalyzable, setOnlyAnalyzable] = useState(false);
-  const [onlyComparable, setOnlyComparable] = useState(false);
+  // Explicit column filters (replaces toggles)
+  const [filterAnalyzable, setFilterAnalyzable] = useState<string>("all");
+  const [filterComparable, setFilterComparable] = useState<string>("all");
 
   // Check if we're in "ids" mode (specific studies from related studies link)
   const idsParam = searchParams.get("ids");
@@ -35,6 +35,10 @@ const DatasetPage = () => {
 
   // Parse filters from query params
   const { searchQuery, labels, paramTypes } = useMemo(() => parseFiltersFromQueryParams(searchParams), [searchParams]);
+
+  // Convert filter values to booleans for query
+  const onlyAnalyzable = filterAnalyzable === "yes";
+  const onlyComparable = filterComparable === "yes";
 
   // Use the unified useStudies hook for both normal and advanced modes
   const studiesQuery = useStudies({
@@ -66,6 +70,16 @@ const DatasetPage = () => {
   const studies = data?.studies ?? [];
   const totalCount = data?.totalCount ?? 0;
   const totalPages = data?.totalPages ?? 0;
+  const pageSize = data?.pageSize ?? 20;
+
+  // Calculate pagination display values
+  const startIndex = page * pageSize + 1;
+  const endIndex = Math.min((page + 1) * pageSize, totalCount);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [filterAnalyzable, filterComparable, searchQuery, labels.join(",")]);
 
   // Handle navigation back with preserved query params
   const handleBack = () => {
@@ -127,7 +141,7 @@ const DatasetPage = () => {
   };
 
   // Effect to update selection when all IDs are fetched
-  useMemo(() => {
+  useEffect(() => {
     if (selectAllRequested && allIdsQuery.data && allIdsQuery.data.length > 0) {
       setSelectedIds(new Set(allIdsQuery.data));
       setSelectAllRequested(false);
@@ -305,31 +319,54 @@ const DatasetPage = () => {
             </div>
           </div>
 
-          {/* Study Profile V2 Filters */}
+          {/* Explicit Column Filters */}
           <div className="flex items-center gap-6 bg-muted/30 border border-border rounded-lg px-4 py-3">
-            <span className="text-sm font-medium text-muted-foreground">Filtros de datos:</span>
+            <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
+            
+            {/* Analyzable filter */}
             <div className="flex items-center gap-2">
-              <Switch
-                id="only-analyzable"
-                checked={onlyAnalyzable}
-                onCheckedChange={setOnlyAnalyzable}
-              />
-              <label htmlFor="only-analyzable" className="text-sm flex items-center gap-1.5 cursor-pointer">
-                <BarChart3 className="h-3.5 w-3.5 text-primary" />
-                Solo analizables
-              </label>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <Select value={filterAnalyzable} onValueChange={setFilterAnalyzable}>
+                <SelectTrigger className="w-36 h-8 text-sm">
+                  <SelectValue placeholder="Analyzable" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="yes">Con datos numéricos</SelectItem>
+                  <SelectItem value="no">Sin datos numéricos</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Comparable filter */}
             <div className="flex items-center gap-2">
-              <Switch
-                id="only-comparable"
-                checked={onlyComparable}
-                onCheckedChange={setOnlyComparable}
-              />
-              <label htmlFor="only-comparable" className="text-sm flex items-center gap-1.5 cursor-pointer">
-                <GitCompare className="h-3.5 w-3.5 text-primary" />
-                Solo comparables (A vs B)
-              </label>
+              <GitCompare className="h-4 w-4 text-muted-foreground" />
+              <Select value={filterComparable} onValueChange={setFilterComparable}>
+                <SelectTrigger className="w-36 h-8 text-sm">
+                  <SelectValue placeholder="Comparable" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="yes">Con comparación A vs B</SelectItem>
+                  <SelectItem value="no">Sin comparación</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Clear filters */}
+            {(filterAnalyzable !== "all" || filterComparable !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilterAnalyzable("all");
+                  setFilterComparable("all");
+                }}
+                className="text-xs"
+              >
+                Limpiar filtros
+              </Button>
+            )}
           </div>
 
           {/* Banner for IDs mode or Advanced mode */}
@@ -465,23 +502,40 @@ const DatasetPage = () => {
                 </Table>
               </div>
 
-              {/* Pagination - only show in standard filter mode (not ids mode, not advanced) */}
-              {!isUrlIdsMode && !isAdvanced && totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-4">
-                  <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 0}>
-                    Previous
-                  </Button>
-                  <span className="text-sm text-muted-foreground px-4">
-                    Page {page + 1} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => p + 1)}
-                    disabled={page >= totalPages - 1}
-                  >
-                    Next
-                  </Button>
+              {/* Pagination with "showing X-Y of Z" indicator */}
+              {totalPages > 0 && (
+                <div className="flex items-center justify-between pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando <span className="font-medium text-foreground">{startIndex}</span>–<span className="font-medium text-foreground">{endIndex}</span> de <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> estudios
+                  </p>
+                  
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setPage((p) => p - 1)} 
+                        disabled={page === 0}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Anterior
+                      </Button>
+                      <span className="text-sm text-muted-foreground px-4">
+                        Página {page + 1} de {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => p + 1)}
+                        disabled={page >= totalPages - 1}
+                        className="gap-1"
+                      >
+                        Siguiente
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </>
