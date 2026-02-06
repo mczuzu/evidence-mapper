@@ -190,7 +190,48 @@ export function useStudies({
         }
 
         const rpcResults = (data as RpcSearchResult[]) || [];
-        const studies = rpcResults.map(normalizeRpcResult);
+        
+        // Get the NCT IDs from RPC results to fetch full study data with V2 fields
+        const nctIds = rpcResults.map(r => r.nct_id);
+        
+        if (nctIds.length === 0) {
+          return {
+            studies: [],
+            totalCount: 0,
+            pageSize: PAGE_SIZE,
+            currentPage: page,
+            totalPages: 0,
+          };
+        }
+
+        // Fetch full study data from v_ui_study_list_v2 for these IDs
+        let query = supabaseExternal
+          .from("v_ui_study_list_v2")
+          .select("*")
+          .in("nct_id", nctIds);
+
+        // Apply Study Profile V2 filters
+        if (onlyAnalyzable) {
+          query = query.eq("has_numeric_results", true);
+        }
+        if (onlyComparable) {
+          query = query.eq("has_group_comparison", true);
+        }
+        if (measurementClusters.length > 0) {
+          query = query.overlaps("measurement_clusters", measurementClusters);
+        }
+
+        const { data: v2Data, error: v2Error } = await query;
+
+        if (v2Error) {
+          console.error("Error fetching V2 study data:", v2Error);
+          throw v2Error;
+        }
+
+        // Create a map for ordering by RPC rank
+        const rankMap = new Map(rpcResults.map((r, i) => [r.nct_id, i]));
+        const studies = ((v2Data as StudyListItem[]) || [])
+          .sort((a, b) => (rankMap.get(a.nct_id) ?? 999) - (rankMap.get(b.nct_id) ?? 999));
 
         // Apply pagination client-side for RPC results
         const from = page * PAGE_SIZE;
