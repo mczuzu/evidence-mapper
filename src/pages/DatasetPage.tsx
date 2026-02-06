@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter, CheckSquare } from "lucide-react";
+import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter, CheckSquare, BarChart3, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useStudies, useAllStudyIds } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
@@ -18,6 +20,10 @@ const DatasetPage = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Study Profile V2 filters
+  const [onlyAnalyzable, setOnlyAnalyzable] = useState(false);
+  const [onlyComparable, setOnlyComparable] = useState(false);
 
   // Check if we're in "ids" mode (specific studies from related studies link)
   const idsParam = searchParams.get("ids");
@@ -37,6 +43,8 @@ const DatasetPage = () => {
     selectedParamTypes: paramTypes,
     page,
     advancedSearch: isAdvanced,
+    onlyAnalyzable,
+    onlyComparable,
   });
 
   // Only use IDs query when explicitly in URL IDs mode (from related studies link)
@@ -297,6 +305,33 @@ const DatasetPage = () => {
             </div>
           </div>
 
+          {/* Study Profile V2 Filters */}
+          <div className="flex items-center gap-6 bg-muted/30 border border-border rounded-lg px-4 py-3">
+            <span className="text-sm font-medium text-muted-foreground">Filtros de datos:</span>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="only-analyzable"
+                checked={onlyAnalyzable}
+                onCheckedChange={setOnlyAnalyzable}
+              />
+              <label htmlFor="only-analyzable" className="text-sm flex items-center gap-1.5 cursor-pointer">
+                <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                Solo analizables
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="only-comparable"
+                checked={onlyComparable}
+                onCheckedChange={setOnlyComparable}
+              />
+              <label htmlFor="only-comparable" className="text-sm flex items-center gap-1.5 cursor-pointer">
+                <GitCompare className="h-3.5 w-3.5 text-primary" />
+                Solo comparables (A vs B)
+              </label>
+            </div>
+          </div>
+
           {/* Banner for IDs mode or Advanced mode */}
           {(isUrlIdsMode || isAdvanced) && (
             <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
@@ -356,8 +391,9 @@ const DatasetPage = () => {
                       </TableHead>
                       <TableHead className="w-32">NCT ID</TableHead>
                       <TableHead>Brief Title</TableHead>
-                      <TableHead className="w-48">Labels</TableHead>
-                      <TableHead className="w-24 text-right">Action</TableHead>
+                      <TableHead className="w-28 text-center">Datos</TableHead>
+                      <TableHead className="w-24 text-center">Métricas</TableHead>
+                      <TableHead className="w-24 text-right">Acción</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -373,11 +409,44 @@ const DatasetPage = () => {
                         <TableCell className="font-mono text-xs">{study.nct_id}</TableCell>
                         <TableCell>
                           <p className="text-sm font-medium text-foreground line-clamp-2">{study.brief_title}</p>
+                          {study.brief_summary && (
+                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                              {study.brief_summary.slice(0, 100)}...
+                            </p>
+                          )}
                         </TableCell>
-                        <TableCell>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {study.semantic_labels?.join(", ") || "—"}
-                          </p>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {study.has_numeric_results && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 gap-1">
+                                <BarChart3 className="h-3 w-3" />
+                                Num
+                              </Badge>
+                            )}
+                            {study.has_group_comparison && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 gap-1">
+                                <GitCompare className="h-3 w-3" />
+                                Cmp
+                              </Badge>
+                            )}
+                            {!study.has_numeric_results && !study.has_group_comparison && (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex flex-col items-center text-xs text-muted-foreground">
+                            {study.n_numeric_outcomes != null && study.n_numeric_outcomes > 0 && (
+                              <span>{study.n_numeric_outcomes} out</span>
+                            )}
+                            {study.n_comparisons != null && study.n_comparisons > 0 && (
+                              <span>{study.n_comparisons} cmp</span>
+                            )}
+                            {(study.n_numeric_outcomes == null || study.n_numeric_outcomes === 0) &&
+                             (study.n_comparisons == null || study.n_comparisons === 0) && (
+                              <span>—</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

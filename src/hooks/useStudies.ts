@@ -62,6 +62,10 @@ interface UseStudiesParams {
   selectedParamTypes: string[];
   page: number;
   advancedSearch?: boolean;
+  // Study Profile V2 filters
+  onlyAnalyzable?: boolean;
+  onlyComparable?: boolean;
+  measurementClusters?: string[];
 }
 
 interface RpcSearchResult {
@@ -80,6 +84,16 @@ function normalizeRpcResult(item: RpcSearchResult): StudyListItem {
     semantic_labels: null,
     n_semantic_labels: null,
     n_total_mentions: null,
+    // V2 fields - RPC doesn't return these yet
+    brief_summary: null,
+    has_numeric_results: null,
+    has_group_comparison: null,
+    measurement_clusters: null,
+    n_numeric_outcomes: null,
+    n_groups: null,
+    n_comparisons: null,
+    conditions_top: null,
+    outcomes_top: null,
   };
 }
 
@@ -154,9 +168,12 @@ export function useStudies({
   selectedParamTypes,
   page,
   advancedSearch = false,
+  onlyAnalyzable = false,
+  onlyComparable = false,
+  measurementClusters = [],
 }: UseStudiesParams) {
   return useQuery({
-    queryKey: ["studies", searchQuery, selectedLabels, selectedParamTypes, page, advancedSearch],
+    queryKey: ["studies", searchQuery, selectedLabels, selectedParamTypes, page, advancedSearch, onlyAnalyzable, onlyComparable, measurementClusters],
     queryFn: async () => {
       // Advanced search using RPC
       if (advancedSearch && searchQuery.trim()) {
@@ -191,11 +208,22 @@ export function useStudies({
         };
       }
 
-      // Standard query - using v_ui_study_list for full dataset (63k+ studies)
+      // Standard query - using v_ui_study_list_v2 for full dataset with Study Profile fields
       let query = supabaseExternal
-        .from("v_ui_study_list")
+        .from("v_ui_study_list_v2")
         .select("*", { count: "exact" })
         .order("nct_id", { ascending: false });
+
+      // Study Profile V2 filters
+      if (onlyAnalyzable) {
+        query = query.eq("has_numeric_results", true);
+      }
+      if (onlyComparable) {
+        query = query.eq("has_group_comparison", true);
+      }
+      if (measurementClusters.length > 0) {
+        query = query.overlaps("measurement_clusters", measurementClusters);
+      }
 
       // Text search on brief_title and official_title
       if (searchQuery.trim()) {

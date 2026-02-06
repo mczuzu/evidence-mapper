@@ -39,18 +39,16 @@ Deno.serve(async (req) => {
 
     console.log(`[analyze-direction] Received ${nctIds.length} NCT IDs to analyze`);
 
-    // Fetch study data for the selected NCT IDs from the full dataset view
-    // IMPORTANT: Supabase default limit is 1000, but we need to handle larger selections
-    // For very large selections (>500), we may need to batch the queries
+    // Fetch study data from v_ui_study_list_v2 (Study Profile view)
+    // Batch queries to avoid hitting limits
     const MAX_IDS_PER_QUERY = 500;
     let allStudies: any[] = [];
     
-    // Batch the IDs to avoid hitting query limits
     for (let i = 0; i < nctIds.length; i += MAX_IDS_PER_QUERY) {
       const batchIds = nctIds.slice(i, i + MAX_IDS_PER_QUERY);
       const { data: batchStudies, error: batchError } = await supabaseExternal
-        .from("v_ui_study_list")
-        .select("nct_id, brief_title, official_title")
+        .from("v_ui_study_list_v2")
+        .select("nct_id, brief_title, brief_summary, conditions_top, outcomes_top, has_numeric_results, has_group_comparison, measurement_clusters")
         .in("nct_id", batchIds);
       
       if (batchError) {
@@ -65,8 +63,7 @@ Deno.serve(async (req) => {
     }
     
     const studies = allStudies;
-    console.log(`[analyze-direction] Fetched ${studies.length} studies from database`);
-
+    console.log(`[analyze-direction] Fetched ${studies.length} studies from v_ui_study_list_v2`);
 
     // Determine which studies are available vs missing
     const foundIds = new Set((studies ?? []).map((s) => s.nct_id));
@@ -92,12 +89,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get study titles for context (only available studies)
+    // Get available studies with Study Profile data
     const availableStudies = (studies ?? []).filter((s) => available.includes(s.nct_id));
-    const studyTitles = availableStudies.map((s) => s.brief_title).filter(Boolean);
-    const titleSummary = studyTitles.slice(0, 3).join(", ") || "selected clinical trials";
 
-    // --- REAL AI ANALYSIS (V3) ---
+    // --- REAL AI ANALYSIS (V3) using Study Profiles ---
     const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
     const openaiModel = Deno.env.get("OPENAI_MODEL") ?? "gpt-4.1-mini";
 
@@ -108,14 +103,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Minimal payload for the LLM (only available studies)
+    // Study Profile payload for the LLM (no raw outcome data)
     const llmPayload = {
       nct_ids: available,
+      study_count: available.length,
       studies: availableStudies.map((s: any) => ({
         nct_id: s.nct_id,
         brief_title: s.brief_title ?? null,
+        brief_summary: s.brief_summary ?? null,
+        conditions_top: s.conditions_top ?? [],
+        outcomes_top: s.outcomes_top ?? [],
+        has_numeric_results: s.has_numeric_results ?? false,
+        has_group_comparison: s.has_group_comparison ?? false,
+        measurement_clusters: s.measurement_clusters ?? [],
       })),
-      title_summary: titleSummary,
     };
 
 const systemPrompt = `
@@ -125,11 +126,13 @@ Your task is to analyze the selected set of studies and produce structured analy
 Return VALID JSON only (no markdown fences).
 Use ONLY the provided payload. Do not invent details.
 Output must match the V3 schema described in the user message.
+
+IMPORTANT: This payload uses "Study Profiles" - each study includes metadata flags like has_numeric_results and has_group_comparison to indicate data richness. Use these to inform your analysis about evidence quality.
 `.trim();
 
     // V3 contract (full Evidence Radar schema)
     const userPrompt = {
-      task: "Generate a V3 direction analysis from the provided studies payload.",
+      task: "Generate a V3 direction analysis from the provided Study Profiles payload.",
       required_output_v3: {
         schema: "v3",
         analysis: {
@@ -178,6 +181,7 @@ Output must match the V3 schema described in the user message.
         "Keep sections 1-6 compatible with structured UI fields.",
         "Section decision_assessment.markdown_report must be a SINGLE Markdown block, not split into sub-fields.",
         "Be decisive. Avoid vague statements like 'more research is needed' without specifying why.",
+        "Consider has_numeric_results and has_group_comparison flags when assessing evidence quality.",
       ],
       payload: llmPayload,
     };
