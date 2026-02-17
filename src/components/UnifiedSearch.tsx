@@ -70,6 +70,17 @@ function ChipInput({
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKey}
+        onPaste={(e) => {
+          const pasted = e.clipboardData.getData("text");
+          if (/[,;\n]/.test(pasted)) {
+            e.preventDefault();
+            const terms = pasted
+              .split(/[,;\n]/)
+              .map((t) => t.trim())
+              .filter((t) => t.length > 0 && !chips.includes(t));
+            terms.forEach((t) => onAdd(t));
+          }
+        }}
         placeholder={chips.length === 0 ? placeholder : "Add term…"}
         className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
       />
