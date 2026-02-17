@@ -56,14 +56,14 @@ Deno.serve(async (req) => {
 
     // Fetch study data from v_ui_study_list_v2 (Study Profile view)
     // Batch queries to avoid hitting limits
-    const MAX_IDS_PER_QUERY = 500;
+    const MAX_IDS_PER_QUERY = 15;
     let allStudies: any[] = [];
     
     for (let i = 0; i < nctIds.length; i += MAX_IDS_PER_QUERY) {
       const batchIds = nctIds.slice(i, i + MAX_IDS_PER_QUERY);
       const { data: batchStudies, error: batchError } = await supabaseExternal
         .from("v_ui_study_list_v2")
-        .select("nct_id, brief_title, brief_summary, semantic_labels, has_numeric_results, has_group_comparison, measurement_clusters")
+        .select("nct_id, brief_title, brief_summary, semantic_labels, has_numeric_results, has_group_comparison")
         .in("nct_id", batchIds);
       
       if (batchError) {
