@@ -228,6 +228,7 @@ IMPORTANT: This payload uses "Study Profiles" - each study includes metadata fla
         "Section decision_assessment.markdown_report must be a SINGLE Markdown block, not split into sub-fields.",
         "Be decisive. Avoid vague statements like 'more research is needed' without specifying why.",
         "Consider has_numeric_results and has_group_comparison flags when assessing evidence quality.",
+        "CRITICAL: If you cannot generate concrete evidence gaps, next studies, or a decision-oriented assessment, you MUST explain WHY in plain English. NEVER return generic statements like 'No concrete evidence gaps could be identified' or 'No specific follow-up studies can be proposed' or 'No decision assessment could be generated.' Instead, clearly state the limiting factors from the analyzed dataset, such as: high heterogeneity of interventions or outcomes, insufficient cluster density (too few studies per intervention type), lack of comparator clarity, mostly narrative reporting without quantitative results, small sample sizes, or fragmented populations. When insights are limited, explicitly describe: (1) what structural pattern in the data prevented inference, (2) why that pattern blocks decision-oriented conclusions, and (3) what would need to change (e.g. more studies per cluster, more homogeneous intervention set, clearer comparators). Keep the tone analytical and evidence-based. Do not invent limitations not supported by the dataset.",
       ],
       payload: llmPayload,
     };
