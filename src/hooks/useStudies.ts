@@ -1,72 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabaseExternal } from "@/lib/supabase-external";
 import { StudyListItem, FacetSemanticLabel, FacetParamType } from "@/types/database";
+import { UnifiedSearchInput, isSearchActive } from "@/types/search";
 
 const PAGE_SIZE = 20;
-
-// Spanish → English term mapping for RPC normalization
-const TERM_MAP: Record<string, string> = {
-  menopausa: "menopause",
-  menopausia: "menopause",
-  perimenopausa: "perimenopause",
-  perimenopausia: "perimenopause",
-  posmenopausa: "postmenopausal",
-  posmenopausia: "postmenopausal",
-  postmenopausa: "postmenopausal",
-  postmenopausia: "postmenopausal",
-  ansiedad: "anxiety",
-  depresion: "depression",
-  depresión: "depression",
-  sofocos: "hot flashes",
-  insomnio: "insomnia",
-  tratamiento: "treatment",
-  terapia: "therapy",
-  cancer: "cancer",
-  cáncer: "cancer",
-  hormonal: "hormone",
-  hormonas: "hormone",
-  estrogeno: "estrogen",
-  estrógeno: "estrogen",
-  progesterona: "progesterone",
-};
-
-/**
- * Normalize query for advanced RPC search:
- * - Lowercase
- * - Remove accents
- * - Tokenize on whitespace/punctuation
- * - Map Spanish → English terms
- * - Re-join tokens
- */
-function normalizeForAdvancedRpc(query: string): string {
-  // Lowercase and normalize unicode (NFD decomposes accents)
-  const normalized = query
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // Remove diacritics
-
-  // Tokenize on whitespace and punctuation
-  const tokens = normalized.split(/[\s,;:.]+/).filter(Boolean);
-
-  // Map tokens to English equivalents
-  const mappedTokens = tokens.map((token) => {
-    return TERM_MAP[token] || token;
-  });
-
-  return mappedTokens.join(" ");
-}
-
-interface UseStudiesParams {
-  searchQuery: string;
-  selectedLabels: string[];
-  selectedParamTypes: string[];
-  page: number;
-  advancedSearch?: boolean;
-  // Study Profile V2 filters
-  onlyAnalyzable?: boolean;
-  onlyComparable?: boolean;
-  measurementClusters?: string[];
-}
 
 interface RpcSearchResult {
   nct_id: string;
@@ -75,168 +12,203 @@ interface RpcSearchResult {
   rank: number;
 }
 
-// Normalize RPC results to StudyListItem structure
-function normalizeRpcResult(item: RpcSearchResult): StudyListItem {
-  return {
-    nct_id: item.nct_id,
-    brief_title: item.brief_title,
-    official_title: item.official_title,
-    semantic_labels: null,
-    n_semantic_labels: null,
-    n_total_mentions: null,
-    // V2 fields - RPC doesn't return these yet
-    brief_summary: null,
-    has_numeric_results: null,
-    has_group_comparison: null,
-    measurement_clusters: null,
-    n_numeric_outcomes: null,
-    n_groups: null,
-    n_comparisons: null,
-  };
+// ─── RPC helper ───────────────────────────────────────────────
+/** Call the existing search_studies_advanced RPC with a single query term. */
+async function callRpc(q: string, limit = 500): Promise<RpcSearchResult[]> {
+  const { data, error } = await supabaseExternal.rpc("search_studies_advanced", {
+    q: q.trim(),
+    limit_n: limit,
+  });
+  if (error) throw error;
+  return (data as RpcSearchResult[]) || [];
 }
 
+// ─── Set operations ───────────────────────────────────────────
+function unionSets(...sets: Set<string>[]): Set<string> {
+  const result = new Set<string>();
+  for (const s of sets) for (const v of s) result.add(v);
+  return result;
+}
+
+function intersectSets(a: Set<string>, b: Set<string>): Set<string> {
+  const result = new Set<string>();
+  for (const v of a) if (b.has(v)) result.add(v);
+  return result;
+}
+
+// ─── Unified search executor ──────────────────────────────────
 /**
- * Hook to fetch ALL study IDs matching the current query (for "Select All" functionality).
- * Returns just the nct_id array, not the full study objects.
+ * Execute the unified search using the existing RPC.
+ *
+ * Strategy:
+ * - base query → single RPC call (AND between tokens, handled by RPC)
+ * - group terms → parallel RPC calls per term, union within group (OR)
+ * - combine groups with AND (intersect) or OR (union)
+ * - if base query + groups, intersect base results with group results
+ *
+ * Returns the ordered list of nct_ids and a rank map.
  */
-export function useAllStudyIds({
-  searchQuery,
-  selectedLabels,
-  advancedSearch = false,
-  enabled = false,
-}: {
-  searchQuery: string;
+async function executeUnifiedSearch(
+  search: UnifiedSearchInput
+): Promise<{ nctIds: string[]; rankMap: Map<string, number> }> {
+  const promises: { key: string; promise: Promise<RpcSearchResult[]> }[] = [];
+
+  // Base query
+  if (search.baseQuery.trim()) {
+    promises.push({ key: "base", promise: callRpc(search.baseQuery.trim()) });
+  }
+
+  // Group A terms (each gets its own RPC call)
+  for (const term of search.groupA) {
+    promises.push({ key: `ga:${term}`, promise: callRpc(term) });
+  }
+
+  // Group B terms
+  for (const term of search.groupB) {
+    promises.push({ key: `gb:${term}`, promise: callRpc(term) });
+  }
+
+  // Execute all in parallel
+  const results = await Promise.all(
+    promises.map(async (p) => ({
+      key: p.key,
+      data: await p.promise,
+    }))
+  );
+
+  // Build rank map (best rank wins across all calls)
+  const globalRankMap = new Map<string, number>();
+  for (const { data } of results) {
+    for (const r of data) {
+      const existing = globalRankMap.get(r.nct_id);
+      if (existing === undefined || r.rank > existing) {
+        globalRankMap.set(r.nct_id, r.rank);
+      }
+    }
+  }
+
+  // Build sets
+  const baseResult = results.find((r) => r.key === "base");
+  const baseSet = baseResult
+    ? new Set(baseResult.data.map((r) => r.nct_id))
+    : null;
+
+  // Group A: union of all ga: results
+  const gaResults = results.filter((r) => r.key.startsWith("ga:"));
+  const gaSet =
+    gaResults.length > 0
+      ? unionSets(...gaResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
+      : null;
+
+  // Group B: union of all gb: results
+  const gbResults = results.filter((r) => r.key.startsWith("gb:"));
+  const gbSet =
+    gbResults.length > 0
+      ? unionSets(...gbResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
+      : null;
+
+  // Combine groups
+  let groupsCombined: Set<string> | null = null;
+  if (gaSet && gbSet) {
+    groupsCombined =
+      search.operatorBetweenGroups === "AND"
+        ? intersectSets(gaSet, gbSet)
+        : unionSets(gaSet, gbSet);
+  } else if (gaSet) {
+    groupsCombined = gaSet;
+  } else if (gbSet) {
+    groupsCombined = gbSet;
+  }
+
+  // Combine base + groups
+  let finalSet: Set<string>;
+  if (baseSet && groupsCombined) {
+    finalSet = intersectSets(baseSet, groupsCombined);
+  } else if (baseSet) {
+    finalSet = baseSet;
+  } else if (groupsCombined) {
+    finalSet = groupsCombined;
+  } else {
+    finalSet = new Set();
+  }
+
+  // Sort by rank descending
+  const nctIds = [...finalSet].sort(
+    (a, b) => (globalRankMap.get(b) ?? 0) - (globalRankMap.get(a) ?? 0)
+  );
+
+  return { nctIds, rankMap: globalRankMap };
+}
+
+// ─── Hook params ──────────────────────────────────────────────
+interface UseStudiesParams {
+  search: UnifiedSearchInput;
   selectedLabels: string[];
-  advancedSearch?: boolean;
-  enabled?: boolean;
-}) {
-  return useQuery({
-    queryKey: ["all-study-ids", searchQuery, selectedLabels, advancedSearch],
-    queryFn: async (): Promise<string[]> => {
-      // Advanced search using RPC
-      if (advancedSearch && searchQuery.trim()) {
-        const { data, error } = await supabaseExternal.rpc("search_studies_advanced", {
-          q: searchQuery.trim(),
-          limit_n: 500,
-        });
-
-        if (error) {
-          console.error("Error fetching all study IDs via RPC:", error);
-          throw error;
-        }
-
-        return ((data as RpcSearchResult[]) || []).map((r) => r.nct_id);
-      }
-
-      // Standard query - fetch all IDs (up to 1000)
-      let query = supabaseExternal
-        .from("v_ui_study_list")
-        .select("nct_id")
-        .order("nct_id", { ascending: false })
-        .limit(1000);
-
-      // Text search
-      if (searchQuery.trim()) {
-        const searchTerm = `%${searchQuery.trim()}%`;
-        query = query.or(`brief_title.ilike.${searchTerm},official_title.ilike.${searchTerm}`);
-      }
-
-      // Filter by semantic labels
-      if (selectedLabels.length > 0) {
-        query = query.overlaps("semantic_labels", selectedLabels);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching all study IDs:", error);
-        throw error;
-      }
-
-      return (data || []).map((r) => r.nct_id);
-    },
-    enabled,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
+  selectedParamTypes: string[];
+  page: number;
+  onlyAnalyzable?: boolean;
+  onlyComparable?: boolean;
+  measurementClusters?: string[];
 }
 
 export function useStudies({
-  searchQuery,
+  search,
   selectedLabels,
   selectedParamTypes,
   page,
-  advancedSearch = false,
   onlyAnalyzable = false,
   onlyComparable = false,
   measurementClusters = [],
 }: UseStudiesParams) {
   return useQuery({
-    queryKey: ["studies", searchQuery, selectedLabels, selectedParamTypes, page, advancedSearch, onlyAnalyzable, onlyComparable, measurementClusters],
+    queryKey: [
+      "studies",
+      search.baseQuery,
+      search.groupA,
+      search.groupB,
+      search.operatorBetweenGroups,
+      selectedLabels,
+      selectedParamTypes,
+      page,
+      onlyAnalyzable,
+      onlyComparable,
+      measurementClusters,
+    ],
     queryFn: async () => {
-      // Advanced search using RPC
-      if (advancedSearch && searchQuery.trim()) {
-        const trimmedQuery = searchQuery.trim();
-        console.log("[Advanced Search] Query:", trimmedQuery);
-        
-        // Use the generic search_studies_advanced RPC that supports multi-term queries
-        const { data, error } = await supabaseExternal.rpc("search_studies_advanced", {
-          q: trimmedQuery,
-          limit_n: 500,
-        });
+      const searchActive = isSearchActive(search);
 
-        if (error) {
-          console.error("Error fetching studies via RPC:", error);
-          throw error;
-        }
+      // ── Path A: search active → use RPC then fetch full data ──
+      if (searchActive) {
+        const { nctIds } = await executeUnifiedSearch(search);
 
-        const rpcResults = (data as RpcSearchResult[]) || [];
-        
-        // Get the NCT IDs from RPC results to fetch full study data with V2 fields
-        const nctIds = rpcResults.map(r => r.nct_id);
-        
         if (nctIds.length === 0) {
-          return {
-            studies: [],
-            totalCount: 0,
-            pageSize: PAGE_SIZE,
-            currentPage: page,
-            totalPages: 0,
-          };
+          return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
         }
 
-        // Fetch full study data from v_ui_study_list_v2 for these IDs
+        // Fetch full study data for matched IDs
         let query = supabaseExternal
           .from("v_ui_study_list_v2")
           .select("*")
           .in("nct_id", nctIds);
 
-        // Apply Study Profile V2 filters
-        if (onlyAnalyzable) {
-          query = query.eq("has_numeric_results", true);
-        }
-        if (onlyComparable) {
-          query = query.eq("has_group_comparison", true);
-        }
-        if (measurementClusters.length > 0) {
-          query = query.overlaps("measurement_clusters", measurementClusters);
-        }
+        // Apply post-filters
+        if (onlyAnalyzable) query = query.eq("has_numeric_results", true);
+        if (onlyComparable) query = query.eq("has_group_comparison", true);
+        if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
+        if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
 
         const { data: v2Data, error: v2Error } = await query;
+        if (v2Error) throw v2Error;
 
-        if (v2Error) {
-          console.error("Error fetching V2 study data:", v2Error);
-          throw v2Error;
-        }
+        // Re-order by rank from RPC
+        const rankIndex = new Map(nctIds.map((id, i) => [id, i]));
+        const studies = ((v2Data as StudyListItem[]) || []).sort(
+          (a, b) => (rankIndex.get(a.nct_id) ?? 999) - (rankIndex.get(b.nct_id) ?? 999)
+        );
 
-        // Create a map for ordering by RPC rank
-        const rankMap = new Map(rpcResults.map((r, i) => [r.nct_id, i]));
-        const studies = ((v2Data as StudyListItem[]) || [])
-          .sort((a, b) => (rankMap.get(a.nct_id) ?? 999) - (rankMap.get(b.nct_id) ?? 999));
-
-        // Apply pagination client-side for RPC results
+        // Client-side pagination
         const from = page * PAGE_SIZE;
-        const to = from + PAGE_SIZE;
-        const paginatedStudies = studies.slice(from, to);
+        const paginatedStudies = studies.slice(from, from + PAGE_SIZE);
 
         return {
           studies: paginatedStudies,
@@ -247,47 +219,22 @@ export function useStudies({
         };
       }
 
-      // Standard query - using v_ui_study_list_v2 for full dataset with Study Profile fields
+      // ── Path B: no search → direct query on view ──
       let query = supabaseExternal
         .from("v_ui_study_list_v2")
         .select("*", { count: "exact" })
         .order("nct_id", { ascending: false });
 
-      // Study Profile V2 filters
-      if (onlyAnalyzable) {
-        query = query.eq("has_numeric_results", true);
-      }
-      if (onlyComparable) {
-        query = query.eq("has_group_comparison", true);
-      }
-      if (measurementClusters.length > 0) {
-        query = query.overlaps("measurement_clusters", measurementClusters);
-      }
+      if (onlyAnalyzable) query = query.eq("has_numeric_results", true);
+      if (onlyComparable) query = query.eq("has_group_comparison", true);
+      if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
+      if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
 
-      // Text search on brief_title and official_title
-      if (searchQuery.trim()) {
-        const searchTerm = `%${searchQuery.trim()}%`;
-        query = query.or(`brief_title.ilike.${searchTerm},official_title.ilike.${searchTerm}`);
-      }
-
-      // Filter by semantic labels (contains any of the selected)
-      if (selectedLabels.length > 0) {
-        query = query.overlaps("semantic_labels", selectedLabels);
-      }
-
-      // Note: param_type_set filter removed - not available in v_ui_study_list
-
-      // Pagination
       const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      query = query.range(from, to);
+      query = query.range(from, from + PAGE_SIZE - 1);
 
       const { data, error, count } = await query;
-
-      if (error) {
-        console.error("Error fetching studies:", error);
-        throw error;
-      }
+      if (error) throw error;
 
       return {
         studies: (data as StudyListItem[]) || [],
@@ -300,6 +247,47 @@ export function useStudies({
   });
 }
 
+// ─── All study IDs (for "Select All") ──────────────────────────
+export function useAllStudyIds({
+  search,
+  selectedLabels,
+  enabled = false,
+}: {
+  search: UnifiedSearchInput;
+  selectedLabels: string[];
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ["all-study-ids", search.baseQuery, search.groupA, search.groupB, search.operatorBetweenGroups, selectedLabels],
+    queryFn: async (): Promise<string[]> => {
+      const searchActive = isSearchActive(search);
+
+      if (searchActive) {
+        const { nctIds } = await executeUnifiedSearch(search);
+        return nctIds;
+      }
+
+      // No search → fetch all IDs from view
+      let query = supabaseExternal
+        .from("v_ui_study_list_v2")
+        .select("nct_id")
+        .order("nct_id", { ascending: false })
+        .limit(1000);
+
+      if (selectedLabels.length > 0) {
+        query = query.overlaps("semantic_labels", selectedLabels);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map((r) => r.nct_id);
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// ─── Facet hooks (unchanged) ──────────────────────────────────
 export function useSemanticLabelsFacet() {
   return useQuery({
     queryKey: ["facet-semantic-labels"],
@@ -308,12 +296,7 @@ export function useSemanticLabelsFacet() {
         .from("v_ui_facet_semantic_labels")
         .select("*")
         .order("n_studies", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching semantic labels facet:", error);
-        throw error;
-      }
-
+      if (error) throw error;
       return (data as FacetSemanticLabel[]) || [];
     },
   });
@@ -327,12 +310,7 @@ export function useParamTypeFacet() {
         .from("v_ui_facet_param_type")
         .select("*")
         .order("n_studies", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching param type facet:", error);
-        throw error;
-      }
-
+      if (error) throw error;
       return (data as FacetParamType[]) || [];
     },
   });

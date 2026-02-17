@@ -3,6 +3,7 @@ import { StudyListItem } from '@/types/database';
 import { StudyCard } from './StudyCard';
 import { FileSearch, Loader2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { UnifiedSearchInput, searchToParams } from '@/types/search';
 
 interface StudyListProps {
   studies: StudyListItem[];
@@ -11,10 +12,9 @@ interface StudyListProps {
   totalPages: number;
   isLoading: boolean;
   onPageChange: (page: number) => void;
-  searchQuery?: string;
+  search?: UnifiedSearchInput;
   selectedLabels?: string[];
   selectedParamTypes?: string[];
-  advancedSearch?: boolean;
 }
 
 export function StudyList({
@@ -24,19 +24,16 @@ export function StudyList({
   totalPages,
   isLoading,
   onPageChange,
-  searchQuery = '',
+  search,
   selectedLabels = [],
   selectedParamTypes = [],
-  advancedSearch = false,
 }: StudyListProps) {
   const navigate = useNavigate();
 
   const handleViewDataset = () => {
-    const params = new URLSearchParams();
-    if (searchQuery) params.set('q', searchQuery);
+    const params = search ? searchToParams(search) : new URLSearchParams();
     if (selectedLabels.length > 0) params.set('labels', selectedLabels.join(','));
     if (selectedParamTypes.length > 0) params.set('paramTypes', selectedParamTypes.join(','));
-    if (advancedSearch) params.set('advanced', '1');
     
     const queryString = params.toString();
     navigate(queryString ? `/dataset?${queryString}` : '/dataset');
@@ -93,7 +90,6 @@ export function StudyList({
         ))}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-6">
           <Button
