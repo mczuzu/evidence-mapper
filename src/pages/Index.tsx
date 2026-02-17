@@ -3,9 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { FilterSidebar } from '@/components/FilterSidebar';
 import { UnifiedSearch } from '@/components/UnifiedSearch';
+import { MeshConditionSearch } from '@/components/MeshConditionSearch';
 import { StudyList } from '@/components/StudyList';
 import { useStudies } from '@/hooks/useStudies';
-import { UnifiedSearchInput, paramsToSearch } from '@/types/search';
+import { UnifiedSearchInput, paramsToSearch, parseMeshFromParams } from '@/types/search';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -19,12 +20,16 @@ const Index = () => {
   const [selectedParamTypes, setSelectedParamTypes] = useState<string[]>(
     searchParams.get('paramTypes')?.split(',').filter(Boolean) || []
   );
+  const [selectedMeshCondition, setSelectedMeshCondition] = useState<string | null>(
+    parseMeshFromParams(searchParams)
+  );
   const [page, setPage] = useState(0);
 
   const { data, isLoading, error } = useStudies({
     search,
     selectedLabels,
     selectedParamTypes,
+    selectedMeshCondition,
     page,
   });
 
@@ -43,6 +48,11 @@ const Index = () => {
     setPage(0);
   };
 
+  const handleMeshChange = (mesh: string | null) => {
+    setSelectedMeshCondition(mesh);
+    setPage(0);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -58,6 +68,7 @@ const Index = () => {
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto space-y-6">
             <UnifiedSearch value={search} onChange={handleSearchChange} />
+            <MeshConditionSearch value={selectedMeshCondition} onChange={handleMeshChange} />
 
             {error ? (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
