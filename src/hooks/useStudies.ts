@@ -145,6 +145,7 @@ interface UseStudiesParams {
   search: UnifiedSearchInput;
   selectedLabels: string[];
   selectedParamTypes: string[];
+  selectedMeshCondition?: string | null;
   page: number;
   onlyAnalyzable?: boolean;
   onlyComparable?: boolean;
@@ -155,6 +156,7 @@ export function useStudies({
   search,
   selectedLabels,
   selectedParamTypes,
+  selectedMeshCondition,
   page,
   onlyAnalyzable = false,
   onlyComparable = false,
@@ -169,6 +171,7 @@ export function useStudies({
       search.operatorBetweenGroups,
       selectedLabels,
       selectedParamTypes,
+      selectedMeshCondition,
       page,
       onlyAnalyzable,
       onlyComparable,
@@ -196,6 +199,7 @@ export function useStudies({
         if (onlyComparable) query = query.eq("has_group_comparison", true);
         if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
         if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
+        if (selectedMeshCondition) query = query.eq("mesh_term", selectedMeshCondition);
 
         const { data: v2Data, error: v2Error } = await query;
         if (v2Error) throw v2Error;
@@ -229,6 +233,7 @@ export function useStudies({
       if (onlyComparable) query = query.eq("has_group_comparison", true);
       if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
       if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
+      if (selectedMeshCondition) query = query.eq("mesh_term", selectedMeshCondition);
 
       const from = page * PAGE_SIZE;
       query = query.range(from, from + PAGE_SIZE - 1);
