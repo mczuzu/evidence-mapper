@@ -54,29 +54,34 @@ Deno.serve(async (req) => {
 
     console.log(`[analyze-direction] Received ${nctIds.length} NCT IDs to analyze`);
 
-    // Fetch study data from v_ui_study_list_v2 (Study Profile view)
-    // Batch queries to avoid hitting limits
-    const MAX_IDS_PER_QUERY = 15;
-    let allStudies: any[] = [];
-    
-    for (let i = 0; i < nctIds.length; i += MAX_IDS_PER_QUERY) {
-      const batchIds = nctIds.slice(i, i + MAX_IDS_PER_QUERY);
-      const { data: batchStudies, error: batchError } = await supabaseExternal
-        .from("v_ui_study_list_v2")
-        .select("nct_id, brief_title, brief_summary, semantic_labels, has_numeric_results, has_group_comparison")
-        .in("nct_id", batchIds);
-      
-      if (batchError) {
-        console.error(`Error fetching batch ${i / MAX_IDS_PER_QUERY + 1}:`, batchError);
-        return new Response(JSON.stringify({ error: "Failed to fetch study data", details: batchError.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      allStudies = allStudies.concat(batchStudies ?? []);
+    // Fetch study data in small parallel batches to avoid statement timeout
+    const BATCH_SIZE = 5;
+    const batches: string[][] = [];
+    for (let i = 0; i < nctIds.length; i += BATCH_SIZE) {
+      batches.push(nctIds.slice(i, i + BATCH_SIZE));
     }
-    
+
+    console.log(`[analyze-direction] Fetching ${nctIds.length} IDs in ${batches.length} parallel batches of ${BATCH_SIZE}`);
+
+    const batchResults = await Promise.allSettled(
+      batches.map((batchIds, idx) =>
+        supabaseExternal
+          .from("v_ui_study_list_v2")
+          .select("nct_id, brief_title, brief_summary, semantic_labels, has_numeric_results, has_group_comparison")
+          .in("nct_id", batchIds)
+          .then(({ data, error }) => {
+            if (error) {
+              console.error(`[analyze-direction] Batch ${idx + 1} failed:`, error.message);
+              return [];
+            }
+            return data ?? [];
+          })
+      )
+    );
+
+    const allStudies = batchResults.flatMap((r) =>
+      r.status === "fulfilled" ? r.value : []
+    );
     const studies = allStudies;
     console.log(`[analyze-direction] Fetched ${studies.length} studies from v_ui_study_list_v2`);
 
