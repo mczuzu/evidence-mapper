@@ -64,6 +64,12 @@ export function StudyList({
 
   return (
     <div className="space-y-4">
+      {totalCount === 500 && (
+        <div className="rounded-md border border-border bg-muted/50 px-4 py-2 text-xs text-muted-foreground">
+          Showing top 500 results. Refine your search to narrow down.
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Showing{' '}

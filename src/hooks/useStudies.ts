@@ -15,7 +15,7 @@ interface RpcSearchResult {
 // ─── RPC helper ───────────────────────────────────────────────
 /** Call the existing search_studies_advanced RPC with a single query term. */
 async function callRpc(q: string, limit = 500): Promise<RpcSearchResult[]> {
-  const { data, error } = await supabaseExternal.rpc("search_studies_advanced", {
+  const { data, error } = await supabaseExternal.rpc("search_studies_advanced_prefix", {
     q: q.trim(),
     limit_n: limit,
   });

@@ -173,6 +173,9 @@ export function UnifiedSearch({ value, onChange }: UnifiedSearchProps) {
                 placeholder="e.g. dialysis, hemodialysis"
                 colorClass="bg-primary/10 text-primary"
               />
+              <p className="text-[11px] text-muted-foreground/70 leading-snug">
+                Tip: If results look narrow, try synonyms/variants (e.g., US/UK spelling). You can generate synonyms with an external LLM and paste them here separated by commas.
+              </p>
             </div>
 
             {/* Operator between groups */}
@@ -222,6 +225,9 @@ export function UnifiedSearch({ value, onChange }: UnifiedSearchProps) {
                 placeholder="e.g. muscle, sarcopenia"
                 colorClass="bg-accent text-accent-foreground"
               />
+              <p className="text-[11px] text-muted-foreground/70 leading-snug">
+                Tip: If results look narrow, try synonyms/variants (e.g., US/UK spelling). You can generate synonyms with an external LLM and paste them here separated by commas.
+              </p>
             </div>
 
             {/* Logic preview */}
