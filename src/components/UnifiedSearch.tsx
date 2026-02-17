@@ -18,12 +18,14 @@ interface UnifiedSearchProps {
 function ChipInput({
   chips,
   onAdd,
+  onAddMany,
   onRemove,
   placeholder,
   colorClass,
 }: {
   chips: string[];
   onAdd: (term: string) => void;
+  onAddMany: (terms: string[]) => void;
   onRemove: (index: number) => void;
   placeholder: string;
   colorClass: string;
@@ -77,8 +79,8 @@ function ChipInput({
             const terms = pasted
               .split(/[,;\n]/)
               .map((t) => t.trim())
-              .filter((t) => t.length > 0 && !chips.includes(t));
-            terms.forEach((t) => onAdd(t));
+            .filter((t) => t.length > 0 && !chips.includes(t));
+            if (terms.length > 0) onAddMany(terms);
           }
         }}
         placeholder={chips.length === 0 ? placeholder : "Add term…"}
@@ -176,6 +178,9 @@ export function UnifiedSearch({ value, onChange }: UnifiedSearchProps) {
                 onAdd={(term) =>
                   update({ groupA: [...value.groupA, term] })
                 }
+                onAddMany={(terms) =>
+                  update({ groupA: [...value.groupA, ...terms] })
+                }
                 onRemove={(i) =>
                   update({
                     groupA: value.groupA.filter((_, idx) => idx !== i),
@@ -227,6 +232,9 @@ export function UnifiedSearch({ value, onChange }: UnifiedSearchProps) {
                 chips={value.groupB}
                 onAdd={(term) =>
                   update({ groupB: [...value.groupB, term] })
+                }
+                onAddMany={(terms) =>
+                  update({ groupB: [...value.groupB, ...terms] })
                 }
                 onRemove={(i) =>
                   update({
