@@ -261,22 +261,43 @@ export function UnifiedSearch({ value, onChange }: UnifiedSearchProps) {
               </div>
             )}
 
-            {/* Clear groups */}
+            {/* Clear buttons */}
             {hasGroups && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() =>
-                  update({
-                    groupA: [],
-                    groupB: [],
-                    operatorBetweenGroups: "AND",
-                  })
-                }
-              >
-                Clear groups
-              </Button>
+              <div className="flex items-center gap-2 pt-1">
+                {value.groupA.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => update({ groupA: [] })}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Borrar Grupo A
+                  </Button>
+                )}
+                {value.groupB.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => update({ groupB: [] })}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Borrar Grupo B
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 text-destructive hover:text-destructive"
+                  onClick={() =>
+                    update({ groupA: [], groupB: [], operatorBetweenGroups: "AND" })
+                  }
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Borrar todo
+                </Button>
+              </div>
             )}
           </div>
         </CollapsibleContent>
