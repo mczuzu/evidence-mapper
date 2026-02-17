@@ -67,8 +67,8 @@ const Index = () => {
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto space-y-6">
-            <UnifiedSearch value={search} onChange={handleSearchChange} />
             <MeshConditionSearch value={selectedMeshCondition} onChange={handleMeshChange} />
+            <UnifiedSearch value={search} onChange={handleSearchChange} />
 
             {error ? (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
