@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useStudies, useAllStudyIds } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
-import { parseFiltersFromQueryParams, buildQueryParamsFromFilters } from "@/lib/filter-utils";
+import { paramsToSearch, searchToParams } from "@/types/search";
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseExternalPublic } from "@/lib/supabase-external";
 import { toast } from "sonner";
@@ -33,23 +33,21 @@ const DatasetPage = () => {
   const specificIds = useMemo(() => idsParam?.split(",").filter(Boolean) || [], [idsParam]);
   const isUrlIdsMode = specificIds.length > 0;
 
-  // Check if we're in advanced search mode
-  const isAdvanced = searchParams.get("advanced") === "1";
-
-  // Parse filters from query params
-  const { searchQuery, labels, paramTypes } = useMemo(() => parseFiltersFromQueryParams(searchParams), [searchParams]);
+  // Parse unified search from URL
+  const search = useMemo(() => paramsToSearch(searchParams), [searchParams]);
+  const labels = useMemo(() => searchParams.get('labels')?.split(',').filter(Boolean) || [], [searchParams]);
+  const paramTypes = useMemo(() => searchParams.get('paramTypes')?.split(',').filter(Boolean) || [], [searchParams]);
 
   // Convert filter values to booleans for query
   const onlyAnalyzable = filterAnalyzable === "yes";
   const onlyComparable = filterComparable === "yes";
 
-  // Use the unified useStudies hook for both normal and advanced modes
+  // Use the unified useStudies hook
   const studiesQuery = useStudies({
-    searchQuery,
+    search,
     selectedLabels: labels,
     selectedParamTypes: paramTypes,
     page,
-    advancedSearch: isAdvanced,
     onlyAnalyzable,
     onlyComparable,
   });
@@ -60,9 +58,8 @@ const DatasetPage = () => {
   // Hook to fetch ALL study IDs for "Select All" functionality
   const [selectAllRequested, setSelectAllRequested] = useState(false);
   const allIdsQuery = useAllStudyIds({
-    searchQuery,
+    search,
     selectedLabels: labels,
-    advancedSearch: isAdvanced,
     enabled: selectAllRequested && !isUrlIdsMode,
   });
 
@@ -82,20 +79,18 @@ const DatasetPage = () => {
   // Reset page when filters change
   useEffect(() => {
     setPage(0);
-  }, [filterAnalyzable, filterComparable, searchQuery, labels.join(",")]);
+  }, [filterAnalyzable, filterComparable, search.baseQuery, search.groupA, search.groupB, labels.join(",")]);
 
   // Handle navigation back with preserved query params
   const handleBack = () => {
     if (isUrlIdsMode) {
       navigate(-1);
     } else {
-      let queryString = buildQueryParamsFromFilters(searchQuery, labels, paramTypes);
-      if (isAdvanced && queryString) {
-        queryString += '&advanced=1';
-      } else if (isAdvanced) {
-        queryString = 'advanced=1';
-      }
-      navigate(queryString ? `/?${queryString}` : "/");
+      const params = searchToParams(search);
+      if (labels.length > 0) params.set('labels', labels.join(','));
+      if (paramTypes.length > 0) params.set('paramTypes', paramTypes.join(','));
+      const qs = params.toString();
+      navigate(qs ? `/?${qs}` : "/");
     }
   };
 
@@ -303,9 +298,7 @@ const DatasetPage = () => {
               <h1 className="font-serif text-xl font-bold text-foreground">
                 {isUrlIdsMode
                   ? `Estudios seleccionados: ${specificIds.length}`
-                  : isAdvanced
-                    ? `Búsqueda expandida: ${totalCount.toLocaleString()} estudios`
-                    : `Dataset: ${totalCount.toLocaleString()} estudios`}
+                  : `Dataset: ${totalCount.toLocaleString()} estudios`}
               </h1>
             </div>
 
@@ -416,15 +409,13 @@ const DatasetPage = () => {
             </div>
           </div>
 
-          {/* Banner for IDs mode or Advanced mode */}
-          {(isUrlIdsMode || isAdvanced) && (
+          {/* Banner for IDs mode */}
+          {isUrlIdsMode && (
             <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
               <div className="flex items-center gap-2 text-primary">
                 <Filter className="h-4 w-4" />
                 <span className="text-sm font-medium">
-                  {isUrlIdsMode 
-                    ? "Vista filtrada por estudios relacionados" 
-                    : "Búsqueda expandida (título + resumen + condiciones)"}
+                  Vista filtrada por estudios relacionados
                 </span>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="gap-2">
