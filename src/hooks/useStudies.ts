@@ -194,7 +194,19 @@ export function useStudies({
 
       // ── Path A: search active → use RPC then fetch full data ──
       if (searchActive) {
-        const { nctIds } = await executeUnifiedSearch(search);
+        // Run search + optional mesh filter in parallel
+        const [searchResult, meshNctIds] = await Promise.all([
+          executeUnifiedSearch(search),
+          selectedMeshCondition ? fetchNctIdsForMesh(selectedMeshCondition) : Promise.resolve(null),
+        ]);
+
+        let nctIds = searchResult.nctIds;
+
+        // Intersect with mesh filter if active
+        if (meshNctIds !== null) {
+          const meshSet = new Set(meshNctIds);
+          nctIds = nctIds.filter((id) => meshSet.has(id));
+        }
 
         if (nctIds.length === 0) {
           return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
@@ -211,7 +223,6 @@ export function useStudies({
         if (onlyComparable) query = query.eq("has_group_comparison", true);
         if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
         if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
-        if (selectedMeshCondition) query = query.eq("mesh_term", selectedMeshCondition);
 
         const { data: v2Data, error: v2Error } = await query;
         if (v2Error) throw v2Error;
