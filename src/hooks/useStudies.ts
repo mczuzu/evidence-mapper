@@ -23,6 +23,33 @@ async function callRpc(q: string, limit = 500): Promise<RpcSearchResult[]> {
   return (data as RpcSearchResult[]) || [];
 }
 
+/**
+ * Call the mesh-aware RPC so SQL applies keyword search + mesh nct_id filter together.
+ * Falls back to client filtering only if the RPC is not available.
+ */
+async function callRpcWithMesh(
+  q: string,
+  meshNctIds: string[],
+  limit = 5000
+): Promise<RpcSearchResult[]> {
+  const { data, error } = await supabaseExternal.rpc("search_studies_with_mesh", {
+    q: q.trim(),
+    mesh_nct_ids: meshNctIds,
+    limit_n: limit,
+  });
+
+  if (!error) return (data as RpcSearchResult[]) || [];
+
+  // Graceful fallback while RPC is rolled out in the DB
+  if (error.message?.toLowerCase().includes("search_studies_with_mesh")) {
+    const fallback = await callRpc(q, limit);
+    const meshSet = new Set(meshNctIds);
+    return fallback.filter((r) => meshSet.has(r.nct_id));
+  }
+
+  throw error;
+}
+
 // ─── Set operations ───────────────────────────────────────────
 function unionSets(...sets: Set<string>[]): Set<string> {
   const result = new Set<string>();
