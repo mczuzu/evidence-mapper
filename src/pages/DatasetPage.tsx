@@ -62,6 +62,7 @@ const DatasetPage = () => {
   const allIdsQuery = useAllStudyIds({
     search,
     selectedLabels: labels,
+    selectedMeshCondition: meshCondition,
     enabled: selectAllRequested && !isUrlIdsMode,
   });
 
