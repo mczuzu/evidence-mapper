@@ -247,6 +247,42 @@ export function useStudies({
       }
 
       // ── Path B: no search → direct query on view ──
+      // If mesh condition is selected, first get matching nct_ids
+      if (selectedMeshCondition) {
+        const meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
+        if (meshNctIds.length === 0) {
+          return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
+        }
+
+        let query = supabaseExternal
+          .from("v_ui_study_list_v2")
+          .select("*")
+          .in("nct_id", meshNctIds);
+
+        if (onlyAnalyzable) query = query.eq("has_numeric_results", true);
+        if (onlyComparable) query = query.eq("has_group_comparison", true);
+        if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
+        if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        const studies = ((data as StudyListItem[]) || []).sort(
+          (a, b) => b.nct_id.localeCompare(a.nct_id)
+        );
+
+        const from = page * PAGE_SIZE;
+        const paginatedStudies = studies.slice(from, from + PAGE_SIZE);
+
+        return {
+          studies: paginatedStudies,
+          totalCount: studies.length,
+          pageSize: PAGE_SIZE,
+          currentPage: page,
+          totalPages: Math.ceil(studies.length / PAGE_SIZE),
+        };
+      }
+
       let query = supabaseExternal
         .from("v_ui_study_list_v2")
         .select("*", { count: "exact" })
@@ -256,7 +292,6 @@ export function useStudies({
       if (onlyComparable) query = query.eq("has_group_comparison", true);
       if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
       if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
-      if (selectedMeshCondition) query = query.eq("mesh_term", selectedMeshCondition);
 
       const from = page * PAGE_SIZE;
       query = query.range(from, from + PAGE_SIZE - 1);
