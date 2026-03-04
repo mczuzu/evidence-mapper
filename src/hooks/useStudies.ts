@@ -167,6 +167,90 @@ async function executeUnifiedSearch(
   return { nctIds, rankMap: globalRankMap };
 }
 
+/**
+ * Same boolean search flow as executeUnifiedSearch, but each term is pre-filtered
+ * in SQL by the provided MeSH nct_id set.
+ */
+async function executeUnifiedSearchWithMesh(
+  search: UnifiedSearchInput,
+  meshNctIds: string[]
+): Promise<{ nctIds: string[]; rankMap: Map<string, number> }> {
+  const promises: { key: string; promise: Promise<RpcSearchResult[]> }[] = [];
+
+  if (search.baseQuery.trim()) {
+    promises.push({ key: "base", promise: callRpcWithMesh(search.baseQuery.trim(), meshNctIds) });
+  }
+
+  for (const term of search.groupA) {
+    promises.push({ key: `ga:${term}`, promise: callRpcWithMesh(term, meshNctIds) });
+  }
+
+  for (const term of search.groupB) {
+    promises.push({ key: `gb:${term}`, promise: callRpcWithMesh(term, meshNctIds) });
+  }
+
+  const results = await Promise.all(
+    promises.map(async (p) => ({
+      key: p.key,
+      data: await p.promise,
+    }))
+  );
+
+  const globalRankMap = new Map<string, number>();
+  for (const { data } of results) {
+    for (const r of data) {
+      const existing = globalRankMap.get(r.nct_id);
+      if (existing === undefined || r.rank > existing) {
+        globalRankMap.set(r.nct_id, r.rank);
+      }
+    }
+  }
+
+  const baseResult = results.find((r) => r.key === "base");
+  const baseSet = baseResult ? new Set(baseResult.data.map((r) => r.nct_id)) : null;
+
+  const gaResults = results.filter((r) => r.key.startsWith("ga:"));
+  const gaSet =
+    gaResults.length > 0
+      ? unionSets(...gaResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
+      : null;
+
+  const gbResults = results.filter((r) => r.key.startsWith("gb:"));
+  const gbSet =
+    gbResults.length > 0
+      ? unionSets(...gbResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
+      : null;
+
+  let groupsCombined: Set<string> | null = null;
+  if (gaSet && gbSet) {
+    groupsCombined =
+      search.operatorBetweenGroups === "AND"
+        ? intersectSets(gaSet, gbSet)
+        : unionSets(gaSet, gbSet);
+  } else if (gaSet) {
+    groupsCombined = gaSet;
+  } else if (gbSet) {
+    groupsCombined = gbSet;
+  }
+
+  let finalSet: Set<string>;
+  if (baseSet && groupsCombined) {
+    finalSet = intersectSets(baseSet, groupsCombined);
+  } else if (baseSet) {
+    finalSet = baseSet;
+  } else if (groupsCombined) {
+    finalSet = groupsCombined;
+  } else {
+    finalSet = new Set();
+  }
+
+  const nctIds = [...finalSet].sort(
+    (a, b) => (globalRankMap.get(b) ?? 0) - (globalRankMap.get(a) ?? 0)
+  );
+
+  return { nctIds, rankMap: globalRankMap };
+}
+
 // ─── MeSH condition helper ────────────────────────────────────
 /** Get nct_ids matching a MeSH condition from browse_conditions table */
 async function fetchNctIdsForMesh(meshTerm: string): Promise<string[]> {
