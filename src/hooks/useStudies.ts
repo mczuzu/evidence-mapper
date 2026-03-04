@@ -252,7 +252,7 @@ async function executeUnifiedSearchWithMesh(
 }
 
 // ─── MeSH condition helper ────────────────────────────────────
-/** Get nct_ids matching a MeSH condition from browse_conditions table */
+/** Get nct_ids matching a MeSH condition from mesh_condition table */
 async function fetchNctIdsForMesh(meshTerm: string): Promise<string[]> {
   const { data, error } = await supabaseExternal
     .from("mesh_condition")
