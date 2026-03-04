@@ -178,8 +178,20 @@ const DatasetPage = () => {
     setAnalysisError(null);
 
     try {
+      // Build search_meta from active filters
+      const activeKeywords = [
+        ...search.groupA,
+        ...search.groupB,
+        ...(search.baseQuery.trim() ? [search.baseQuery.trim()] : []),
+      ].filter(Boolean);
+
+      const searchMeta: { mesh_term: string | null; keywords: string[] } = {
+        mesh_term: meshCondition,
+        keywords: activeKeywords,
+      };
+
       // Build request body
-      const requestBody: { nct_ids: string[]; context?: AnalysisContext } = { nct_ids: nctIds };
+      const requestBody: { nct_ids: string[]; context?: AnalysisContext; search_meta?: typeof searchMeta } = { nct_ids: nctIds, search_meta: searchMeta };
       
       // Only include context if product_idea is provided
       if (context?.product_idea && context.product_idea.trim().length > 0) {
