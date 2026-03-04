@@ -10,8 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useStudies, useAllStudyIds } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
 import { paramsToSearch, searchToParams } from "@/types/search";
-import { supabase } from "@/integrations/supabase/client";
-import { supabaseExternalPublic } from "@/lib/supabase-external";
+import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_KEY } from "@/lib/supabase-external";
 import { toast } from "sonner";
 import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
 
