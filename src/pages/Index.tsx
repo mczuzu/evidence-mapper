@@ -87,6 +87,7 @@ const Index = () => {
                 search={search}
                 selectedLabels={selectedLabels}
                 selectedParamTypes={selectedParamTypes}
+                selectedMeshCondition={selectedMeshCondition}
               />
             )}
           </div>
