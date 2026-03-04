@@ -197,13 +197,22 @@ const DatasetPage = () => {
         requestBody.context = context;
       }
 
-      // Call analyze-direction (Lovable Cloud backend function)
-      const { data: result, error: fnError } = await supabase.functions.invoke("analyze-direction", {
-        body: requestBody,
+      // Call analyze-direction on external Supabase
+      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/analyze-direction`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          apikey: EXTERNAL_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       });
 
-      if (fnError) {
-        const errorDetails = fnError.message || "Analysis failed";
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errorDetails = result?.error || result?.message || `HTTP ${response.status}`;
         throw { message: "Analysis failed", details: errorDetails };
       }
 
