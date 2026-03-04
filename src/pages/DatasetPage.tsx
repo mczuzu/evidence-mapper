@@ -240,9 +240,12 @@ const DatasetPage = () => {
         : [];
 
       const isV3 = result.schema === "v3";
+      const isS3 = result.schema_version === "S3";
       const available: string[] = isV3
         ? (Array.isArray(result.available) ? result.available : [])
-        : Object.keys(result.found_paths && typeof result.found_paths === "object" ? result.found_paths : {});
+        : isS3
+          ? (Array.isArray(result.study_index) ? result.study_index.map((s: any) => s.nct_id) : nctIds)
+          : Object.keys(result.found_paths && typeof result.found_paths === "object" ? result.found_paths : {});
 
       if (available.length === 0) {
         toast.warning(`No se encontraron datos para los ${missing.length || nctIds.length} estudios seleccionados.`);
