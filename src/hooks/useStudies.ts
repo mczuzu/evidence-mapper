@@ -427,28 +427,45 @@ export function useStudies({
 export function useAllStudyIds({
   search,
   selectedLabels,
+  selectedMeshCondition,
   enabled = false,
 }: {
   search: UnifiedSearchInput;
   selectedLabels: string[];
+  selectedMeshCondition?: string | null;
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: ["all-study-ids", search.baseQuery, search.groupA, search.groupB, search.operatorBetweenGroups, selectedLabels],
+    queryKey: ["all-study-ids", search.baseQuery, search.groupA, search.groupB, search.operatorBetweenGroups, selectedLabels, selectedMeshCondition],
     queryFn: async (): Promise<string[]> => {
       const searchActive = isSearchActive(search);
 
+      // Get MeSH nct_ids if a condition is selected
+      let meshNctIds: string[] | null = null;
+      if (selectedMeshCondition) {
+        meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
+        if (meshNctIds.length === 0) return [];
+      }
+
       if (searchActive) {
+        if (meshNctIds) {
+          const { nctIds } = await executeUnifiedSearchWithMesh(search, meshNctIds);
+          return nctIds;
+        }
         const { nctIds } = await executeUnifiedSearch(search);
         return nctIds;
       }
 
-      // No search → fetch all IDs from view
+      // No search → fetch IDs from view, optionally filtered by MeSH
       let query = supabaseExternal
         .from("v_ui_study_list_v2")
         .select("nct_id")
         .order("nct_id", { ascending: false })
         .limit(1000);
+
+      if (meshNctIds) {
+        query = query.in("nct_id", meshNctIds);
+      }
 
       if (selectedLabels.length > 0) {
         query = query.overlaps("semantic_labels", selectedLabels);
