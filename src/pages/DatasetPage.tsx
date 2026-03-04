@@ -37,6 +37,7 @@ const DatasetPage = () => {
   const search = useMemo(() => paramsToSearch(searchParams), [searchParams]);
   const labels = useMemo(() => searchParams.get('labels')?.split(',').filter(Boolean) || [], [searchParams]);
   const paramTypes = useMemo(() => searchParams.get('paramTypes')?.split(',').filter(Boolean) || [], [searchParams]);
+  const meshCondition = useMemo(() => searchParams.get('mesh') || null, [searchParams]);
 
   // Convert filter values to booleans for query
   const onlyAnalyzable = filterAnalyzable === "yes";
@@ -47,6 +48,7 @@ const DatasetPage = () => {
     search,
     selectedLabels: labels,
     selectedParamTypes: paramTypes,
+    selectedMeshCondition: meshCondition,
     page,
     onlyAnalyzable,
     onlyComparable,
