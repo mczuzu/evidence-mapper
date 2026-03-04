@@ -10,8 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useStudies, useAllStudyIds } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
 import { paramsToSearch, searchToParams } from "@/types/search";
-import { supabase } from "@/integrations/supabase/client";
-import { supabaseExternalPublic } from "@/lib/supabase-external";
+import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_KEY } from "@/lib/supabase-external";
 import { toast } from "sonner";
 import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
 
@@ -198,13 +197,22 @@ const DatasetPage = () => {
         requestBody.context = context;
       }
 
-      // Call analyze-direction (Lovable Cloud backend function)
-      const { data: result, error: fnError } = await supabase.functions.invoke("analyze-direction", {
-        body: requestBody,
+      // Call analyze-direction on external Supabase
+      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/analyze-direction`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          apikey: EXTERNAL_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       });
 
-      if (fnError) {
-        const errorDetails = fnError.message || "Analysis failed";
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errorDetails = result?.error || result?.message || `HTTP ${response.status}`;
         throw { message: "Analysis failed", details: errorDetails };
       }
 
