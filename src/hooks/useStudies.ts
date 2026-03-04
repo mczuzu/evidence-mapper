@@ -144,7 +144,7 @@ async function executeUnifiedSearch(
 /** Get nct_ids matching a MeSH condition from browse_conditions table */
 async function fetchNctIdsForMesh(meshTerm: string): Promise<string[]> {
   const { data, error } = await supabaseExternal
-    .from("browse_conditions")
+    .from("mesh_condition")
     .select("nct_id")
     .eq("mesh_term", meshTerm)
     .limit(5000);
