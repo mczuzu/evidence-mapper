@@ -305,18 +305,20 @@ export function useStudies({
 
       // ── Path A: search active → use RPC then fetch full data ──
       if (searchActive) {
-        // Run search + optional mesh filter in parallel
-        const [searchResult, meshNctIds] = await Promise.all([
-          executeUnifiedSearch(search),
-          selectedMeshCondition ? fetchNctIdsForMesh(selectedMeshCondition) : Promise.resolve(null),
-        ]);
+        let nctIds: string[] = [];
 
-        let nctIds = searchResult.nctIds;
+        // When MeSH + keyword search are both active, apply intersection in SQL via RPC.
+        if (selectedMeshCondition) {
+          const meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
+          if (meshNctIds.length === 0) {
+            return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
+          }
 
-        // Intersect with mesh filter if active
-        if (meshNctIds !== null) {
-          const meshSet = new Set(meshNctIds);
-          nctIds = nctIds.filter((id) => meshSet.has(id));
+          const searchResult = await executeUnifiedSearchWithMesh(search, meshNctIds);
+          nctIds = searchResult.nctIds;
+        } else {
+          const searchResult = await executeUnifiedSearch(search);
+          nctIds = searchResult.nctIds;
         }
 
         if (nctIds.length === 0) {
