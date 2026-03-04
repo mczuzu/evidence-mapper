@@ -140,6 +140,18 @@ async function executeUnifiedSearch(
   return { nctIds, rankMap: globalRankMap };
 }
 
+// ─── MeSH condition helper ────────────────────────────────────
+/** Get nct_ids matching a MeSH condition from browse_conditions table */
+async function fetchNctIdsForMesh(meshTerm: string): Promise<string[]> {
+  const { data, error } = await supabaseExternal
+    .from("browse_conditions")
+    .select("nct_id")
+    .eq("mesh_term", meshTerm)
+    .limit(5000);
+  if (error) throw error;
+  return (data || []).map((r) => r.nct_id);
+}
+
 // ─── Hook params ──────────────────────────────────────────────
 interface UseStudiesParams {
   search: UnifiedSearchInput;
