@@ -140,6 +140,18 @@ async function executeUnifiedSearch(
   return { nctIds, rankMap: globalRankMap };
 }
 
+// ─── MeSH condition helper ────────────────────────────────────
+/** Get nct_ids matching a MeSH condition from browse_conditions table */
+async function fetchNctIdsForMesh(meshTerm: string): Promise<string[]> {
+  const { data, error } = await supabaseExternal
+    .from("browse_conditions")
+    .select("nct_id")
+    .eq("mesh_term", meshTerm)
+    .limit(5000);
+  if (error) throw error;
+  return (data || []).map((r) => r.nct_id);
+}
+
 // ─── Hook params ──────────────────────────────────────────────
 interface UseStudiesParams {
   search: UnifiedSearchInput;
@@ -182,7 +194,19 @@ export function useStudies({
 
       // ── Path A: search active → use RPC then fetch full data ──
       if (searchActive) {
-        const { nctIds } = await executeUnifiedSearch(search);
+        // Run search + optional mesh filter in parallel
+        const [searchResult, meshNctIds] = await Promise.all([
+          executeUnifiedSearch(search),
+          selectedMeshCondition ? fetchNctIdsForMesh(selectedMeshCondition) : Promise.resolve(null),
+        ]);
+
+        let nctIds = searchResult.nctIds;
+
+        // Intersect with mesh filter if active
+        if (meshNctIds !== null) {
+          const meshSet = new Set(meshNctIds);
+          nctIds = nctIds.filter((id) => meshSet.has(id));
+        }
 
         if (nctIds.length === 0) {
           return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
@@ -199,7 +223,6 @@ export function useStudies({
         if (onlyComparable) query = query.eq("has_group_comparison", true);
         if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
         if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
-        if (selectedMeshCondition) query = query.eq("mesh_term", selectedMeshCondition);
 
         const { data: v2Data, error: v2Error } = await query;
         if (v2Error) throw v2Error;
@@ -224,6 +247,42 @@ export function useStudies({
       }
 
       // ── Path B: no search → direct query on view ──
+      // If mesh condition is selected, first get matching nct_ids
+      if (selectedMeshCondition) {
+        const meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
+        if (meshNctIds.length === 0) {
+          return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
+        }
+
+        let query = supabaseExternal
+          .from("v_ui_study_list_v2")
+          .select("*")
+          .in("nct_id", meshNctIds);
+
+        if (onlyAnalyzable) query = query.eq("has_numeric_results", true);
+        if (onlyComparable) query = query.eq("has_group_comparison", true);
+        if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
+        if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        const studies = ((data as StudyListItem[]) || []).sort(
+          (a, b) => b.nct_id.localeCompare(a.nct_id)
+        );
+
+        const from = page * PAGE_SIZE;
+        const paginatedStudies = studies.slice(from, from + PAGE_SIZE);
+
+        return {
+          studies: paginatedStudies,
+          totalCount: studies.length,
+          pageSize: PAGE_SIZE,
+          currentPage: page,
+          totalPages: Math.ceil(studies.length / PAGE_SIZE),
+        };
+      }
+
       let query = supabaseExternal
         .from("v_ui_study_list_v2")
         .select("*", { count: "exact" })
@@ -233,7 +292,6 @@ export function useStudies({
       if (onlyComparable) query = query.eq("has_group_comparison", true);
       if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
       if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
-      if (selectedMeshCondition) query = query.eq("mesh_term", selectedMeshCondition);
 
       const from = page * PAGE_SIZE;
       query = query.range(from, from + PAGE_SIZE - 1);
