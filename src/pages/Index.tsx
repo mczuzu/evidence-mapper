@@ -4,14 +4,13 @@ import { Header } from '@/components/Header';
 import { FilterSidebar } from '@/components/FilterSidebar';
 import { UnifiedSearch } from '@/components/UnifiedSearch';
 import { MeshConditionSearch } from '@/components/MeshConditionSearch';
-import { StudyList } from '@/components/StudyList';
-import { useStudies } from '@/hooks/useStudies';
+import { SearchSummary } from '@/components/SearchSummary';
+import { useSearchCounts } from '@/hooks/useSearchCounts';
 import { UnifiedSearchInput, paramsToSearch, parseMeshFromParams } from '@/types/search';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
 
-  // Initialize from URL
   const initialSearch = paramsToSearch(searchParams);
   const [search, setSearch] = useState<UnifiedSearchInput>(initialSearch);
   const [selectedLabels, setSelectedLabels] = useState<string[]>(
@@ -23,34 +22,26 @@ const Index = () => {
   const [selectedMeshCondition, setSelectedMeshCondition] = useState<string | null>(
     parseMeshFromParams(searchParams)
   );
-  const [page, setPage] = useState(0);
 
-  const { data, isLoading, error } = useStudies({
+  const { data: counts, isLoading, error } = useSearchCounts({
     search,
-    selectedLabels,
-    selectedParamTypes,
     selectedMeshCondition,
-    page,
   });
 
   const handleSearchChange = (value: UnifiedSearchInput) => {
     setSearch(value);
-    setPage(0);
   };
 
   const handleLabelsChange = (labels: string[]) => {
     setSelectedLabels(labels);
-    setPage(0);
   };
 
   const handleParamTypesChange = (types: string[]) => {
     setSelectedParamTypes(types);
-    setPage(0);
   };
 
   const handleMeshChange = (mesh: string | null) => {
     setSelectedMeshCondition(mesh);
-    setPage(0);
   };
 
   return (
@@ -77,17 +68,13 @@ const Index = () => {
                 </p>
               </div>
             ) : (
-              <StudyList
-                studies={data?.studies || []}
-                totalCount={data?.totalCount || 0}
-                currentPage={data?.currentPage || 0}
-                totalPages={data?.totalPages || 0}
+              <SearchSummary
+                counts={counts}
                 isLoading={isLoading}
-                onPageChange={setPage}
                 search={search}
+                selectedMeshCondition={selectedMeshCondition}
                 selectedLabels={selectedLabels}
                 selectedParamTypes={selectedParamTypes}
-                selectedMeshCondition={selectedMeshCondition}
               />
             )}
           </div>
