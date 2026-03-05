@@ -85,38 +85,35 @@ export function useSearchCounts({
     queryFn: async (): Promise<SearchCounts> => {
       const active = isSearchActive(search);
 
-      // 1. MeSH nct_ids
+      // 1. MeSH nct_ids (independent count)
       let meshNctIds: string[] | null = null;
+      let meshSet: Set<string> | null = null;
       if (selectedMeshCondition) {
         meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
+        meshSet = new Set(meshNctIds);
       }
 
-      if (!active && !meshNctIds) {
+      if (!active && !meshSet) {
         return { meshTotal: null, baseTotal: null, groupATotal: null, groupBTotal: null, intersectionTotal: 0, finalNctIds: [] };
       }
 
-      // 2. Keyword searches (parallel)
-      const useMesh = !!meshNctIds;
-      const rpcCall = useMesh
-        ? (q: string) => callRpcWithMesh(q, meshNctIds!)
-        : (q: string) => callRpc(q);
-
+      // 2. Keyword searches — ALWAYS independent (no mesh filter) for counts
       const promises: { key: string; promise: Promise<RpcSearchResult[]> }[] = [];
       if (search.baseQuery.trim()) {
-        promises.push({ key: "base", promise: rpcCall(search.baseQuery.trim()) });
+        promises.push({ key: "base", promise: callRpc(search.baseQuery.trim()) });
       }
       for (const term of search.groupA) {
-        if (term.trim()) promises.push({ key: `ga:${term}`, promise: rpcCall(term) });
+        if (term.trim()) promises.push({ key: `ga:${term}`, promise: callRpc(term) });
       }
       for (const term of search.groupB) {
-        if (term.trim()) promises.push({ key: `gb:${term}`, promise: rpcCall(term) });
+        if (term.trim()) promises.push({ key: `gb:${term}`, promise: callRpc(term) });
       }
 
       const results = await Promise.all(
         promises.map(async (p) => ({ key: p.key, data: await p.promise }))
       );
 
-      // Build intermediate sets
+      // Build independent sets (without mesh filtering)
       const baseResult = results.find((r) => r.key === "base");
       const baseSet = baseResult ? new Set(baseResult.data.map((r) => r.nct_id)) : null;
 
@@ -130,7 +127,7 @@ export function useSearchCounts({
         ? unionSets(...gbResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
         : null;
 
-      // Combine groups
+      // 3. Combine keyword groups
       let groupsCombined: Set<string> | null = null;
       if (gaSet && gbSet) {
         groupsCombined = search.operatorBetweenGroups === "AND"
@@ -142,25 +139,30 @@ export function useSearchCounts({
         groupsCombined = gbSet;
       }
 
-      // Combine base + groups
-      let finalSet: Set<string>;
+      // 4. Combine base + groups
+      let keywordSet: Set<string> | null = null;
       if (baseSet && groupsCombined) {
-        finalSet = intersectSets(baseSet, groupsCombined);
+        keywordSet = intersectSets(baseSet, groupsCombined);
       } else if (baseSet) {
-        finalSet = baseSet;
+        keywordSet = baseSet;
       } else if (groupsCombined) {
-        finalSet = groupsCombined;
-      } else if (meshNctIds) {
-        finalSet = new Set(meshNctIds);
+        keywordSet = groupsCombined;
+      }
+
+      // 5. Final intersection with MeSH (if active)
+      let finalSet: Set<string>;
+      if (meshSet && keywordSet) {
+        finalSet = intersectSets(meshSet, keywordSet);
+      } else if (meshSet) {
+        finalSet = meshSet;
+      } else if (keywordSet) {
+        finalSet = keywordSet;
       } else {
         finalSet = new Set();
       }
 
-      // If mesh active but no keyword search, finalSet = meshNctIds
-      // If mesh active + keyword search, finalSet is already the intersection from rpcWithMesh
-
       return {
-        meshTotal: meshNctIds ? meshNctIds.length : null,
+        meshTotal: meshSet ? meshSet.size : null,
         baseTotal: baseSet ? baseSet.size : null,
         groupATotal: gaSet ? gaSet.size : null,
         groupBTotal: gbSet ? gbSet.size : null,
