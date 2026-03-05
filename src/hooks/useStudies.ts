@@ -263,6 +263,16 @@ async function fetchNctIdsForMesh(meshTerm: string): Promise<string[]> {
   return (data || []).map((r) => r.nct_id);
 }
 
+/** Get nct_ids for multiple MeSH conditions (union) */
+async function fetchNctIdsForMeshMulti(meshTerms: string[]): Promise<string[]> {
+  if (meshTerms.length === 0) return [];
+  if (meshTerms.length === 1) return fetchNctIdsForMesh(meshTerms[0]);
+  const allIds = await Promise.all(meshTerms.map(fetchNctIdsForMesh));
+  const set = new Set<string>();
+  for (const ids of allIds) for (const id of ids) set.add(id);
+  return [...set];
+}
+
 // ─── Hook params ──────────────────────────────────────────────
 interface UseStudiesParams {
   search: UnifiedSearchInput;
