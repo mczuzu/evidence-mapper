@@ -13,6 +13,8 @@ import {
   GitCompare,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { useEnrichedStudies } from "@/hooks/useEnrichedStudies";
 import { HighlightText } from "@/components/HighlightText";
@@ -37,7 +39,7 @@ type RankedStudy = {
 };
 
 const DatasetPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
@@ -47,11 +49,8 @@ const DatasetPage = () => {
   const [showRankingModal, setShowRankingModal] = useState(false);
   const [analysisError, setAnalysisError] = useState<{ message: string; details?: string } | null>(null);
   const [rankingError, setRankingError] = useState<{ message: string; details?: string } | null>(null);
-
-  // Ranking results: null = no ranking active, array = ranking applied
   const [rankingResults, setRankingResults] = useState<RankedStudy[] | null>(null);
 
-  // Explicit column filters
   const [filterAnalyzable, setFilterAnalyzable] = useState<string>("all");
   const [filterComparable, setFilterComparable] = useState<string>("all");
 
@@ -95,7 +94,6 @@ const DatasetPage = () => {
   const totalPages = data?.totalPages ?? 0;
   const pageSize = data?.pageSize ?? 20;
 
-  // If ranking is active, filter and reorder studies by ranking results
   const studies = useMemo(() => {
     if (!rankingResults) return allStudies;
     const scoreMap = new Map(rankingResults.map((r) => [r.nct_id, r]));
@@ -196,10 +194,6 @@ const DatasetPage = () => {
   }, [selectAllRequested, allIdsQuery.data]);
 
   const handleClearSelection = () => setSelectedIds(new Set());
-
-  const allVisibleSelected = studies.length > 0 && studies.every((s) => selectedIds.has(s.nct_id));
-  const someVisibleSelected = studies.some((s) => selectedIds.has(s.nct_id));
-
   const handleViewStudy = (nctId: string) => navigate(`/study/${nctId}`);
 
   const handleOpenAnalysisModal = () => {
@@ -212,9 +206,10 @@ const DatasetPage = () => {
     setShowRankingModal(true);
   };
 
-  const clearRanking = () => {
-    setRankingResults(null);
-  };
+  const clearRanking = () => setRankingResults(null);
+
+  const allVisibleSelected = studies.length > 0 && studies.every((s) => selectedIds.has(s.nct_id));
+  const someVisibleSelected = studies.some((s) => selectedIds.has(s.nct_id));
 
   // ── Analysis ───────────────────────────────────────────────────────────────
   const runAnalysis = async (context?: AnalysisContext) => {
@@ -358,8 +353,10 @@ const DatasetPage = () => {
       }
 
       setRankingResults(result.ranked);
+      // Auto-select all ranked studies
+      setSelectedIds(new Set(result.ranked.map((r: RankedStudy) => r.nct_id)));
       setShowRankingModal(false);
-      toast.success(`${result.ranked.length} estudios relevantes encontrados de ${nctIds.length} evaluados.`);
+      toast.success(`${result.ranked.length} estudios relevantes seleccionados de ${nctIds.length} evaluados.`);
     } catch (err) {
       const errorObj = err as { message?: string; details?: string };
       setRankingError({
@@ -378,7 +375,7 @@ const DatasetPage = () => {
 
       <main className="flex-1 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header bar */}
+          {/* ── Top bar ── */}
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={handleBack}>
@@ -389,64 +386,80 @@ const DatasetPage = () => {
                 {isUrlIdsMode
                   ? `Estudios seleccionados: ${specificIds.length}`
                   : rankingResults
-                    ? `Ranking: ${studies.length} estudios relevantes`
+                    ? `Ranking IA: ${studies.length} estudios relevantes`
                     : `Dataset: ${totalCount.toLocaleString()} estudios`}
               </h1>
             </div>
+          </div>
 
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Ranking AI button — always visible */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleOpenRankingModal}
-                disabled={isRanking}
-                className="gap-1.5"
-              >
-                {isRanking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BarChart3 className="h-3.5 w-3.5" />}
-                Ranking AI
-              </Button>
-
-              {/* Clear ranking badge */}
-              {rankingResults && (
-                <Button variant="ghost" size="sm" onClick={clearRanking} className="text-xs text-muted-foreground">
-                  × Limpiar ranking
-                </Button>
-              )}
-
-              {/* Select all / clear */}
-              {totalCount > 0 && (
-                <div className="flex items-center gap-2">
-                  {selectedIds.size < totalCount ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSelectAll}
-                      disabled={allIdsQuery.isLoading}
-                      className="gap-1.5"
-                    >
-                      {allIdsQuery.isLoading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <CheckSquare className="h-3.5 w-3.5" />
-                      )}
-                      Seleccionar todos ({totalCount})
-                    </Button>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={handleClearSelection} className="gap-1.5">
-                      Limpiar selección
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              <span className="text-sm text-muted-foreground">
-                Seleccionados: <span className="font-medium text-foreground">{selectedIds.size}</span>
+          {/* ── Two-step action bar ── */}
+          <div className="flex items-center justify-between bg-muted/20 border border-border rounded-xl px-5 py-4 gap-6 flex-wrap">
+            {/* Step 1 */}
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                1 · Seleccionar estudios
               </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  disabled={allIdsQuery.isLoading || totalCount === 0}
+                  className="gap-1.5"
+                >
+                  {allIdsQuery.isLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CheckSquare className="h-3.5 w-3.5" />
+                  )}
+                  Seleccionar todos
+                  {totalCount > 0 && <span className="text-muted-foreground">({totalCount})</span>}
+                </Button>
 
-              <Button onClick={handleOpenAnalysisModal} disabled={selectedIds.size === 0} className="gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenRankingModal}
+                  disabled={isRanking || totalCount === 0}
+                  className="gap-1.5"
+                >
+                  {isRanking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Selección con IA
+                </Button>
+
+                {selectedIds.size > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearSelection}
+                    className="gap-1 text-muted-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Limpiar
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Divider + count */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-2xl font-bold text-foreground">{selectedIds.size}</span>
+              <span className="text-xs text-muted-foreground">seleccionados</span>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                2 · Analizar evidencia
+              </span>
+              <Button onClick={handleOpenAnalysisModal} disabled={selectedIds.size === 0} size="sm" className="gap-2">
                 <FlaskConical className="h-4 w-4" />
                 Analizar seleccionados
+                {selectedIds.size > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {selectedIds.size}
+                  </Badge>
+                )}
               </Button>
             </div>
           </div>
@@ -455,18 +468,19 @@ const DatasetPage = () => {
           {rankingResults && (
             <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
               <div className="flex items-center gap-2 text-primary">
-                <BarChart3 className="h-4 w-4" />
+                <Sparkles className="h-4 w-4" />
                 <span className="text-sm font-medium">
-                  Ranking AI activo — mostrando {studies.length} estudios relevantes ordenados por relevancia
+                  Selección IA activa — {studies.length} estudios relevantes ordenados por relevancia
                 </span>
               </div>
-              <Button variant="outline" size="sm" onClick={clearRanking}>
+              <Button variant="outline" size="sm" onClick={clearRanking} className="gap-1">
+                <X className="h-3.5 w-3.5" />
                 Ver todos
               </Button>
             </div>
           )}
 
-          {/* Explicit Column Filters */}
+          {/* ── Column Filters ── */}
           <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
             <div className="flex items-center gap-6">
               <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
@@ -527,7 +541,7 @@ const DatasetPage = () => {
             </div>
           </div>
 
-          {/* Banner for IDs mode */}
+          {/* IDs mode banner */}
           {isUrlIdsMode && (
             <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
               <div className="flex items-center gap-2 text-primary">
@@ -541,14 +555,14 @@ const DatasetPage = () => {
             </div>
           )}
 
-          {/* Error state */}
+          {/* Error */}
           {error && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
               <p className="text-sm text-destructive">Error loading dataset: {error.message}</p>
             </div>
           )}
 
-          {/* Loading state */}
+          {/* Loading */}
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
@@ -556,14 +570,14 @@ const DatasetPage = () => {
             </div>
           )}
 
-          {/* Empty state */}
+          {/* Empty */}
           {!isLoading && !error && studies.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileSearch className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="font-serif text-lg font-semibold text-foreground mb-2">No studies found</h3>
               <p className="text-sm text-muted-foreground max-w-sm">
                 {rankingResults
-                  ? "El ranking no encontró estudios relevantes para ese objetivo. Prueba con otro."
+                  ? "La selección IA no encontró estudios relevantes. Prueba con otro objetivo."
                   : "Try adjusting your filters to see more results."}
               </p>
             </div>
@@ -594,7 +608,7 @@ const DatasetPage = () => {
                       <TableHead className="w-24">Start</TableHead>
                       <TableHead className="w-24">Completion</TableHead>
                       <TableHead className="w-24">Results Posted</TableHead>
-                      {rankingResults && <TableHead className="w-24 text-center">Score</TableHead>}
+                      {rankingResults && <TableHead className="w-24 text-center">Score IA</TableHead>}
                       <TableHead className="w-16 text-right">Acción</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -695,7 +709,7 @@ const DatasetPage = () => {
                 </Table>
               </div>
 
-              {/* Pagination — hidden when ranking is active */}
+              {/* Pagination */}
               {!rankingResults && totalPages > 0 && (
                 <div className="flex items-center justify-between pt-4">
                   <p className="text-sm text-muted-foreground">
