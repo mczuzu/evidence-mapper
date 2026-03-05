@@ -9,7 +9,7 @@ interface SearchSummaryProps {
   counts: SearchCounts | undefined;
   isLoading: boolean;
   search: UnifiedSearchInput;
-  selectedMeshCondition: string | null;
+  selectedMeshConditions: string[];
   selectedLabels: string[];
   selectedParamTypes: string[];
 }
@@ -18,7 +18,7 @@ export function SearchSummary({
   counts,
   isLoading,
   search,
-  selectedMeshCondition,
+  selectedMeshConditions,
   selectedLabels,
   selectedParamTypes,
 }: SearchSummaryProps) {
@@ -32,8 +32,7 @@ export function SearchSummary({
       counts.groupBTotal !== null);
 
   const handleViewDataset = () => {
-    const params = searchToParams(search);
-    if (selectedMeshCondition) params.set("mesh", selectedMeshCondition);
+    const params = searchToParams(search, selectedMeshConditions);
     if (selectedLabels.length > 0) params.set("labels", selectedLabels.join(","));
     if (selectedParamTypes.length > 0) params.set("paramTypes", selectedParamTypes.join(","));
     navigate(`/dataset?${params.toString()}`);
@@ -60,7 +59,7 @@ export function SearchSummary({
 
   if (counts.meshTotal !== null) {
     cards.push({
-      label: `MeSH: ${selectedMeshCondition}`,
+      label: `MeSH: ${selectedMeshConditions.join(" + ")}`,
       value: counts.meshTotal,
       icon: <Database className="h-5 w-5" />,
       color: "border-blue-500/30 bg-blue-500/5",

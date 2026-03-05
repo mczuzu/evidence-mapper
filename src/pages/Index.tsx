@@ -19,30 +19,14 @@ const Index = () => {
   const [selectedParamTypes, setSelectedParamTypes] = useState<string[]>(
     searchParams.get('paramTypes')?.split(',').filter(Boolean) || []
   );
-  const [selectedMeshCondition, setSelectedMeshCondition] = useState<string | null>(
+  const [selectedMeshConditions, setSelectedMeshConditions] = useState<string[]>(
     parseMeshFromParams(searchParams)
   );
 
   const { data: counts, isLoading, error } = useSearchCounts({
     search,
-    selectedMeshCondition,
+    selectedMeshConditions,
   });
-
-  const handleSearchChange = (value: UnifiedSearchInput) => {
-    setSearch(value);
-  };
-
-  const handleLabelsChange = (labels: string[]) => {
-    setSelectedLabels(labels);
-  };
-
-  const handleParamTypesChange = (types: string[]) => {
-    setSelectedParamTypes(types);
-  };
-
-  const handleMeshChange = (mesh: string | null) => {
-    setSelectedMeshCondition(mesh);
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -51,15 +35,15 @@ const Index = () => {
       <div className="flex flex-1 overflow-hidden">
         <FilterSidebar
           selectedLabels={selectedLabels}
-          setSelectedLabels={handleLabelsChange}
+          setSelectedLabels={(labels) => { setSelectedLabels(labels); }}
           selectedParamTypes={selectedParamTypes}
-          setSelectedParamTypes={handleParamTypesChange}
+          setSelectedParamTypes={(types) => { setSelectedParamTypes(types); }}
         />
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto space-y-6">
-            <MeshConditionSearch value={selectedMeshCondition} onChange={handleMeshChange} />
-            <UnifiedSearch value={search} onChange={handleSearchChange} />
+            <MeshConditionSearch value={selectedMeshConditions} onChange={setSelectedMeshConditions} />
+            <UnifiedSearch value={search} onChange={setSearch} />
 
             {error ? (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
@@ -72,7 +56,7 @@ const Index = () => {
                 counts={counts}
                 isLoading={isLoading}
                 search={search}
-                selectedMeshCondition={selectedMeshCondition}
+                selectedMeshConditions={selectedMeshConditions}
                 selectedLabels={selectedLabels}
                 selectedParamTypes={selectedParamTypes}
               />
