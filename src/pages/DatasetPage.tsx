@@ -35,14 +35,15 @@ const DatasetPage = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isRanking, setIsRanking] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisError, setAnalysisError] = useState<{ message: string; details?: string } | null>(null);
 
-  // Explicit column filters (replaces toggles)
+  // Explicit column filters
   const [filterAnalyzable, setFilterAnalyzable] = useState<string>("all");
   const [filterComparable, setFilterComparable] = useState<string>("all");
 
-  // Check if we're in "ids" mode (specific studies from related studies link)
+  // Check if we're in "ids" mode
   const idsParam = searchParams.get("ids");
   const specificIds = useMemo(() => idsParam?.split(",").filter(Boolean) || [], [idsParam]);
   const isUrlIdsMode = specificIds.length > 0;
@@ -53,11 +54,9 @@ const DatasetPage = () => {
   const paramTypes = useMemo(() => searchParams.get("paramTypes")?.split(",").filter(Boolean) || [], [searchParams]);
   const meshConditions = useMemo(() => searchParams.get("mesh")?.split(",").filter(Boolean) || [], [searchParams]);
 
-  // Convert filter values to booleans for query
   const onlyAnalyzable = filterAnalyzable === "yes";
   const onlyComparable = filterComparable === "yes";
 
-  // Use the unified useStudies hook
   const studiesQuery = useStudies({
     search,
     selectedLabels: labels,
@@ -68,10 +67,8 @@ const DatasetPage = () => {
     onlyComparable,
   });
 
-  // Only use IDs query when explicitly in URL IDs mode (from related studies link)
   const idsQuery = useDatasetStudiesByIds(isUrlIdsMode ? specificIds : []);
 
-  // Hook to fetch ALL study IDs for "Select All" functionality
   const [selectAllRequested, setSelectAllRequested] = useState(false);
   const allIdsQuery = useAllStudyIds({
     search,
@@ -80,7 +77,6 @@ const DatasetPage = () => {
     enabled: selectAllRequested && !isUrlIdsMode,
   });
 
-  // Determine which query result to use
   const activeQuery = isUrlIdsMode ? idsQuery : studiesQuery;
   const { data, isLoading, error } = activeQuery;
 
@@ -89,22 +85,18 @@ const DatasetPage = () => {
   const totalPages = data?.totalPages ?? 0;
   const pageSize = data?.pageSize ?? 20;
 
-  // Fetch enriched data from study_index for visible studies
   const visibleNctIds = useMemo(() => studies.map((s) => s.nct_id), [studies]);
   const enrichedQuery = useEnrichedStudies(visibleNctIds);
   const enrichedMap = enrichedQuery.data;
 
-  // Collect search terms for highlighting (include MeSH conditions)
   const highlightTerms = useMemo(() => {
     const terms: string[] = [];
     if (search.baseQuery.trim()) terms.push(search.baseQuery.trim());
     terms.push(...search.groupA.filter((t) => t.trim()));
     terms.push(...search.groupB.filter((t) => t.trim()));
-    // Add MeSH conditions — split multi-word terms into individual words too
     for (const m of meshConditions) {
       if (m.trim()) {
         terms.push(m.trim());
-        // Also add individual words so "Sarcopenia" matches inside "...Sarcopenia;..."
         const words = m
           .trim()
           .split(/\s+/)
@@ -112,7 +104,6 @@ const DatasetPage = () => {
         terms.push(...words);
       }
     }
-    // Deduplicate (case-insensitive)
     const seen = new Set<string>();
     return terms.filter((t) => {
       const key = t.toLowerCase();
@@ -122,16 +113,13 @@ const DatasetPage = () => {
     });
   }, [search, meshConditions]);
 
-  // Calculate pagination display values
   const startIndex = page * pageSize + 1;
   const endIndex = Math.min((page + 1) * pageSize, totalCount);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(0);
   }, [filterAnalyzable, filterComparable, search.baseQuery, search.groupA, search.groupB, labels.join(",")]);
 
-  // Handle navigation back with preserved query params
   const handleBack = () => {
     if (isUrlIdsMode) {
       navigate(-1);
@@ -144,7 +132,6 @@ const DatasetPage = () => {
     }
   };
 
-  // Toggle single study selection
   const toggleSelection = (nctId: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -157,11 +144,9 @@ const DatasetPage = () => {
     });
   };
 
-  // Toggle all visible studies
   const toggleSelectAll = () => {
     const allVisibleIds = studies.map((s) => s.nct_id);
     const allSelected = allVisibleIds.every((id) => selectedIds.has(id));
-
     if (allSelected) {
       setSelectedIds((prev) => {
         const next = new Set(prev);
@@ -177,18 +162,14 @@ const DatasetPage = () => {
     }
   };
 
-  // Select ALL studies in the result set
   const handleSelectAll = async () => {
     if (isUrlIdsMode) {
-      // In IDs mode, select all specific IDs
       setSelectedIds(new Set(specificIds));
     } else {
-      // Trigger the query to fetch all IDs
       setSelectAllRequested(true);
     }
   };
 
-  // Effect to update selection when all IDs are fetched
   useEffect(() => {
     if (selectAllRequested && allIdsQuery.data && allIdsQuery.data.length > 0) {
       setSelectedIds(new Set(allIdsQuery.data));
@@ -197,7 +178,6 @@ const DatasetPage = () => {
     }
   }, [selectAllRequested, allIdsQuery.data]);
 
-  // Clear all selections
   const handleClearSelection = () => {
     setSelectedIds(new Set());
   };
@@ -205,18 +185,16 @@ const DatasetPage = () => {
   const allVisibleSelected = studies.length > 0 && studies.every((s) => selectedIds.has(s.nct_id));
   const someVisibleSelected = studies.some((s) => selectedIds.has(s.nct_id));
 
-  // Navigate to study detail
   const handleViewStudy = (nctId: string) => {
     navigate(`/study/${nctId}`);
   };
 
-  // Open analysis modal
   const handleOpenAnalysisModal = () => {
     setAnalysisError(null);
     setShowAnalysisModal(true);
   };
 
-  // Run analysis with optional context (called from modal)
+  // ── Existing analysis function ──────────────────────────────────────────────
   const runAnalysis = async (context?: AnalysisContext) => {
     const nctIds = Array.from(selectedIds);
     if (nctIds.length === 0) return;
@@ -225,7 +203,6 @@ const DatasetPage = () => {
     setAnalysisError(null);
 
     try {
-      // Build search_meta from active filters
       const activeKeywords = [
         ...search.groupA,
         ...search.groupB,
@@ -237,18 +214,15 @@ const DatasetPage = () => {
         keywords: activeKeywords,
       };
 
-      // Build request body
       const requestBody: { nct_ids: string[]; context?: AnalysisContext; search_meta?: typeof searchMeta } = {
         nct_ids: nctIds,
         search_meta: searchMeta,
       };
 
-      // Only include context if product_idea is provided
       if (context?.product_idea && context.product_idea.trim().length > 0) {
         requestBody.context = context;
       }
 
-      // Call analyze-direction on external Supabase
       const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/analyze-direction`;
       const response = await fetch(url, {
         method: "POST",
@@ -267,23 +241,12 @@ const DatasetPage = () => {
         throw { message: "Analysis failed", details: errorDetails };
       }
 
-      if (!result) {
-        throw { message: "No data returned from analysis" };
-      }
-
-      // If backend explicitly reports a DB issue, surface it clearly.
+      if (!result) throw { message: "No data returned from analysis" };
       if (typeof result.db_error === "string" && result.db_error) {
         throw { message: "Database error", details: result.db_error };
       }
+      if (result.error) throw { message: result.error, details: result.details || undefined };
 
-      // Check for error in response body
-      if (result.error) {
-        throw { message: result.error, details: result.details || undefined };
-      }
-
-      // Normalize response across formats:
-      // - Legacy: { missing: (string|{nct_id})[], found_paths: Record<nct_id,string>, analysis, ... }
-      // - V3: { schema: 'v3', available: string[], missing: string[], analysis, metadata, ... }
       const missing: string[] = Array.isArray(result.missing)
         ? result.missing
             .map((m: any) => (typeof m === "string" ? m : m?.nct_id))
@@ -312,24 +275,19 @@ const DatasetPage = () => {
         toast.info(`Análisis completado. ${missing.length} estudio(s) sin datos disponibles.`);
       }
 
-      // The Edge Function should return { analysis: ... }
       const analysisPayload = result.analysis;
-      if (!analysisPayload) {
-        throw { message: "Missing analysis in response payload" };
-      }
+      if (!analysisPayload) throw { message: "Missing analysis in response payload" };
 
-      // Generate a NEW analysisId per run (no reuse)
       const analysisId = crypto.randomUUID();
 
-      // Persist to analysis_runs (matches your table columns)
       const { error: insertError } = await supabaseExternalPublic.from("analysis_runs").insert({
         id: analysisId,
-        nct_ids: available, // text[]
-        dataset_query: isUrlIdsMode ? null : searchParams.toString(), // optional
+        nct_ids: available,
+        dataset_query: isUrlIdsMode ? null : searchParams.toString(),
         prompt_version: result.prompt_version ?? result?.metadata?.model ?? "v3",
         schema_version:
           result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
-        analysis: analysisPayload, // jsonb
+        analysis: analysisPayload,
       });
 
       if (insertError) {
@@ -339,7 +297,6 @@ const DatasetPage = () => {
 
       setShowAnalysisModal(false);
 
-      // Navigate to the analysis page using the NEW analysisId
       navigate(`/analysis/${analysisId}`, {
         state: {
           run: {
@@ -365,6 +322,36 @@ const DatasetPage = () => {
     }
   };
 
+  // ── NEW: ranking function ───────────────────────────────────────────────────
+  const runRanking = async () => {
+    const nctIds = Array.from(selectedIds);
+    if (nctIds.length === 0) return;
+
+    setIsRanking(true);
+    try {
+      const requestBody = { nct_ids: nctIds };
+      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/ia-ranking`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          apikey: EXTERNAL_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "Ranking API failed");
+      console.log("Ranking result:", result);
+      toast.success("Ranking generado correctamente");
+    } catch (err) {
+      console.error("Ranking error:", err);
+      toast.error(err instanceof Error ? err.message : "Error al generar ranking");
+    } finally {
+      setIsRanking(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -386,7 +373,6 @@ const DatasetPage = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Select All / Clear Selection buttons */}
               {totalCount > 0 && (
                 <div className="flex items-center gap-2">
                   {selectedIds.size < totalCount ? (
@@ -415,9 +401,20 @@ const DatasetPage = () => {
               <span className="text-sm text-muted-foreground">
                 Seleccionados: <span className="font-medium text-foreground">{selectedIds.size}</span>
               </span>
+
               <Button onClick={handleOpenAnalysisModal} disabled={selectedIds.size === 0} className="gap-2">
                 <FlaskConical className="h-4 w-4" />
                 Analizar seleccionados
+              </Button>
+
+              <Button
+                onClick={runRanking}
+                disabled={selectedIds.size === 0 || isRanking}
+                variant="outline"
+                className="gap-2"
+              >
+                {isRanking ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
+                Ranking seleccionados
               </Button>
             </div>
           </div>
@@ -427,7 +424,6 @@ const DatasetPage = () => {
             <div className="flex items-center gap-6">
               <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
 
-              {/* Analyzable filter */}
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 <Select value={filterAnalyzable} onValueChange={setFilterAnalyzable}>
@@ -442,7 +438,6 @@ const DatasetPage = () => {
                 </Select>
               </div>
 
-              {/* Comparable filter */}
               <div className="flex items-center gap-2">
                 <GitCompare className="h-4 w-4 text-muted-foreground" />
                 <Select value={filterComparable} onValueChange={setFilterComparable}>
@@ -457,7 +452,6 @@ const DatasetPage = () => {
                 </Select>
               </div>
 
-              {/* Clear filters */}
               {(filterAnalyzable !== "all" || filterComparable !== "all") && (
                 <Button
                   variant="ghost"
@@ -473,7 +467,6 @@ const DatasetPage = () => {
               )}
             </div>
 
-            {/* Filter result counter */}
             <div className="flex items-center gap-2">
               {(filterAnalyzable !== "all" || filterComparable !== "all") && (
                 <Badge variant="secondary" className="text-xs px-2 py-1">
@@ -630,7 +623,7 @@ const DatasetPage = () => {
                 </Table>
               </div>
 
-              {/* Pagination with "showing X-Y of Z" indicator */}
+              {/* Pagination */}
               {totalPages > 0 && (
                 <div className="flex items-center justify-between pt-4">
                   <p className="text-sm text-muted-foreground">
