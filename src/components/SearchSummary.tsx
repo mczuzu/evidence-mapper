@@ -1,4 +1,4 @@
-import { Loader2, Database, Layers, FlaskConical, GitMerge } from "lucide-react";
+import { Loader2, Database, Layers, FlaskConical, GitMerge, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ interface SearchSummaryProps {
   selectedMeshConditions: string[];
   selectedLabels: string[];
   selectedParamTypes: string[];
+  objective: string;
 }
 
 export function SearchSummary({
@@ -21,6 +22,7 @@ export function SearchSummary({
   selectedMeshConditions,
   selectedLabels,
   selectedParamTypes,
+  objective,
 }: SearchSummaryProps) {
   const navigate = useNavigate();
 
@@ -31,10 +33,13 @@ export function SearchSummary({
       counts.groupATotal !== null ||
       counts.groupBTotal !== null);
 
+  const canViewDataset = objective.trim().length > 0 && (counts?.intersectionTotal ?? 0) > 0;
+
   const handleViewDataset = () => {
     const params = searchToParams(search, selectedMeshConditions);
     if (selectedLabels.length > 0) params.set("labels", selectedLabels.join(","));
     if (selectedParamTypes.length > 0) params.set("paramTypes", selectedParamTypes.join(","));
+    params.set("objective", objective.trim());
     navigate(`/dataset?${params.toString()}`);
   };
 
@@ -98,10 +103,7 @@ export function SearchSummary({
       {/* Dimension cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {cards.map((card) => (
-          <div
-            key={card.label}
-            className={`flex items-center gap-4 rounded-lg border p-4 ${card.color}`}
-          >
+          <div key={card.label} className={`flex items-center gap-4 rounded-lg border p-4 ${card.color}`}>
             <div className="text-muted-foreground">{card.icon}</div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground truncate">{card.label}</p>
@@ -113,29 +115,37 @@ export function SearchSummary({
         ))}
       </div>
 
-      {/* Intersection result */}
+      {/* Intersection + CTA */}
       <div className="flex items-center gap-4 rounded-lg border-2 border-primary/40 bg-primary/5 p-5">
         <div className="text-primary">
           <GitMerge className="h-6 w-6" />
         </div>
         <div className="flex-1">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-            Intersección final
-          </p>
-          <p className="text-3xl font-bold text-foreground tabular-nums">
-            {counts.intersectionTotal.toLocaleString()}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            estudios que cumplen todos los criterios activos
-          </p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dataset Bronze</p>
+          <p className="text-3xl font-bold text-foreground tabular-nums">{counts.intersectionTotal.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground mt-1">estudios que cumplen todos los criterios activos</p>
         </div>
+
         {counts.intersectionTotal > 0 && (
-          <Button onClick={handleViewDataset} className="gap-2">
-            Ver dataset
-            <Badge variant="secondary" className="ml-1 text-xs">
-              {counts.intersectionTotal.toLocaleString()}
-            </Badge>
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button
+              onClick={handleViewDataset}
+              disabled={!canViewDataset}
+              className="gap-2"
+              title={!objective.trim() ? "Define tu objetivo primero" : undefined}
+            >
+              Ver dataset Bronze
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {counts.intersectionTotal.toLocaleString()}
+              </Badge>
+            </Button>
+            {!objective.trim() && (
+              <p className="text-xs text-amber-600 flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                Define tu objetivo para continuar
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>
