@@ -68,10 +68,10 @@ export interface SearchCounts {
 
 export function useSearchCounts({
   search,
-  selectedMeshCondition,
+  selectedMeshConditions,
 }: {
   search: UnifiedSearchInput;
-  selectedMeshCondition: string | null;
+  selectedMeshConditions: string[];
 }) {
   return useQuery({
     queryKey: [
@@ -80,17 +80,22 @@ export function useSearchCounts({
       search.groupA,
       search.groupB,
       search.operatorBetweenGroups,
-      selectedMeshCondition,
+      selectedMeshConditions,
     ],
     queryFn: async (): Promise<SearchCounts> => {
       const active = isSearchActive(search);
 
-      // 1. MeSH nct_ids (independent count)
-      let meshNctIds: string[] | null = null;
+      // 1. MeSH nct_ids — union of all selected MeSH conditions
       let meshSet: Set<string> | null = null;
-      if (selectedMeshCondition) {
-        meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
-        meshSet = new Set(meshNctIds);
+      if (selectedMeshConditions.length > 0) {
+        const allMeshIds = await Promise.all(
+          selectedMeshConditions.map((term) => fetchNctIdsForMesh(term))
+        );
+        // Union all MeSH results
+        meshSet = new Set<string>();
+        for (const ids of allMeshIds) {
+          for (const id of ids) meshSet.add(id);
+        }
       }
 
       if (!active && !meshSet) {
