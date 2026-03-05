@@ -418,10 +418,6 @@ const DatasetPage = () => {
               <Button onClick={handleOpenAnalysisModal} disabled={selectedIds.size === 0} className="gap-2">
                 <FlaskConical className="h-4 w-4" />
                 Analizar seleccionados
-                <Button onClick={handleAutoSelect} disabled={studies.length === 0} className="gap-2" variant="outline">
-                  <CheckSquare className="h-4 w-4" />
-                  Selección automática
-                </Button>
               </Button>
             </div>
           </div>
