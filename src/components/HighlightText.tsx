@@ -26,10 +26,14 @@ export function HighlightText({ text, terms, className }: HighlightTextProps) {
   const regex = new RegExp(`(${escaped.join("|")})`, "gi");
   const parts = text.split(regex);
 
+  // Build a Set of lowercased terms for O(1) match check (avoids regex lastIndex bug)
+  const termsLower = new Set(escaped.map((t) => t.toLowerCase()));
+  const isMatch = (part: string) => termsLower.has(part.toLowerCase());
+
   return (
     <span className={className}>
       {parts.map((part, i) =>
-        regex.test(part) ? (
+        isMatch(part) ? (
           <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 text-inherit rounded-sm px-0.5">
             {part}
           </mark>
