@@ -213,7 +213,7 @@ const DatasetPage = () => {
 
   // ── Analysis ───────────────────────────────────────────────────────────────
   const runAnalysis = async (context?: AnalysisContext) => {
-    const nctIds = Array.from(selectedIds);
+    const nctIds = selectedIds.size > 0 ? Array.from(selectedIds) : allStudies.map((s) => s.nct_id);
     if (nctIds.length === 0) return;
 
     setIsAnalyzing(true);
