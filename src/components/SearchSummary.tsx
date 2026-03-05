@@ -22,7 +22,6 @@ export function SearchSummary({
   selectedMeshConditions,
   selectedLabels,
   selectedParamTypes,
-  objective,
   objective = "",
 }: SearchSummaryProps) {
   const navigate = useNavigate();
