@@ -9,12 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, BarChart3 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 interface RankingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
+  totalCount: number;
   onConfirm: (objective: string) => void;
   isLoading: boolean;
   error?: { message: string; details?: string } | null;
@@ -24,11 +25,14 @@ export const RankingModal = ({
   open,
   onOpenChange,
   selectedCount,
+  totalCount,
   onConfirm,
   isLoading,
   error,
 }: RankingModalProps) => {
   const [objective, setObjective] = useState("");
+
+  const studiosAEvaluar = selectedCount > 0 ? selectedCount : totalCount;
 
   const handleConfirm = () => {
     if (!objective.trim()) return;
@@ -47,19 +51,23 @@ export const RankingModal = ({
       <DialogContent className="max-w-[560px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Ranking AI
+            <Sparkles className="h-5 w-5 text-primary" />
+            Selección con IA
           </DialogTitle>
           <DialogDescription>
-            Introduce tu objetivo de investigación. El sistema evaluará los{" "}
-            <strong>{selectedCount}</strong> estudios seleccionados
-            y mostrará solo los relevantes, ordenados por relevancia.
+            Introduce tu objetivo de investigación. La IA evaluará{" "}
+            <strong>
+              {selectedCount > 0
+                ? `los ${selectedCount} estudios seleccionados`
+                : `todos los ${totalCount} estudios del dataset`}
+            </strong>{" "}
+            y seleccionará automáticamente los relevantes, ordenados por relevancia.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2 py-4">
           <Textarea
-            placeholder="Ej: Evaluar la eficacia de intervenciones nutricionales en la prevención de enfermedades colónicas en adultos mayores de 50 años..."
+            placeholder="Ej: interventions that improve muscle function in CKD patients on dialysis"
             value={objective}
             onChange={(e) => setObjective(e.target.value)}
             rows={4}
@@ -74,9 +82,7 @@ export const RankingModal = ({
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
             <p className="text-sm text-destructive font-medium">{error.message}</p>
-            {error.details && (
-              <p className="text-xs text-destructive/80 mt-1">{error.details}</p>
-            )}
+            {error.details && <p className="text-xs text-destructive/80 mt-1">{error.details}</p>}
           </div>
         )}
 
@@ -86,18 +92,18 @@ export const RankingModal = ({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!objective.trim() || isLoading}
+            disabled={!objective.trim() || isLoading || studiosAEvaluar === 0}
             className="gap-2"
           >
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Evaluando...
+                Evaluando {studiosAEvaluar} estudios...
               </>
             ) : (
               <>
-                <BarChart3 className="h-4 w-4" />
-                Ranking AI
+                <Sparkles className="h-4 w-4" />
+                Seleccionar con IA
               </>
             )}
           </Button>
