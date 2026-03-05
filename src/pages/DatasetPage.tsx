@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter, CheckSquare, BarChart3, GitCompare, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEnrichedStudies } from "@/hooks/useEnrichedStudies";
+import { HighlightText } from "@/components/HighlightText";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
