@@ -23,6 +23,7 @@ export function SearchSummary({
   selectedLabels,
   selectedParamTypes,
   objective,
+  objective = "",
 }: SearchSummaryProps) {
   const navigate = useNavigate();
 
