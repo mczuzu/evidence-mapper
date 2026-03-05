@@ -36,16 +36,6 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <FilterSidebar
-          selectedLabels={selectedLabels}
-          setSelectedLabels={(labels) => {
-            setSelectedLabels(labels);
-          }}
-          selectedParamTypes={selectedParamTypes}
-          setSelectedParamTypes={(types) => {
-            setSelectedParamTypes(types);
-          }}
-        />
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto space-y-8">
             {/* ── STEP 0: OBJETIVO ── */}
