@@ -551,21 +551,21 @@ const DatasetPage = () => {
                           <TableCell className="font-mono text-xs">
                             <HighlightText text={study.nct_id} terms={highlightTerms} />
                           </TableCell>
-                          <TruncatedCell fullText={enriched?.brief_title || study.brief_title || undefined}>
+                          <TruncatedCell fullText={enriched?.brief_title || study.brief_title || undefined} highlightTerms={highlightTerms}>
                             <HighlightText
                               text={enriched?.brief_title || study.brief_title}
                               terms={highlightTerms}
                               className="text-sm font-medium text-foreground line-clamp-2"
                             />
                           </TruncatedCell>
-                          <TruncatedCell fullText={enriched?.conditions || undefined}>
+                          <TruncatedCell fullText={enriched?.conditions || undefined} highlightTerms={highlightTerms}>
                             <HighlightText
                               text={enriched?.conditions || "—"}
                               terms={highlightTerms}
                               className="text-xs text-muted-foreground line-clamp-2"
                             />
                           </TruncatedCell>
-                          <TruncatedCell fullText={enriched?.interventions || undefined}>
+                          <TruncatedCell fullText={enriched?.interventions || undefined} highlightTerms={highlightTerms}>
                             <HighlightText
                               text={enriched?.interventions || "—"}
                               terms={highlightTerms}
