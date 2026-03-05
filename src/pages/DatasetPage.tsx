@@ -307,7 +307,7 @@ const DatasetPage = () => {
     setIsRanking(true);
 
     try {
-      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/ia-ranking`;
+      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/ranking-api`;
       const response = await fetch(url, {
         method: "POST",
         headers: {
