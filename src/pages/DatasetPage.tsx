@@ -76,6 +76,20 @@ const DatasetPage = () => {
   const totalPages = data?.totalPages ?? 0;
   const pageSize = data?.pageSize ?? 20;
 
+  // Fetch enriched data from study_index for visible studies
+  const visibleNctIds = useMemo(() => studies.map((s) => s.nct_id), [studies]);
+  const enrichedQuery = useEnrichedStudies(visibleNctIds);
+  const enrichedMap = enrichedQuery.data;
+
+  // Collect search terms for highlighting
+  const highlightTerms = useMemo(() => {
+    const terms: string[] = [];
+    if (search.baseQuery.trim()) terms.push(search.baseQuery.trim());
+    terms.push(...search.groupA.filter((t) => t.trim()));
+    terms.push(...search.groupB.filter((t) => t.trim()));
+    return terms;
+  }, [search]);
+
   // Calculate pagination display values
   const startIndex = page * pageSize + 1;
   const endIndex = Math.min((page + 1) * pageSize, totalCount);
