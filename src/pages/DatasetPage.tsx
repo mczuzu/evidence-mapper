@@ -88,8 +88,23 @@ const DatasetPage = () => {
     if (search.baseQuery.trim()) terms.push(search.baseQuery.trim());
     terms.push(...search.groupA.filter((t) => t.trim()));
     terms.push(...search.groupB.filter((t) => t.trim()));
-    terms.push(...meshConditions.filter((t) => t.trim()));
-    return terms;
+    // Add MeSH conditions — split multi-word terms into individual words too
+    for (const m of meshConditions) {
+      if (m.trim()) {
+        terms.push(m.trim());
+        // Also add individual words so "Sarcopenia" matches inside "...Sarcopenia;..."
+        const words = m.trim().split(/\s+/).filter((w) => w.length > 2);
+        terms.push(...words);
+      }
+    }
+    // Deduplicate (case-insensitive)
+    const seen = new Set<string>();
+    return terms.filter((t) => {
+      const key = t.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [search, meshConditions]);
 
   // Calculate pagination display values
@@ -533,7 +548,9 @@ const DatasetPage = () => {
                               aria-label={`Select ${study.nct_id}`}
                             />
                           </TableCell>
-                          <TableCell className="font-mono text-xs">{study.nct_id}</TableCell>
+                          <TableCell className="font-mono text-xs">
+                            <HighlightText text={study.nct_id} terms={highlightTerms} />
+                          </TableCell>
                           <TruncatedCell fullText={enriched?.brief_title || study.brief_title || undefined}>
                             <HighlightText
                               text={enriched?.brief_title || study.brief_title}
@@ -556,10 +573,10 @@ const DatasetPage = () => {
                             />
                           </TruncatedCell>
                           <TableCell className="text-xs text-muted-foreground">
-                            {enriched?.study_type || "—"}
+                            <HighlightText text={enriched?.study_type || "—"} terms={highlightTerms} />
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
-                            {enriched?.phase || "—"}
+                            <HighlightText text={enriched?.phase || "—"} terms={highlightTerms} />
                           </TableCell>
                           <TableCell className="text-right text-xs text-muted-foreground">
                             {enriched?.enrollment != null ? enriched.enrollment.toLocaleString() : "—"}
