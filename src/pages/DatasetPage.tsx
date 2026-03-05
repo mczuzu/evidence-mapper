@@ -28,6 +28,13 @@ import { paramsToSearch, searchToParams } from "@/types/search";
 import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_KEY } from "@/lib/supabase-external";
 import { toast } from "sonner";
 import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
+import { RankingModal } from "@/components/ranking/RankingModal";
+
+type RankedStudy = {
+  nct_id: string;
+  score: number;
+  reason: string;
+};
 
 const DatasetPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,18 +44,21 @@ const DatasetPage = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isRanking, setIsRanking] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [showRankingModal, setShowRankingModal] = useState(false);
   const [analysisError, setAnalysisError] = useState<{ message: string; details?: string } | null>(null);
+  const [rankingError, setRankingError] = useState<{ message: string; details?: string } | null>(null);
+
+  // Ranking results: null = no ranking active, array = ranking applied
+  const [rankingResults, setRankingResults] = useState<RankedStudy[] | null>(null);
 
   // Explicit column filters
   const [filterAnalyzable, setFilterAnalyzable] = useState<string>("all");
   const [filterComparable, setFilterComparable] = useState<string>("all");
 
-  // Check if we're in "ids" mode
   const idsParam = searchParams.get("ids");
   const specificIds = useMemo(() => idsParam?.split(",").filter(Boolean) || [], [idsParam]);
   const isUrlIdsMode = specificIds.length > 0;
 
-  // Parse unified search from URL
   const search = useMemo(() => paramsToSearch(searchParams), [searchParams]);
   const labels = useMemo(() => searchParams.get("labels")?.split(",").filter(Boolean) || [], [searchParams]);
   const paramTypes = useMemo(() => searchParams.get("paramTypes")?.split(",").filter(Boolean) || [], [searchParams]);
@@ -80,10 +90,19 @@ const DatasetPage = () => {
   const activeQuery = isUrlIdsMode ? idsQuery : studiesQuery;
   const { data, isLoading, error } = activeQuery;
 
-  const studies = data?.studies ?? [];
+  const allStudies = data?.studies ?? [];
   const totalCount = data?.totalCount ?? 0;
   const totalPages = data?.totalPages ?? 0;
   const pageSize = data?.pageSize ?? 20;
+
+  // If ranking is active, filter and reorder studies by ranking results
+  const studies = useMemo(() => {
+    if (!rankingResults) return allStudies;
+    const scoreMap = new Map(rankingResults.map((r) => [r.nct_id, r]));
+    return allStudies
+      .filter((s) => scoreMap.has(s.nct_id))
+      .sort((a, b) => (scoreMap.get(b.nct_id)?.score ?? 0) - (scoreMap.get(a.nct_id)?.score ?? 0));
+  }, [allStudies, rankingResults]);
 
   const visibleNctIds = useMemo(() => studies.map((s) => s.nct_id), [studies]);
   const enrichedQuery = useEnrichedStudies(visibleNctIds);
@@ -118,6 +137,7 @@ const DatasetPage = () => {
 
   useEffect(() => {
     setPage(0);
+    setRankingResults(null);
   }, [filterAnalyzable, filterComparable, search.baseQuery, search.groupA, search.groupB, labels.join(",")]);
 
   const handleBack = () => {
@@ -135,11 +155,8 @@ const DatasetPage = () => {
   const toggleSelection = (nctId: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(nctId)) {
-        next.delete(nctId);
-      } else {
-        next.add(nctId);
-      }
+      if (next.has(nctId)) next.delete(nctId);
+      else next.add(nctId);
       return next;
     });
   };
@@ -178,23 +195,28 @@ const DatasetPage = () => {
     }
   }, [selectAllRequested, allIdsQuery.data]);
 
-  const handleClearSelection = () => {
-    setSelectedIds(new Set());
-  };
+  const handleClearSelection = () => setSelectedIds(new Set());
 
   const allVisibleSelected = studies.length > 0 && studies.every((s) => selectedIds.has(s.nct_id));
   const someVisibleSelected = studies.some((s) => selectedIds.has(s.nct_id));
 
-  const handleViewStudy = (nctId: string) => {
-    navigate(`/study/${nctId}`);
-  };
+  const handleViewStudy = (nctId: string) => navigate(`/study/${nctId}`);
 
   const handleOpenAnalysisModal = () => {
     setAnalysisError(null);
     setShowAnalysisModal(true);
   };
 
-  // ── Existing analysis function ──────────────────────────────────────────────
+  const handleOpenRankingModal = () => {
+    setRankingError(null);
+    setShowRankingModal(true);
+  };
+
+  const clearRanking = () => {
+    setRankingResults(null);
+  };
+
+  // ── Analysis ───────────────────────────────────────────────────────────────
   const runAnalysis = async (context?: AnalysisContext) => {
     const nctIds = Array.from(selectedIds);
     if (nctIds.length === 0) return;
@@ -209,11 +231,7 @@ const DatasetPage = () => {
         ...(search.baseQuery.trim() ? [search.baseQuery.trim()] : []),
       ].filter(Boolean);
 
-      const searchMeta: { mesh_terms: string[]; keywords: string[] } = {
-        mesh_terms: meshConditions,
-        keywords: activeKeywords,
-      };
-
+      const searchMeta = { mesh_terms: meshConditions, keywords: activeKeywords };
       const requestBody: { nct_ids: string[]; context?: AnalysisContext; search_meta?: typeof searchMeta } = {
         nct_ids: nctIds,
         search_meta: searchMeta,
@@ -236,16 +254,11 @@ const DatasetPage = () => {
 
       const result = await response.json();
 
-      if (!response.ok) {
-        const errorDetails = result?.error || result?.message || `HTTP ${response.status}`;
-        throw { message: "Analysis failed", details: errorDetails };
-      }
-
+      if (!response.ok) throw { message: "Analysis failed", details: result?.error || `HTTP ${response.status}` };
       if (!result) throw { message: "No data returned from analysis" };
-      if (typeof result.db_error === "string" && result.db_error) {
+      if (typeof result.db_error === "string" && result.db_error)
         throw { message: "Database error", details: result.db_error };
-      }
-      if (result.error) throw { message: result.error, details: result.details || undefined };
+      if (result.error) throw { message: result.error, details: result.details };
 
       const missing: string[] = Array.isArray(result.missing)
         ? result.missing
@@ -253,8 +266,8 @@ const DatasetPage = () => {
             .filter((x: any) => typeof x === "string" && x.length > 0)
         : [];
 
-      const isV3 = result.schema === "v3";
       const isS3 = result.schema_version === "S3";
+      const isV3 = result.schema === "v3";
       const available: string[] = isV3
         ? Array.isArray(result.available)
           ? result.available
@@ -271,15 +284,12 @@ const DatasetPage = () => {
         return;
       }
 
-      if (missing.length > 0) {
-        toast.info(`Análisis completado. ${missing.length} estudio(s) sin datos disponibles.`);
-      }
+      if (missing.length > 0) toast.info(`Análisis completado. ${missing.length} estudio(s) sin datos disponibles.`);
 
       const analysisPayload = result.analysis;
       if (!analysisPayload) throw { message: "Missing analysis in response payload" };
 
       const analysisId = crypto.randomUUID();
-
       const { error: insertError } = await supabaseExternalPublic.from("analysis_runs").insert({
         id: analysisId,
         nct_ids: available,
@@ -290,13 +300,9 @@ const DatasetPage = () => {
         analysis: analysisPayload,
       });
 
-      if (insertError) {
-        console.error("Error saving analysis:", insertError);
-        throw { message: "Failed to save analysis results", details: insertError.message };
-      }
+      if (insertError) throw { message: "Failed to save analysis results", details: insertError.message };
 
       setShowAnalysisModal(false);
-
       navigate(`/analysis/${analysisId}`, {
         state: {
           run: {
@@ -310,7 +316,6 @@ const DatasetPage = () => {
         },
       });
     } catch (err) {
-      console.error("Analysis error:", err);
       const errorObj = err as { message?: string; details?: string };
       setAnalysisError({
         message: errorObj.message || (err instanceof Error ? err.message : "Failed to analyze studies"),
@@ -322,15 +327,16 @@ const DatasetPage = () => {
     }
   };
 
-  // ── NEW: ranking function ───────────────────────────────────────────────────
-  const runRanking = async () => {
+  // ── Ranking ────────────────────────────────────────────────────────────────
+  const runRanking = async (objective: string) => {
     const nctIds = Array.from(selectedIds);
     if (nctIds.length === 0) return;
 
     setIsRanking(true);
+    setRankingError(null);
+
     try {
-      const requestBody = { nct_ids: nctIds };
-      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/ia-ranking`;
+      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/ranking-api`;
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -338,15 +344,29 @@ const DatasetPage = () => {
           Authorization: `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ nct_ids: nctIds, objective }),
       });
+
       const result = await response.json();
-      if (!response.ok) throw new Error(result?.error || "Ranking API failed");
-      console.log("Ranking result:", result);
-      toast.success("Ranking generado correctamente");
+      if (!response.ok) throw { message: result?.error || "Ranking API failed", details: result?.details };
+      if (!Array.isArray(result?.ranked)) throw { message: "Invalid response from ranking API" };
+
+      if (result.ranked.length === 0) {
+        toast.warning("No se encontraron estudios relevantes para ese objetivo.");
+        setShowRankingModal(false);
+        return;
+      }
+
+      setRankingResults(result.ranked);
+      setShowRankingModal(false);
+      toast.success(`${result.ranked.length} estudios relevantes encontrados de ${nctIds.length} evaluados.`);
     } catch (err) {
-      console.error("Ranking error:", err);
-      toast.error(err instanceof Error ? err.message : "Error al generar ranking");
+      const errorObj = err as { message?: string; details?: string };
+      setRankingError({
+        message: errorObj.message || "Error al generar ranking",
+        details: errorObj.details,
+      });
+      toast.error(errorObj.message || "Error al generar ranking");
     } finally {
       setIsRanking(false);
     }
@@ -368,11 +388,33 @@ const DatasetPage = () => {
               <h1 className="font-serif text-xl font-bold text-foreground">
                 {isUrlIdsMode
                   ? `Estudios seleccionados: ${specificIds.length}`
-                  : `Dataset: ${totalCount.toLocaleString()} estudios`}
+                  : rankingResults
+                    ? `Ranking: ${studies.length} estudios relevantes`
+                    : `Dataset: ${totalCount.toLocaleString()} estudios`}
               </h1>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Ranking AI button — always visible */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenRankingModal}
+                disabled={isRanking}
+                className="gap-1.5"
+              >
+                {isRanking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BarChart3 className="h-3.5 w-3.5" />}
+                Ranking AI
+              </Button>
+
+              {/* Clear ranking badge */}
+              {rankingResults && (
+                <Button variant="ghost" size="sm" onClick={clearRanking} className="text-xs text-muted-foreground">
+                  × Limpiar ranking
+                </Button>
+              )}
+
+              {/* Select all / clear */}
               {totalCount > 0 && (
                 <div className="flex items-center gap-2">
                   {selectedIds.size < totalCount ? (
@@ -406,18 +448,23 @@ const DatasetPage = () => {
                 <FlaskConical className="h-4 w-4" />
                 Analizar seleccionados
               </Button>
-
-              <Button
-                onClick={runRanking}
-                disabled={selectedIds.size === 0 || isRanking}
-                variant="outline"
-                className="gap-2"
-              >
-                {isRanking ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
-                Ranking seleccionados
-              </Button>
             </div>
           </div>
+
+          {/* Ranking active banner */}
+          {rankingResults && (
+            <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
+              <div className="flex items-center gap-2 text-primary">
+                <BarChart3 className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Ranking AI activo — mostrando {studies.length} estudios relevantes ordenados por relevancia
+                </span>
+              </div>
+              <Button variant="outline" size="sm" onClick={clearRanking}>
+                Ver todos
+              </Button>
+            </div>
+          )}
 
           {/* Explicit Column Filters */}
           <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
@@ -514,7 +561,11 @@ const DatasetPage = () => {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileSearch className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="font-serif text-lg font-semibold text-foreground mb-2">No studies found</h3>
-              <p className="text-sm text-muted-foreground max-w-sm">Try adjusting your filters to see more results.</p>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                {rankingResults
+                  ? "El ranking no encontró estudios relevantes para ese objetivo. Prueba con otro."
+                  : "Try adjusting your filters to see more results."}
+              </p>
             </div>
           )}
 
@@ -543,14 +594,20 @@ const DatasetPage = () => {
                       <TableHead className="w-24">Start</TableHead>
                       <TableHead className="w-24">Completion</TableHead>
                       <TableHead className="w-24">Results Posted</TableHead>
+                      {rankingResults && <TableHead className="w-24 text-center">Score</TableHead>}
                       <TableHead className="w-16 text-right">Acción</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {studies.map((study) => {
                       const enriched = enrichedMap?.get(study.nct_id);
+                      const ranked = rankingResults?.find((r) => r.nct_id === study.nct_id);
                       return (
-                        <TableRow key={study.nct_id} className={selectedIds.has(study.nct_id) ? "bg-primary/5" : ""}>
+                        <TableRow
+                          key={study.nct_id}
+                          className={selectedIds.has(study.nct_id) ? "bg-primary/5" : ""}
+                          title={ranked ? `Relevancia: ${ranked.reason}` : undefined}
+                        >
                           <TableCell>
                             <Checkbox
                               checked={selectedIds.has(study.nct_id)}
@@ -606,6 +663,21 @@ const DatasetPage = () => {
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                             {enriched?.results_first_posted_date || "—"}
                           </TableCell>
+                          {rankingResults && (
+                            <TableCell className="text-center">
+                              {ranked ? (
+                                <Badge
+                                  variant={ranked.score >= 8 ? "default" : ranked.score >= 6 ? "secondary" : "outline"}
+                                  className="text-xs font-mono"
+                                  title={ranked.reason}
+                                >
+                                  {ranked.score}/10
+                                </Badge>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"
@@ -623,15 +695,14 @@ const DatasetPage = () => {
                 </Table>
               </div>
 
-              {/* Pagination */}
-              {totalPages > 0 && (
+              {/* Pagination — hidden when ranking is active */}
+              {!rankingResults && totalPages > 0 && (
                 <div className="flex items-center justify-between pt-4">
                   <p className="text-sm text-muted-foreground">
                     Mostrando <span className="font-medium text-foreground">{startIndex}</span>–
                     <span className="font-medium text-foreground">{endIndex}</span> de{" "}
                     <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> estudios
                   </p>
-
                   {totalPages > 1 && (
                     <div className="flex items-center gap-2">
                       <Button
@@ -666,7 +737,6 @@ const DatasetPage = () => {
         </div>
       </main>
 
-      {/* Analysis Modal */}
       <AnalysisModal
         open={showAnalysisModal}
         onOpenChange={setShowAnalysisModal}
@@ -674,6 +744,15 @@ const DatasetPage = () => {
         onConfirm={runAnalysis}
         isLoading={isAnalyzing}
         error={analysisError}
+      />
+
+      <RankingModal
+        open={showRankingModal}
+        onOpenChange={setShowRankingModal}
+        selectedCount={selectedIds.size}
+        onConfirm={runRanking}
+        isLoading={isRanking}
+        error={rankingError}
       />
     </div>
   );
