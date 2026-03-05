@@ -506,78 +506,84 @@ const DatasetPage = () => {
                           className={someVisibleSelected && !allVisibleSelected ? "opacity-50" : ""}
                         />
                       </TableHead>
-                      <TableHead className="w-32">NCT ID</TableHead>
-                      <TableHead>Brief Title</TableHead>
-                      <TableHead className="w-28 text-center">Datos</TableHead>
-                      <TableHead className="w-24 text-center">Métricas</TableHead>
-                      <TableHead className="w-24 text-right">Acción</TableHead>
+                      <TableHead className="w-28">NCT ID</TableHead>
+                      <TableHead className="min-w-[200px]">Title</TableHead>
+                      <TableHead className="w-40">Conditions</TableHead>
+                      <TableHead className="w-40">Interventions</TableHead>
+                      <TableHead className="w-28">Study Type</TableHead>
+                      <TableHead className="w-24">Phase</TableHead>
+                      <TableHead className="w-20 text-right">Enrollment</TableHead>
+                      <TableHead className="w-24">Start</TableHead>
+                      <TableHead className="w-24">Completion</TableHead>
+                      <TableHead className="w-24">Results Posted</TableHead>
+                      <TableHead className="w-16 text-right">Acción</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {studies.map((study) => (
-                      <TableRow key={study.nct_id} className={selectedIds.has(study.nct_id) ? "bg-primary/5" : ""}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedIds.has(study.nct_id)}
-                            onCheckedChange={() => toggleSelection(study.nct_id)}
-                            aria-label={`Select ${study.nct_id}`}
-                          />
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{study.nct_id}</TableCell>
-                        <TableCell>
-                          <p className="text-sm font-medium text-foreground line-clamp-2">{study.brief_title}</p>
-                          {study.brief_summary && (
-                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                              {study.brief_summary.slice(0, 100)}...
-                            </p>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            {study.has_numeric_results && (
-                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 gap-1">
-                                <BarChart3 className="h-3 w-3" />
-                                Num
-                              </Badge>
-                            )}
-                            {study.has_group_comparison && (
-                              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 gap-1">
-                                <GitCompare className="h-3 w-3" />
-                                Cmp
-                              </Badge>
-                            )}
-                            {!study.has_numeric_results && !study.has_group_comparison && (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex flex-col items-center text-xs text-muted-foreground">
-                            {study.n_numeric_outcomes != null && study.n_numeric_outcomes > 0 && (
-                              <span>{study.n_numeric_outcomes} out</span>
-                            )}
-                            {study.n_comparisons != null && study.n_comparisons > 0 && (
-                              <span>{study.n_comparisons} cmp</span>
-                            )}
-                            {(study.n_numeric_outcomes == null || study.n_numeric_outcomes === 0) &&
-                             (study.n_comparisons == null || study.n_comparisons === 0) && (
-                              <span>—</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewStudy(study.nct_id)}
-                            className="gap-1"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Ver
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {studies.map((study) => {
+                      const enriched = enrichedMap?.get(study.nct_id);
+                      return (
+                        <TableRow key={study.nct_id} className={selectedIds.has(study.nct_id) ? "bg-primary/5" : ""}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedIds.has(study.nct_id)}
+                              onCheckedChange={() => toggleSelection(study.nct_id)}
+                              aria-label={`Select ${study.nct_id}`}
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{study.nct_id}</TableCell>
+                          <TableCell>
+                            <HighlightText
+                              text={enriched?.brief_title || study.brief_title}
+                              terms={highlightTerms}
+                              className="text-sm font-medium text-foreground line-clamp-2"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <HighlightText
+                              text={enriched?.conditions || "—"}
+                              terms={highlightTerms}
+                              className="text-xs text-muted-foreground line-clamp-2"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <HighlightText
+                              text={enriched?.interventions || "—"}
+                              terms={highlightTerms}
+                              className="text-xs text-muted-foreground line-clamp-2"
+                            />
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {enriched?.study_type || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {enriched?.phase || "—"}
+                          </TableCell>
+                          <TableCell className="text-right text-xs text-muted-foreground">
+                            {enriched?.enrollment != null ? enriched.enrollment.toLocaleString() : "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {enriched?.start_date || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {enriched?.primary_completion_date || enriched?.completion_date || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {enriched?.results_first_posted_date || "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewStudy(study.nct_id)}
+                              className="gap-1"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
