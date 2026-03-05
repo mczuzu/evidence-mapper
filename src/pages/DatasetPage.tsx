@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter, CheckSquare, BarChart3, GitCompare, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEnrichedStudies } from "@/hooks/useEnrichedStudies";
 import { HighlightText } from "@/components/HighlightText";
+import { TruncatedCell } from "@/components/TruncatedCell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -81,14 +82,15 @@ const DatasetPage = () => {
   const enrichedQuery = useEnrichedStudies(visibleNctIds);
   const enrichedMap = enrichedQuery.data;
 
-  // Collect search terms for highlighting
+  // Collect search terms for highlighting (include MeSH conditions)
   const highlightTerms = useMemo(() => {
     const terms: string[] = [];
     if (search.baseQuery.trim()) terms.push(search.baseQuery.trim());
     terms.push(...search.groupA.filter((t) => t.trim()));
     terms.push(...search.groupB.filter((t) => t.trim()));
+    terms.push(...meshConditions.filter((t) => t.trim()));
     return terms;
-  }, [search]);
+  }, [search, meshConditions]);
 
   // Calculate pagination display values
   const startIndex = page * pageSize + 1;
@@ -532,27 +534,27 @@ const DatasetPage = () => {
                             />
                           </TableCell>
                           <TableCell className="font-mono text-xs">{study.nct_id}</TableCell>
-                          <TableCell title={enriched?.brief_title || study.brief_title || undefined}>
+                          <TruncatedCell fullText={enriched?.brief_title || study.brief_title || undefined}>
                             <HighlightText
                               text={enriched?.brief_title || study.brief_title}
                               terms={highlightTerms}
                               className="text-sm font-medium text-foreground line-clamp-2"
                             />
-                          </TableCell>
-                          <TableCell title={enriched?.conditions || undefined}>
+                          </TruncatedCell>
+                          <TruncatedCell fullText={enriched?.conditions || undefined}>
                             <HighlightText
                               text={enriched?.conditions || "—"}
                               terms={highlightTerms}
                               className="text-xs text-muted-foreground line-clamp-2"
                             />
-                          </TableCell>
-                          <TableCell title={enriched?.interventions || undefined}>
+                          </TruncatedCell>
+                          <TruncatedCell fullText={enriched?.interventions || undefined}>
                             <HighlightText
                               text={enriched?.interventions || "—"}
                               terms={highlightTerms}
                               className="text-xs text-muted-foreground line-clamp-2"
                             />
-                          </TableCell>
+                          </TruncatedCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {enriched?.study_type || "—"}
                           </TableCell>
