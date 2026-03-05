@@ -626,7 +626,7 @@ const DatasetPage = () => {
               </p>
             </div>
             <Button
-              onClick={() => setShowAnalysisModal(true)}
+              onClick={() => runAnalysis()}
               disabled={selectedIds.size === 0 || isAnalyzing}
               size="lg"
               className="gap-2 shrink-0"
