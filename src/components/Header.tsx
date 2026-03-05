@@ -6,7 +6,7 @@ export function Header() {
           <Microscope className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="font-serif text-xl font-semibold text-foreground">Evidence Opportunity Radar</h1>
+          <h1 className="font-serif text-xl font-semibold text-foreground">Evidence Mapper</h1>
           <p className="text-sm text-muted-foreground">
             Browse and explore clinical evidence by semantic outcomes
           </p>
