@@ -304,7 +304,7 @@ export function useStudies({
       search.operatorBetweenGroups,
       selectedLabels,
       selectedParamTypes,
-      selectedMeshCondition,
+      selectedMeshConditions,
       page,
       onlyAnalyzable,
       onlyComparable,
@@ -318,8 +318,8 @@ export function useStudies({
         let nctIds: string[] = [];
 
         // When MeSH + keyword search are both active, apply intersection in SQL via RPC.
-        if (selectedMeshCondition) {
-          const meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
+        if (selectedMeshConditions.length > 0) {
+          const meshNctIds = await fetchNctIdsForMeshMulti(selectedMeshConditions);
           if (meshNctIds.length === 0) {
             return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
           }
@@ -371,8 +371,8 @@ export function useStudies({
 
       // ── Path B: no search → direct query on view ──
       // If mesh condition is selected, first get matching nct_ids
-      if (selectedMeshCondition) {
-        const meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
+      if (selectedMeshConditions.length > 0) {
+        const meshNctIds = await fetchNctIdsForMeshMulti(selectedMeshConditions);
         if (meshNctIds.length === 0) {
           return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
         }
@@ -437,23 +437,23 @@ export function useStudies({
 export function useAllStudyIds({
   search,
   selectedLabels,
-  selectedMeshCondition,
+  selectedMeshConditions = [],
   enabled = false,
 }: {
   search: UnifiedSearchInput;
   selectedLabels: string[];
-  selectedMeshCondition?: string | null;
+  selectedMeshConditions?: string[];
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: ["all-study-ids", search.baseQuery, search.groupA, search.groupB, search.operatorBetweenGroups, selectedLabels, selectedMeshCondition],
+    queryKey: ["all-study-ids", search.baseQuery, search.groupA, search.groupB, search.operatorBetweenGroups, selectedLabels, selectedMeshConditions],
     queryFn: async (): Promise<string[]> => {
       const searchActive = isSearchActive(search);
 
-      // Get MeSH nct_ids if a condition is selected
+      // Get MeSH nct_ids if conditions are selected
       let meshNctIds: string[] | null = null;
-      if (selectedMeshCondition) {
-        meshNctIds = await fetchNctIdsForMesh(selectedMeshCondition);
+      if (selectedMeshConditions.length > 0) {
+        meshNctIds = await fetchNctIdsForMeshMulti(selectedMeshConditions);
         if (meshNctIds.length === 0) return [];
       }
 

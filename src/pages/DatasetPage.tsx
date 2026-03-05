@@ -38,7 +38,7 @@ const DatasetPage = () => {
   const search = useMemo(() => paramsToSearch(searchParams), [searchParams]);
   const labels = useMemo(() => searchParams.get('labels')?.split(',').filter(Boolean) || [], [searchParams]);
   const paramTypes = useMemo(() => searchParams.get('paramTypes')?.split(',').filter(Boolean) || [], [searchParams]);
-  const meshCondition = useMemo(() => searchParams.get('mesh') || null, [searchParams]);
+  const meshConditions = useMemo(() => searchParams.get('mesh')?.split(',').filter(Boolean) || [], [searchParams]);
 
   // Convert filter values to booleans for query
   const onlyAnalyzable = filterAnalyzable === "yes";
@@ -49,7 +49,7 @@ const DatasetPage = () => {
     search,
     selectedLabels: labels,
     selectedParamTypes: paramTypes,
-    selectedMeshCondition: meshCondition,
+    selectedMeshConditions: meshConditions,
     page,
     onlyAnalyzable,
     onlyComparable,
@@ -63,7 +63,7 @@ const DatasetPage = () => {
   const allIdsQuery = useAllStudyIds({
     search,
     selectedLabels: labels,
-    selectedMeshCondition: meshCondition,
+    selectedMeshConditions: meshConditions,
     enabled: selectAllRequested && !isUrlIdsMode,
   });
 
