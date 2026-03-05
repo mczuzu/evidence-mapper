@@ -30,8 +30,8 @@ export function useEnrichedStudies(nctIds: string[]) {
       if (nctIds.length === 0) return new Map<string, EnrichedStudy>();
 
       const { data, error } = await supabaseExternal
-        .from("study_index")
-        .select("*")
+        .from("study_index_complete")
+        .select("nct_id,brief_title,official_title,brief_summary,study_type,phase,enrollment,start_date,primary_completion_date,completion_date,results_first_posted_date,conditions,interventions,outcome_measures,design_groups")
         .in("nct_id", nctIds);
 
       if (error) throw error;
