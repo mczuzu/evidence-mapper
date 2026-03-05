@@ -455,30 +455,49 @@ const DatasetPage = () => {
 
   // ── Render step panel ─────────────────────────────────────────────────────
   const renderStepPanel = () => {
+    // Pipeline tracker inline
+    const PipelineTracker = () => {
+      if (tier === "bronze") return null;
+      return (
+        <p className="text-xs text-muted-foreground font-mono">
+          📍 Pipeline: Bronze {totalCount.toLocaleString()}
+          {(tier === "silver" || tier === "gold") && <> → Silver {silverIds?.length ?? "—"}</>}
+          {tier === "gold" && <> → Gold {goldResults?.length ?? "—"}</>}
+        </p>
+      );
+    };
+
     // BRONZE — choose filter method
     if (tier === "bronze") {
       return (
         <StepPanel>
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <TierBadge tier="bronze" />
-                <span className="text-sm font-semibold text-foreground">
-                  {totalCount.toLocaleString()} estudios encontrados
-                </span>
-              </div>
-              {objective && (
-                <p className="text-xs text-muted-foreground">
-                  Objetivo: <span className="text-foreground italic">"{objective}"</span>
-                </p>
-              )}
-              <p className="text-sm text-muted-foreground max-w-xl">
-                Estos son los estudios que coinciden con tus criterios de búsqueda. Para un análisis fiable necesitas un
-                dataset consistente. <strong>Filtra los más relevantes</strong> para tu objetivo usando IA o selección
-                manual.
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <TierBadge tier="bronze" />
+              <span className="text-sm font-semibold text-foreground">
+                {totalCount.toLocaleString()} estudios encontrados
+              </span>
+            </div>
+            {objective && (
+              <p className="text-xs text-muted-foreground">
+                Objetivo: <span className="text-foreground italic">"{objective}"</span>
               </p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
+            <p>
+              <strong className="text-foreground">Bronze = dataset crudo.</strong> Contiene todos los estudios que coinciden con tus criterios de búsqueda pero puede incluir ruido. Para un análisis fiable necesitas reducirlo primero.
+            </p>
+            <div>
+              <p className="font-medium text-foreground mb-1">¿Cómo quieres filtrar?</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li><strong>Con IA:</strong> extrae keywords de tu objetivo y filtra los estudios que las contienen en título o resumen. Rápido, ~10 segundos.</li>
+                <li><strong>Manual:</strong> selecciona tú mismo los estudios relevantes usando los checkboxes de la tabla.</li>
+              </ul>
             </div>
           </div>
+
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               onClick={runAIFilter}
@@ -529,42 +548,52 @@ const DatasetPage = () => {
     if (tier === "silver") {
       return (
         <StepPanel>
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <TierBadge tier="silver" />
-                <span className="text-sm font-semibold text-foreground">{studies.length} estudios filtrados</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-muted-foreground h-6 px-2"
-                  onClick={() => {
-                    setTier("bronze");
-                    setSilverIds(null);
-                    setFilterMethod(null);
-                    setSelectedIds(new Set());
-                  }}
-                >
-                  ← Volver a Bronze
-                </Button>
-              </div>
-              {filterMethod === "ai" && silverKeywords.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs text-muted-foreground">Keywords inferidas:</span>
-                  {silverKeywords.map((kw) => (
-                    <Badge key={kw} variant="secondary" className="text-xs">
-                      {kw}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              {filterMethod === "manual" && <p className="text-xs text-muted-foreground">Seleccionados manualmente.</p>}
-              <p className="text-sm text-muted-foreground max-w-xl">
-                La IA leerá los resúmenes de estos estudios y confirmará cuáles responden realmente a tu objetivo,
-                descartando los que solo coinciden superficialmente.
-              </p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <TierBadge tier="silver" />
+              <span className="text-sm font-semibold text-foreground">{studies.length} estudios filtrados</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground h-6 px-2"
+                onClick={() => {
+                  setTier("bronze");
+                  setSilverIds(null);
+                  setFilterMethod(null);
+                  setSelectedIds(new Set());
+                }}
+              >
+                ← Volver a Bronze
+              </Button>
+            </div>
+            <PipelineTracker />
+          </div>
+
+          {filterMethod === "ai" && silverKeywords.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-muted-foreground">Keywords inferidas:</span>
+              {silverKeywords.map((kw) => (
+                <Badge key={kw} variant="secondary" className="text-xs">
+                  {kw}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {filterMethod === "manual" && <p className="text-xs text-muted-foreground">Seleccionados manualmente.</p>}
+
+          <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
+            <p>
+              La IA extrajo estas keywords de tu objetivo y filtró los estudios que las contienen en título o resumen.
+            </p>
+            <div>
+              <p className="font-medium text-foreground mb-1">¿Qué hacer ahora?</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li><strong>Validar con IA (recomendado):</strong> la IA lee los resúmenes completos y descarta los que solo coinciden superficialmente. Puntuación mínima para pasar: 4/10.</li>
+                <li><strong>Saltar validación:</strong> pasar directamente al análisis con estos {studies.length} estudios. Puede haber ruido en el dataset.</li>
+              </ul>
             </div>
           </div>
+
           <div className="flex items-center gap-3 flex-wrap">
             <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2">
               {isRanking ? (
@@ -599,7 +628,7 @@ const DatasetPage = () => {
       return (
         <StepPanel>
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <TierBadge tier="gold" />
                 <span className="text-sm font-semibold text-foreground">{studies.length} estudios validados</span>
@@ -615,15 +644,15 @@ const DatasetPage = () => {
                   ← Volver a Silver
                 </Button>
               </div>
+              <PipelineTracker />
+
               {goldResults && (
-                <p className="text-xs text-muted-foreground">
-                  Validados por IA leyendo summaries · ordenados por relevancia
+                <p className="text-xs text-muted-foreground flex items-center gap-3">
+                  <span><span className="inline-block w-2 h-2 rounded-full bg-primary mr-1" />≥8 Alta relevancia</span>
+                  <span><span className="inline-block w-2 h-2 rounded-full bg-secondary mr-1" />≥6 Media</span>
+                  <span><span className="inline-block w-2 h-2 rounded-full border border-border mr-1" />&lt;6 Baja</span>
                 </p>
               )}
-              <p className="text-sm text-muted-foreground max-w-xl">
-                Dataset listo para análisis. Puedes revisar y ajustar la selección final antes de lanzar el análisis de
-                estado de la evidencia.
-              </p>
             </div>
             <Button
               onClick={() => runAnalysis()}
@@ -646,6 +675,13 @@ const DatasetPage = () => {
                 </Badge>
               )}
             </Button>
+          </div>
+
+          <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
+            <p>
+              La IA leyó los resúmenes y puntuó cada estudio de 0 a 10 según su relevancia para tu objetivo. Solo pasan los que superan 4/10.
+            </p>
+            <p>Puedes deseleccionar estudios en la tabla antes de lanzar el análisis.</p>
           </div>
         </StepPanel>
       );
@@ -794,7 +830,7 @@ const DatasetPage = () => {
                       <TableHead className="w-24">Start</TableHead>
                       <TableHead className="w-24">Completion</TableHead>
                       <TableHead className="w-24">Results Posted</TableHead>
-                      {tier === "gold" && goldResults && <TableHead className="w-24 text-center">Score IA</TableHead>}
+                      {tier === "gold" && goldResults && <TableHead className="w-28 min-w-[7rem] text-center">Score IA</TableHead>}
                       <TableHead className="w-16 text-right">Acción</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -894,6 +930,16 @@ const DatasetPage = () => {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Score legend — only in Gold */}
+              {tier === "gold" && goldResults && (
+                <p className="text-xs text-muted-foreground pt-2 px-1">
+                  Puntuación de relevancia IA:{" "}
+                  <span className="inline-block w-2 h-2 rounded-full bg-primary mr-0.5 align-middle" /> ≥8 Alta ·{" "}
+                  <span className="inline-block w-2 h-2 rounded-full bg-secondary mr-0.5 align-middle" /> ≥6 Media ·{" "}
+                  <span className="inline-block w-2 h-2 rounded-full border border-border mr-0.5 align-middle" /> &lt;6 Baja
+                </p>
+              )}
 
               {/* Pagination — only in bronze */}
               {tier === "bronze" && totalPages > 1 && (
