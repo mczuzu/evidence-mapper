@@ -200,8 +200,8 @@ const DatasetPage = () => {
         ...(search.baseQuery.trim() ? [search.baseQuery.trim()] : []),
       ].filter(Boolean);
 
-      const searchMeta: { mesh_term: string | null; keywords: string[] } = {
-        mesh_term: meshCondition,
+      const searchMeta: { mesh_terms: string[]; keywords: string[] } = {
+        mesh_terms: meshConditions,
         keywords: activeKeywords,
       };
 
