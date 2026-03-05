@@ -81,14 +81,15 @@ const DatasetPage = () => {
   const enrichedQuery = useEnrichedStudies(visibleNctIds);
   const enrichedMap = enrichedQuery.data;
 
-  // Collect search terms for highlighting
+  // Collect search terms for highlighting (include MeSH conditions)
   const highlightTerms = useMemo(() => {
     const terms: string[] = [];
     if (search.baseQuery.trim()) terms.push(search.baseQuery.trim());
     terms.push(...search.groupA.filter((t) => t.trim()));
     terms.push(...search.groupB.filter((t) => t.trim()));
+    terms.push(...meshConditions.filter((t) => t.trim()));
     return terms;
-  }, [search]);
+  }, [search, meshConditions]);
 
   // Calculate pagination display values
   const startIndex = page * pageSize + 1;
