@@ -1,7 +1,19 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { ArrowLeft, Loader2, FlaskConical, Eye, FileSearch, Filter, CheckSquare, BarChart3, GitCompare, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  FlaskConical,
+  Eye,
+  FileSearch,
+  Filter,
+  CheckSquare,
+  BarChart3,
+  GitCompare,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useEnrichedStudies } from "@/hooks/useEnrichedStudies";
 import { HighlightText } from "@/components/HighlightText";
 import { TruncatedCell } from "@/components/TruncatedCell";
@@ -37,9 +49,9 @@ const DatasetPage = () => {
 
   // Parse unified search from URL
   const search = useMemo(() => paramsToSearch(searchParams), [searchParams]);
-  const labels = useMemo(() => searchParams.get('labels')?.split(',').filter(Boolean) || [], [searchParams]);
-  const paramTypes = useMemo(() => searchParams.get('paramTypes')?.split(',').filter(Boolean) || [], [searchParams]);
-  const meshConditions = useMemo(() => searchParams.get('mesh')?.split(',').filter(Boolean) || [], [searchParams]);
+  const labels = useMemo(() => searchParams.get("labels")?.split(",").filter(Boolean) || [], [searchParams]);
+  const paramTypes = useMemo(() => searchParams.get("paramTypes")?.split(",").filter(Boolean) || [], [searchParams]);
+  const meshConditions = useMemo(() => searchParams.get("mesh")?.split(",").filter(Boolean) || [], [searchParams]);
 
   // Convert filter values to booleans for query
   const onlyAnalyzable = filterAnalyzable === "yes";
@@ -93,7 +105,10 @@ const DatasetPage = () => {
       if (m.trim()) {
         terms.push(m.trim());
         // Also add individual words so "Sarcopenia" matches inside "...Sarcopenia;..."
-        const words = m.trim().split(/\s+/).filter((w) => w.length > 2);
+        const words = m
+          .trim()
+          .split(/\s+/)
+          .filter((w) => w.length > 2);
         terms.push(...words);
       }
     }
@@ -122,8 +137,8 @@ const DatasetPage = () => {
       navigate(-1);
     } else {
       const params = searchToParams(search);
-      if (labels.length > 0) params.set('labels', labels.join(','));
-      if (paramTypes.length > 0) params.set('paramTypes', paramTypes.join(','));
+      if (labels.length > 0) params.set("labels", labels.join(","));
+      if (paramTypes.length > 0) params.set("paramTypes", paramTypes.join(","));
       const qs = params.toString();
       navigate(qs ? `/?${qs}` : "/");
     }
@@ -223,8 +238,11 @@ const DatasetPage = () => {
       };
 
       // Build request body
-      const requestBody: { nct_ids: string[]; context?: AnalysisContext; search_meta?: typeof searchMeta } = { nct_ids: nctIds, search_meta: searchMeta };
-      
+      const requestBody: { nct_ids: string[]; context?: AnalysisContext; search_meta?: typeof searchMeta } = {
+        nct_ids: nctIds,
+        search_meta: searchMeta,
+      };
+
       // Only include context if product_idea is provided
       if (context?.product_idea && context.product_idea.trim().length > 0) {
         requestBody.context = context;
@@ -275,9 +293,13 @@ const DatasetPage = () => {
       const isV3 = result.schema === "v3";
       const isS3 = result.schema_version === "S3";
       const available: string[] = isV3
-        ? (Array.isArray(result.available) ? result.available : [])
+        ? Array.isArray(result.available)
+          ? result.available
+          : []
         : isS3
-          ? (Array.isArray(result.study_index) ? result.study_index.map((s: any) => s.nct_id) : nctIds)
+          ? Array.isArray(result.study_index)
+            ? result.study_index.map((s: any) => s.nct_id)
+            : nctIds
           : Object.keys(result.found_paths && typeof result.found_paths === "object" ? result.found_paths : {});
 
       if (available.length === 0) {
@@ -305,7 +327,8 @@ const DatasetPage = () => {
         nct_ids: available, // text[]
         dataset_query: isUrlIdsMode ? null : searchParams.toString(), // optional
         prompt_version: result.prompt_version ?? result?.metadata?.model ?? "v3",
-        schema_version: result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
+        schema_version:
+          result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
         analysis: analysisPayload, // jsonb
       });
 
@@ -324,7 +347,8 @@ const DatasetPage = () => {
             nct_ids: available,
             analysis: analysisPayload,
             prompt_version: result.prompt_version ?? result?.metadata?.model ?? "v3",
-            schema_version: result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
+            schema_version:
+              result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
           },
         },
       });
@@ -381,24 +405,23 @@ const DatasetPage = () => {
                       Seleccionar todos ({totalCount})
                     </Button>
                   ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearSelection}
-                      className="gap-1.5"
-                    >
+                    <Button variant="outline" size="sm" onClick={handleClearSelection} className="gap-1.5">
                       Limpiar selección
                     </Button>
                   )}
                 </div>
               )}
-              
+
               <span className="text-sm text-muted-foreground">
                 Seleccionados: <span className="font-medium text-foreground">{selectedIds.size}</span>
               </span>
               <Button onClick={handleOpenAnalysisModal} disabled={selectedIds.size === 0} className="gap-2">
                 <FlaskConical className="h-4 w-4" />
                 Analizar seleccionados
+                <Button onClick={handleAutoSelect} disabled={studies.length === 0} className="gap-2" variant="outline">
+                  <CheckSquare className="h-4 w-4" />
+                  Selección automática
+                </Button>
               </Button>
             </div>
           </div>
@@ -407,7 +430,7 @@ const DatasetPage = () => {
           <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
             <div className="flex items-center gap-6">
               <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
-              
+
               {/* Analyzable filter */}
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -473,9 +496,7 @@ const DatasetPage = () => {
             <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
               <div className="flex items-center gap-2 text-primary">
                 <Filter className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  Vista filtrada por estudios relacionados
-                </span>
+                <span className="text-sm font-medium">Vista filtrada por estudios relacionados</span>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="gap-2">
                 <ArrowLeft className="h-3.5 w-3.5" />
@@ -551,7 +572,10 @@ const DatasetPage = () => {
                           <TableCell className="font-mono text-xs">
                             <HighlightText text={study.nct_id} terms={highlightTerms} />
                           </TableCell>
-                          <TruncatedCell fullText={enriched?.brief_title || study.brief_title || undefined} highlightTerms={highlightTerms}>
+                          <TruncatedCell
+                            fullText={enriched?.brief_title || study.brief_title || undefined}
+                            highlightTerms={highlightTerms}
+                          >
                             <HighlightText
                               text={enriched?.brief_title || study.brief_title}
                               terms={highlightTerms}
@@ -565,7 +589,10 @@ const DatasetPage = () => {
                               className="text-xs text-muted-foreground line-clamp-2"
                             />
                           </TruncatedCell>
-                          <TruncatedCell fullText={enriched?.interventions || undefined} highlightTerms={highlightTerms}>
+                          <TruncatedCell
+                            fullText={enriched?.interventions || undefined}
+                            highlightTerms={highlightTerms}
+                          >
                             <HighlightText
                               text={enriched?.interventions || "—"}
                               terms={highlightTerms}
@@ -611,15 +638,17 @@ const DatasetPage = () => {
               {totalPages > 0 && (
                 <div className="flex items-center justify-between pt-4">
                   <p className="text-sm text-muted-foreground">
-                    Mostrando <span className="font-medium text-foreground">{startIndex}</span>–<span className="font-medium text-foreground">{endIndex}</span> de <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> estudios
+                    Mostrando <span className="font-medium text-foreground">{startIndex}</span>–
+                    <span className="font-medium text-foreground">{endIndex}</span> de{" "}
+                    <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> estudios
                   </p>
-                  
+
                   {totalPages > 1 && (
                     <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setPage((p) => p - 1)} 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => p - 1)}
                         disabled={page === 0}
                         className="gap-1"
                       >
