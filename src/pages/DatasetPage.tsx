@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Sparkles,
   X,
+  ChevronRight as ArrowRight,
 } from "lucide-react";
 import { useEnrichedStudies } from "@/hooks/useEnrichedStudies";
 import { HighlightText } from "@/components/HighlightText";
@@ -32,28 +33,77 @@ import { toast } from "sonner";
 import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
 import { RankingModal } from "@/components/ranking/RankingModal";
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+type DatasetTier = "bronze" | "silver" | "gold";
+
 type RankedStudy = {
   nct_id: string;
   score: number;
   reason: string;
 };
 
+type FilterMethod = "ai" | "manual" | null;
+
+// ── Tier badge ────────────────────────────────────────────────────────────────
+const TIER_CONFIG = {
+  bronze: { label: "Bronze", color: "bg-amber-700/20 text-amber-700 border-amber-700/30" },
+  silver: { label: "Silver", color: "bg-slate-400/20 text-slate-500 border-slate-400/30" },
+  gold: { label: "Gold", color: "bg-yellow-500/20 text-yellow-600 border-yellow-500/30" },
+};
+
+function TierBadge({ tier }: { tier: DatasetTier }) {
+  const cfg = TIER_CONFIG[tier];
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-semibold ${cfg.color}`}>
+      ◆ {cfg.label}
+    </span>
+  );
+}
+
+// ── Step panel ────────────────────────────────────────────────────────────────
+function StepPanel({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-xl border border-border bg-muted/20 px-6 py-5 space-y-4">{children}</div>;
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 const DatasetPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(0);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isRanking, setIsRanking] = useState(false);
-  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
-  const [showRankingModal, setShowRankingModal] = useState(false);
-  const [analysisError, setAnalysisError] = useState<{ message: string; details?: string } | null>(null);
-  const [rankingError, setRankingError] = useState<{ message: string; details?: string } | null>(null);
-  const [rankingResults, setRankingResults] = useState<RankedStudy[] | null>(null);
 
+  // Objective from URL
+  const objective = searchParams.get("objective") || "";
+
+  // Dataset tier state
+  const [tier, setTier] = useState<DatasetTier>("bronze");
+  const [filterMethod, setFilterMethod] = useState<FilterMethod>(null);
+
+  // Silver: filtered by keywords (AI) or manual selection
+  const [silverIds, setSilverIds] = useState<string[] | null>(null);
+  const [silverKeywords, setSilverKeywords] = useState<string[]>([]);
+
+  // Gold: ranked/validated by AI
+  const [goldResults, setGoldResults] = useState<RankedStudy[] | null>(null);
+
+  // Manual selection (for silver manual path)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Loading states
+  const [isFilteringAI, setIsFilteringAI] = useState(false);
+  const [isRanking, setIsRanking] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Modals
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [analysisError, setAnalysisError] = useState<{ message: string; details?: string } | null>(null);
+
+  // Pagination
+  const [page, setPage] = useState(0);
+
+  // Column filters
   const [filterAnalyzable, setFilterAnalyzable] = useState<string>("all");
   const [filterComparable, setFilterComparable] = useState<string>("all");
 
+  // URL ids mode
   const idsParam = searchParams.get("ids");
   const specificIds = useMemo(() => idsParam?.split(",").filter(Boolean) || [], [idsParam]);
   const isUrlIdsMode = specificIds.length > 0;
@@ -89,18 +139,30 @@ const DatasetPage = () => {
   const activeQuery = isUrlIdsMode ? idsQuery : studiesQuery;
   const { data, isLoading, error } = activeQuery;
 
-  const allStudies = data?.studies ?? [];
+  const bronzeStudies = data?.studies ?? [];
   const totalCount = data?.totalCount ?? 0;
   const totalPages = data?.totalPages ?? 0;
   const pageSize = data?.pageSize ?? 20;
 
+  // Derive visible studies based on tier
   const studies = useMemo(() => {
-    if (!rankingResults) return allStudies;
-    const scoreMap = new Map(rankingResults.map((r) => [r.nct_id, r]));
-    return allStudies
-      .filter((s) => scoreMap.has(s.nct_id))
-      .sort((a, b) => (scoreMap.get(b.nct_id)?.score ?? 0) - (scoreMap.get(a.nct_id)?.score ?? 0));
-  }, [allStudies, rankingResults]);
+    if (tier === "bronze") return bronzeStudies;
+
+    if (tier === "silver") {
+      if (silverIds === null) return bronzeStudies;
+      const idSet = new Set(silverIds);
+      return bronzeStudies.filter((s) => idSet.has(s.nct_id));
+    }
+
+    if (tier === "gold" && goldResults) {
+      const scoreMap = new Map(goldResults.map((r) => [r.nct_id, r]));
+      return bronzeStudies
+        .filter((s) => scoreMap.has(s.nct_id))
+        .sort((a, b) => (scoreMap.get(b.nct_id)?.score ?? 0) - (scoreMap.get(a.nct_id)?.score ?? 0));
+    }
+
+    return bronzeStudies;
+  }, [tier, bronzeStudies, silverIds, goldResults]);
 
   const visibleNctIds = useMemo(() => studies.map((s) => s.nct_id), [studies]);
   const enrichedQuery = useEnrichedStudies(visibleNctIds);
@@ -135,8 +197,15 @@ const DatasetPage = () => {
 
   useEffect(() => {
     setPage(0);
-    setRankingResults(null);
-  }, [filterAnalyzable, filterComparable, search.baseQuery, search.groupA, search.groupB, labels.join(",")]);
+  }, [filterAnalyzable, filterComparable, search.baseQuery, labels.join(",")]);
+
+  useEffect(() => {
+    if (selectAllRequested && allIdsQuery.data && allIdsQuery.data.length > 0) {
+      setSelectedIds(new Set(allIdsQuery.data));
+      setSelectAllRequested(false);
+      toast.success(`${allIdsQuery.data.length} estudios seleccionados`);
+    }
+  }, [selectAllRequested, allIdsQuery.data]);
 
   const handleBack = () => {
     if (isUrlIdsMode) {
@@ -145,6 +214,7 @@ const DatasetPage = () => {
       const params = searchToParams(search);
       if (labels.length > 0) params.set("labels", labels.join(","));
       if (paramTypes.length > 0) params.set("paramTypes", paramTypes.join(","));
+      if (objective) params.set("objective", objective);
       const qs = params.toString();
       navigate(qs ? `/?${qs}` : "/");
     }
@@ -177,43 +247,100 @@ const DatasetPage = () => {
     }
   };
 
-  const handleSelectAll = async () => {
-    if (isUrlIdsMode) {
-      setSelectedIds(new Set(specificIds));
-    } else {
-      setSelectAllRequested(true);
-    }
-  };
-
-  useEffect(() => {
-    if (selectAllRequested && allIdsQuery.data && allIdsQuery.data.length > 0) {
-      setSelectedIds(new Set(allIdsQuery.data));
-      setSelectAllRequested(false);
-      toast.success(`${allIdsQuery.data.length} estudios seleccionados`);
-    }
-  }, [selectAllRequested, allIdsQuery.data]);
-
-  const handleClearSelection = () => setSelectedIds(new Set());
-  const handleViewStudy = (nctId: string) => navigate(`/study/${nctId}`);
-
-  const handleOpenAnalysisModal = () => {
-    setAnalysisError(null);
-    setShowAnalysisModal(true);
-  };
-
-  const handleOpenRankingModal = () => {
-    setRankingError(null);
-    setShowRankingModal(true);
-  };
-
-  const clearRanking = () => setRankingResults(null);
-
   const allVisibleSelected = studies.length > 0 && studies.every((s) => selectedIds.has(s.nct_id));
   const someVisibleSelected = studies.some((s) => selectedIds.has(s.nct_id));
 
-  // ── Analysis ───────────────────────────────────────────────────────────────
+  const handleViewStudy = (nctId: string) => navigate(`/study/${nctId}`);
+
+  // ── Filter to Silver with AI ───────────────────────────────────────────────
+  const runAIFilter = async () => {
+    const nctIds = bronzeStudies.map((s) => s.nct_id);
+    if (nctIds.length === 0) return;
+
+    setIsFilteringAI(true);
+    setFilterMethod("ai");
+
+    try {
+      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/ia-keywords`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          apikey: EXTERNAL_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ objective, nct_ids: nctIds }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "AI filter failed");
+
+      setSilverKeywords(result.keywords ?? []);
+      setSilverIds(result.nct_ids_filtered ?? []);
+      setTier("silver");
+
+      const msg = result.capped
+        ? `Dataset Silver: ${result.total_filtered} estudios (limitado a 200). Keywords: ${result.keywords.join(", ")}`
+        : `Dataset Silver: ${result.total_filtered} de ${result.total_input} estudios. Keywords: ${result.keywords.join(", ")}`;
+      toast.success(msg);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al filtrar con IA");
+      setFilterMethod(null);
+    } finally {
+      setIsFilteringAI(false);
+    }
+  };
+
+  // ── Confirm manual Silver ─────────────────────────────────────────────────
+  const confirmManualSilver = () => {
+    setSilverIds(Array.from(selectedIds));
+    setTier("silver");
+    setFilterMethod("manual");
+    toast.success(`Dataset Silver: ${selectedIds.size} estudios seleccionados manualmente.`);
+  };
+
+  // ── Validate to Gold with AI (ia-ranking) ─────────────────────────────────
+  const runGoldValidation = async () => {
+    const nctIds = silverIds ?? bronzeStudies.map((s) => s.nct_id);
+    if (nctIds.length === 0) return;
+
+    setIsRanking(true);
+
+    try {
+      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/ia-ranking`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          apikey: EXTERNAL_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ nct_ids: nctIds, objective }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "Gold validation failed");
+      if (!Array.isArray(result?.ranked)) throw new Error("Invalid response from ranking API");
+
+      if (result.ranked.length === 0) {
+        toast.warning("La IA no encontró estudios suficientemente relevantes. Prueba con otro objetivo.");
+        return;
+      }
+
+      setGoldResults(result.ranked);
+      setSelectedIds(new Set(result.ranked.map((r: RankedStudy) => r.nct_id)));
+      setTier("gold");
+      toast.success(`Dataset Gold: ${result.ranked.length} estudios validados de ${nctIds.length} evaluados.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al validar con IA");
+    } finally {
+      setIsRanking(false);
+    }
+  };
+
+  // ── Analysis ──────────────────────────────────────────────────────────────
   const runAnalysis = async (context?: AnalysisContext) => {
-    const nctIds = selectedIds.size > 0 ? Array.from(selectedIds) : allStudies.map((s) => s.nct_id);
+    const nctIds = Array.from(selectedIds);
     if (nctIds.length === 0) return;
 
     setIsAnalyzing(true);
@@ -227,9 +354,15 @@ const DatasetPage = () => {
       ].filter(Boolean);
 
       const searchMeta = { mesh_terms: meshConditions, keywords: activeKeywords };
-      const requestBody: { nct_ids: string[]; context?: AnalysisContext; search_meta?: typeof searchMeta } = {
+      const requestBody: {
+        nct_ids: string[];
+        objective?: string;
+        context?: AnalysisContext;
+        search_meta?: typeof searchMeta;
+      } = {
         nct_ids: nctIds,
         search_meta: searchMeta,
+        ...(objective ? { objective } : {}),
       };
 
       if (context?.product_idea && context.product_idea.trim().length > 0) {
@@ -258,7 +391,7 @@ const DatasetPage = () => {
       const missing: string[] = Array.isArray(result.missing)
         ? result.missing
             .map((m: any) => (typeof m === "string" ? m : m?.nct_id))
-            .filter((x: any) => typeof x === "string" && x.length > 0)
+            .filter((x: any) => typeof x === "string")
         : [];
 
       const isS3 = result.schema_version === "S3";
@@ -274,12 +407,12 @@ const DatasetPage = () => {
           : Object.keys(result.found_paths && typeof result.found_paths === "object" ? result.found_paths : {});
 
       if (available.length === 0) {
-        toast.warning(`No se encontraron datos para los ${missing.length || nctIds.length} estudios seleccionados.`);
+        toast.warning(`No se encontraron datos para los estudios seleccionados.`);
         setShowAnalysisModal(false);
         return;
       }
 
-      if (missing.length > 0) toast.info(`Análisis completado. ${missing.length} estudio(s) sin datos disponibles.`);
+      if (missing.length > 0) toast.info(`${missing.length} estudio(s) sin datos disponibles.`);
 
       const analysisPayload = result.analysis;
       if (!analysisPayload) throw { message: "Missing analysis in response payload" };
@@ -289,9 +422,8 @@ const DatasetPage = () => {
         id: analysisId,
         nct_ids: available,
         dataset_query: isUrlIdsMode ? null : searchParams.toString(),
-        prompt_version: result.prompt_version ?? result?.metadata?.model ?? "v3",
-        schema_version:
-          result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
+        prompt_version: result.prompt_version ?? "v3",
+        schema_version: result.schema_version ?? "V3",
         analysis: analysisPayload,
       });
 
@@ -304,9 +436,8 @@ const DatasetPage = () => {
             id: analysisId,
             nct_ids: available,
             analysis: analysisPayload,
-            prompt_version: result.prompt_version ?? result?.metadata?.model ?? "v3",
-            schema_version:
-              result.schema_version ?? (typeof result.schema === "string" ? result.schema.toUpperCase() : "V3"),
+            prompt_version: result.prompt_version ?? "v3",
+            schema_version: result.schema_version ?? "V3",
           },
         },
       });
@@ -322,54 +453,202 @@ const DatasetPage = () => {
     }
   };
 
-  // ── Ranking ────────────────────────────────────────────────────────────────
-  const runRanking = async (objective: string) => {
-    console.log("runRanking called", { objective, selectedIds: selectedIds.size, studies: studies.length });
-    const nctIds = selectedIds.size > 0
-      ? Array.from(selectedIds)
-      : studies.map((s) => s.nct_id);
-    console.log("nctIds", nctIds);
-    if (nctIds.length === 0) return;
+  // ── Render step panel ─────────────────────────────────────────────────────
+  const renderStepPanel = () => {
+    // BRONZE — choose filter method
+    if (tier === "bronze") {
+      return (
+        <StepPanel>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <TierBadge tier="bronze" />
+                <span className="text-sm font-semibold text-foreground">
+                  {totalCount.toLocaleString()} estudios encontrados
+                </span>
+              </div>
+              {objective && (
+                <p className="text-xs text-muted-foreground">
+                  Objetivo: <span className="text-foreground italic">"{objective}"</span>
+                </p>
+              )}
+              <p className="text-sm text-muted-foreground max-w-xl">
+                Estos son los estudios que coinciden con tus criterios de búsqueda. Para un análisis fiable necesitas un
+                dataset consistente. <strong>Filtra los más relevantes</strong> para tu objetivo usando IA o selección
+                manual.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button
+              onClick={runAIFilter}
+              disabled={isFilteringAI || !objective || totalCount === 0}
+              variant="default"
+              className="gap-2"
+            >
+              {isFilteringAI ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Filtrando con IA...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" /> Filtrar con IA → Silver
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => setFilterMethod("manual")}
+              variant="outline"
+              className="gap-2"
+              disabled={totalCount === 0}
+            >
+              <CheckSquare className="h-4 w-4" />
+              Seleccionar manualmente
+            </Button>
+          </div>
+          {filterMethod === "manual" && (
+            <div className="flex items-center gap-3 pt-2 border-t border-border">
+              <p className="text-sm text-muted-foreground flex-1">
+                Selecciona los estudios relevantes en la tabla.{" "}
+                <span className="font-medium text-foreground">{selectedIds.size} / 200</span> seleccionados.
+              </p>
+              <Button onClick={confirmManualSilver} disabled={selectedIds.size === 0} className="gap-2">
+                <ArrowRight className="h-4 w-4" />
+                Confirmar selección → Silver
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setFilterMethod(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </StepPanel>
+      );
+    }
 
-    setIsRanking(true);
-    setRankingError(null);
+    // SILVER — filtered, ready for gold validation
+    if (tier === "silver") {
+      return (
+        <StepPanel>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <TierBadge tier="silver" />
+                <span className="text-sm font-semibold text-foreground">{studies.length} estudios filtrados</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground h-6 px-2"
+                  onClick={() => {
+                    setTier("bronze");
+                    setSilverIds(null);
+                    setFilterMethod(null);
+                    setSelectedIds(new Set());
+                  }}
+                >
+                  ← Volver a Bronze
+                </Button>
+              </div>
+              {filterMethod === "ai" && silverKeywords.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs text-muted-foreground">Keywords inferidas:</span>
+                  {silverKeywords.map((kw) => (
+                    <Badge key={kw} variant="secondary" className="text-xs">
+                      {kw}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {filterMethod === "manual" && <p className="text-xs text-muted-foreground">Seleccionados manualmente.</p>}
+              <p className="text-sm text-muted-foreground max-w-xl">
+                La IA leerá los resúmenes de estos estudios y confirmará cuáles responden realmente a tu objetivo,
+                descartando los que solo coinciden superficialmente.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2">
+              {isRanking ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Validando relevancia...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" /> Validar relevancia → Gold
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedIds(new Set(silverIds ?? []));
+                setGoldResults(null);
+                setTier("gold");
+              }}
+              className="gap-2"
+            >
+              <ArrowRight className="h-4 w-4" />
+              Saltar validación → Gold
+            </Button>
+          </div>
+        </StepPanel>
+      );
+    }
 
-    try {
-      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/ranking-api`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          apikey: EXTERNAL_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ nct_ids: nctIds, objective }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw { message: result?.error || "Ranking API failed", details: result?.details };
-      if (!Array.isArray(result?.ranked)) throw { message: "Invalid response from ranking API" };
-
-      if (result.ranked.length === 0) {
-        toast.warning("No se encontraron estudios relevantes para ese objetivo.");
-        setShowRankingModal(false);
-        return;
-      }
-
-      setRankingResults(result.ranked);
-      // Auto-select all ranked studies
-      setSelectedIds(new Set(result.ranked.map((r: RankedStudy) => r.nct_id)));
-      setShowRankingModal(false);
-      toast.success(`${result.ranked.length} estudios relevantes seleccionados de ${nctIds.length} evaluados.`);
-    } catch (err) {
-      const errorObj = err as { message?: string; details?: string };
-      setRankingError({
-        message: errorObj.message || "Error al generar ranking",
-        details: errorObj.details,
-      });
-      toast.error(errorObj.message || "Error al generar ranking");
-    } finally {
-      setIsRanking(false);
+    // GOLD — ready to analyze
+    if (tier === "gold") {
+      return (
+        <StepPanel>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <TierBadge tier="gold" />
+                <span className="text-sm font-semibold text-foreground">{studies.length} estudios validados</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground h-6 px-2"
+                  onClick={() => {
+                    setTier("silver");
+                    setGoldResults(null);
+                  }}
+                >
+                  ← Volver a Silver
+                </Button>
+              </div>
+              {goldResults && (
+                <p className="text-xs text-muted-foreground">
+                  Validados por IA leyendo summaries · ordenados por relevancia
+                </p>
+              )}
+              <p className="text-sm text-muted-foreground max-w-xl">
+                Dataset listo para análisis. Puedes revisar y ajustar la selección final antes de lanzar el análisis de
+                estado de la evidencia.
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowAnalysisModal(true)}
+              disabled={selectedIds.size === 0 || isAnalyzing}
+              size="lg"
+              className="gap-2 shrink-0"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Analizando...
+                </>
+              ) : (
+                <>
+                  <FlaskConical className="h-4 w-4" /> Analizar evidencia
+                </>
+              )}
+              {selectedIds.size > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {selectedIds.size}
+                </Badge>
+              )}
+            </Button>
+          </div>
+        </StepPanel>
+      );
     }
   };
 
@@ -379,171 +658,20 @@ const DatasetPage = () => {
 
       <main className="flex-1 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* ── Top bar ── */}
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {isUrlIdsMode ? "Volver" : "Volver a filtros"}
-              </Button>
-              <h1 className="font-serif text-xl font-bold text-foreground">
-                {isUrlIdsMode
-                  ? `Estudios seleccionados: ${specificIds.length}`
-                  : rankingResults
-                    ? `Ranking IA: ${studies.length} estudios relevantes`
-                    : `Dataset: ${totalCount.toLocaleString()} estudios`}
-              </h1>
+          {/* Top bar */}
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {isUrlIdsMode ? "Volver" : "Volver a búsqueda"}
+            </Button>
+            <div className="flex items-center gap-3">
+              <h1 className="font-serif text-xl font-bold text-foreground">Dataset</h1>
+              <TierBadge tier={tier} />
             </div>
           </div>
 
-          {/* ── Two-step action bar ── */}
-          <div className="flex items-center justify-between bg-muted/20 border border-border rounded-xl px-5 py-4 gap-6 flex-wrap">
-            {/* Step 1 */}
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                1 · Seleccionar estudios
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  disabled={allIdsQuery.isLoading || totalCount === 0}
-                  className="gap-1.5"
-                >
-                  {allIdsQuery.isLoading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <CheckSquare className="h-3.5 w-3.5" />
-                  )}
-                  Seleccionar todos
-                  {totalCount > 0 && <span className="text-muted-foreground">({totalCount})</span>}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOpenRankingModal}
-                  disabled={isRanking || totalCount === 0}
-                  className="gap-1.5"
-                >
-                  {isRanking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  Selección con IA
-                </Button>
-
-                {selectedIds.size > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearSelection}
-                    className="gap-1 text-muted-foreground"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                    Limpiar
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Divider + count */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-2xl font-bold text-foreground">{selectedIds.size}</span>
-              <span className="text-xs text-muted-foreground">seleccionados</span>
-            </div>
-
-            {/* Step 2 */}
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                2 · Analizar evidencia
-              </span>
-              <Button onClick={handleOpenAnalysisModal} disabled={selectedIds.size === 0} size="sm" className="gap-2">
-                <FlaskConical className="h-4 w-4" />
-                Analizar seleccionados
-                {selectedIds.size > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {selectedIds.size}
-                  </Badge>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Ranking active banner */}
-          {rankingResults && (
-            <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
-              <div className="flex items-center gap-2 text-primary">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  Selección IA activa — {studies.length} estudios relevantes ordenados por relevancia
-                </span>
-              </div>
-              <Button variant="outline" size="sm" onClick={clearRanking} className="gap-1">
-                <X className="h-3.5 w-3.5" />
-                Ver todos
-              </Button>
-            </div>
-          )}
-
-          {/* ── Column Filters ── */}
-          <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
-            <div className="flex items-center gap-6">
-              <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
-
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                <Select value={filterAnalyzable} onValueChange={setFilterAnalyzable}>
-                  <SelectTrigger className="w-36 h-8 text-sm">
-                    <SelectValue placeholder="Analyzable" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="yes">Con datos numéricos</SelectItem>
-                    <SelectItem value="no">Sin datos numéricos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <GitCompare className="h-4 w-4 text-muted-foreground" />
-                <Select value={filterComparable} onValueChange={setFilterComparable}>
-                  <SelectTrigger className="w-36 h-8 text-sm">
-                    <SelectValue placeholder="Comparable" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="yes">Con comparación A vs B</SelectItem>
-                    <SelectItem value="no">Sin comparación</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {(filterAnalyzable !== "all" || filterComparable !== "all") && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setFilterAnalyzable("all");
-                    setFilterComparable("all");
-                  }}
-                  className="text-xs"
-                >
-                  Limpiar filtros
-                </Button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {(filterAnalyzable !== "all" || filterComparable !== "all") && (
-                <Badge variant="secondary" className="text-xs px-2 py-1">
-                  {isLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <span>{totalCount.toLocaleString()} estudios con filtros aplicados</span>
-                  )}
-                </Badge>
-              )}
-            </div>
-          </div>
+          {/* Step panel */}
+          {!isUrlIdsMode && renderStepPanel()}
 
           {/* IDs mode banner */}
           {isUrlIdsMode && (
@@ -559,6 +687,60 @@ const DatasetPage = () => {
             </div>
           )}
 
+          {/* Column filters */}
+          <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
+            <div className="flex items-center gap-6">
+              <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <Select value={filterAnalyzable} onValueChange={setFilterAnalyzable}>
+                  <SelectTrigger className="w-36 h-8 text-sm">
+                    <SelectValue placeholder="Analyzable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="yes">Con datos numéricos</SelectItem>
+                    <SelectItem value="no">Sin datos numéricos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <GitCompare className="h-4 w-4 text-muted-foreground" />
+                <Select value={filterComparable} onValueChange={setFilterComparable}>
+                  <SelectTrigger className="w-36 h-8 text-sm">
+                    <SelectValue placeholder="Comparable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="yes">Con comparación A vs B</SelectItem>
+                    <SelectItem value="no">Sin comparación</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {(filterAnalyzable !== "all" || filterComparable !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFilterAnalyzable("all");
+                    setFilterComparable("all");
+                  }}
+                  className="text-xs"
+                >
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {tier === "bronze" && filterMethod === "manual" && (
+                <Button variant="outline" size="sm" onClick={toggleSelectAll} className="gap-1.5 text-xs">
+                  <CheckSquare className="h-3.5 w-3.5" />
+                  {allVisibleSelected ? "Deseleccionar página" : "Seleccionar página"}
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* Error */}
           {error && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
@@ -570,7 +752,7 @@ const DatasetPage = () => {
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
-              <p className="text-sm text-muted-foreground">Loading studies...</p>
+              <p className="text-sm text-muted-foreground">Cargando estudios...</p>
             </div>
           )}
 
@@ -578,11 +760,11 @@ const DatasetPage = () => {
           {!isLoading && !error && studies.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileSearch className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-serif text-lg font-semibold text-foreground mb-2">No studies found</h3>
+              <h3 className="font-serif text-lg font-semibold text-foreground mb-2">No se encontraron estudios</h3>
               <p className="text-sm text-muted-foreground max-w-sm">
-                {rankingResults
-                  ? "La selección IA no encontró estudios relevantes. Prueba con otro objetivo."
-                  : "Try adjusting your filters to see more results."}
+                {tier !== "bronze"
+                  ? "El filtro no encontró estudios relevantes. Vuelve a Bronze y prueba con otro objetivo."
+                  : "Ajusta los filtros de búsqueda para ver resultados."}
               </p>
             </div>
           )}
@@ -612,14 +794,14 @@ const DatasetPage = () => {
                       <TableHead className="w-24">Start</TableHead>
                       <TableHead className="w-24">Completion</TableHead>
                       <TableHead className="w-24">Results Posted</TableHead>
-                      {rankingResults && <TableHead className="w-24 text-center">Score IA</TableHead>}
+                      {tier === "gold" && goldResults && <TableHead className="w-24 text-center">Score IA</TableHead>}
                       <TableHead className="w-16 text-right">Acción</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {studies.map((study) => {
                       const enriched = enrichedMap?.get(study.nct_id);
-                      const ranked = rankingResults?.find((r) => r.nct_id === study.nct_id);
+                      const ranked = goldResults?.find((r) => r.nct_id === study.nct_id);
                       return (
                         <TableRow
                           key={study.nct_id}
@@ -681,7 +863,7 @@ const DatasetPage = () => {
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                             {enriched?.results_first_posted_date || "—"}
                           </TableCell>
-                          {rankingResults && (
+                          {tier === "gold" && goldResults && (
                             <TableCell className="text-center">
                               {ranked ? (
                                 <Badge
@@ -713,41 +895,39 @@ const DatasetPage = () => {
                 </Table>
               </div>
 
-              {/* Pagination */}
-              {!rankingResults && totalPages > 0 && (
+              {/* Pagination — only in bronze */}
+              {tier === "bronze" && totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
                   <p className="text-sm text-muted-foreground">
                     Mostrando <span className="font-medium text-foreground">{startIndex}</span>–
                     <span className="font-medium text-foreground">{endIndex}</span> de{" "}
                     <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> estudios
                   </p>
-                  {totalPages > 1 && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => p - 1)}
-                        disabled={page === 0}
-                        className="gap-1"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <span className="text-sm text-muted-foreground px-4">
-                        Página {page + 1} de {totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => p + 1)}
-                        disabled={page >= totalPages - 1}
-                        className="gap-1"
-                      >
-                        Siguiente
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => p - 1)}
+                      disabled={page === 0}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-4">
+                      Página {page + 1} de {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => p + 1)}
+                      disabled={page >= totalPages - 1}
+                      className="gap-1"
+                    >
+                      Siguiente
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </>
@@ -762,15 +942,6 @@ const DatasetPage = () => {
         onConfirm={runAnalysis}
         isLoading={isAnalyzing}
         error={analysisError}
-      />
-
-      <RankingModal
-        open={showRankingModal}
-        onOpenChange={setShowRankingModal}
-        selectedCount={selectedIds.size}
-        onConfirm={runRanking}
-        isLoading={isRanking}
-        error={rankingError}
       />
     </div>
   );
