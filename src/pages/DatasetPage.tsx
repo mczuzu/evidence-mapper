@@ -532,21 +532,21 @@ const DatasetPage = () => {
                             />
                           </TableCell>
                           <TableCell className="font-mono text-xs">{study.nct_id}</TableCell>
-                          <TableCell>
+                          <TableCell title={enriched?.brief_title || study.brief_title || undefined}>
                             <HighlightText
                               text={enriched?.brief_title || study.brief_title}
                               terms={highlightTerms}
                               className="text-sm font-medium text-foreground line-clamp-2"
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell title={enriched?.conditions || undefined}>
                             <HighlightText
                               text={enriched?.conditions || "—"}
                               terms={highlightTerms}
                               className="text-xs text-muted-foreground line-clamp-2"
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell title={enriched?.interventions || undefined}>
                             <HighlightText
                               text={enriched?.interventions || "—"}
                               terms={highlightTerms}
