@@ -268,7 +268,7 @@ interface UseStudiesParams {
   search: UnifiedSearchInput;
   selectedLabels: string[];
   selectedParamTypes: string[];
-  selectedMeshCondition?: string | null;
+  selectedMeshConditions?: string[];
   page: number;
   onlyAnalyzable?: boolean;
   onlyComparable?: boolean;
@@ -279,7 +279,7 @@ export function useStudies({
   search,
   selectedLabels,
   selectedParamTypes,
-  selectedMeshCondition,
+  selectedMeshConditions = [],
   page,
   onlyAnalyzable = false,
   onlyComparable = false,

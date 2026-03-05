@@ -15,7 +15,7 @@ interface StudyListProps {
   search?: UnifiedSearchInput;
   selectedLabels?: string[];
   selectedParamTypes?: string[];
-  selectedMeshCondition?: string | null;
+  selectedMeshConditions?: string[];
 }
 
 export function StudyList({
@@ -28,12 +28,12 @@ export function StudyList({
   search,
   selectedLabels = [],
   selectedParamTypes = [],
-  selectedMeshCondition,
+  selectedMeshConditions = [],
 }: StudyListProps) {
   const navigate = useNavigate();
 
   const handleViewDataset = () => {
-    const params = search ? searchToParams(search, selectedMeshCondition) : new URLSearchParams();
+    const params = search ? searchToParams(search, selectedMeshConditions) : new URLSearchParams();
     if (selectedLabels.length > 0) params.set('labels', selectedLabels.join(','));
     if (selectedParamTypes.length > 0) params.set('paramTypes', selectedParamTypes.join(','));
     
