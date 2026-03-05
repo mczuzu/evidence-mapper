@@ -9,13 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, BarChart3 } from "lucide-react";
 
 interface RankingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCount: number;
-  totalCount: number;
   onConfirm: (objective: string) => void;
   isLoading: boolean;
   error?: { message: string; details?: string } | null;
@@ -25,14 +24,11 @@ export const RankingModal = ({
   open,
   onOpenChange,
   selectedCount,
-  totalCount,
   onConfirm,
   isLoading,
   error,
 }: RankingModalProps) => {
   const [objective, setObjective] = useState("");
-
-  const studiosAEvaluar = selectedCount > 0 ? selectedCount : totalCount;
 
   const handleConfirm = () => {
     if (!objective.trim()) return;
@@ -51,17 +47,13 @@ export const RankingModal = ({
       <DialogContent className="max-w-[560px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Selección con IA
+            <BarChart3 className="h-5 w-5 text-primary" />
+            Ranking AI
           </DialogTitle>
           <DialogDescription>
-            Introduce tu objetivo de investigación. La IA evaluará{" "}
-            <strong>
-              {selectedCount > 0
-                ? `los ${selectedCount} estudios seleccionados`
-                : `todos los ${totalCount} estudios del dataset`}
-            </strong>{" "}
-            y seleccionará automáticamente los relevantes, ordenados por relevancia.
+            Introduce tu objetivo de investigación. El sistema evaluará los{" "}
+            <strong>{selectedCount} estudios seleccionados</strong>{" "}
+            y mostrará solo los relevantes, ordenados por relevancia.
           </DialogDescription>
         </DialogHeader>
 
@@ -82,7 +74,9 @@ export const RankingModal = ({
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
             <p className="text-sm text-destructive font-medium">{error.message}</p>
-            {error.details && <p className="text-xs text-destructive/80 mt-1">{error.details}</p>}
+            {error.details && (
+              <p className="text-xs text-destructive/80 mt-1">{error.details}</p>
+            )}
           </div>
         )}
 
@@ -92,18 +86,18 @@ export const RankingModal = ({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!objective.trim() || isLoading || studiosAEvaluar === 0}
+            disabled={!objective.trim() || isLoading}
             className="gap-2"
           >
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Evaluando {studiosAEvaluar} estudios...
+                Evaluando...
               </>
             ) : (
               <>
-                <Sparkles className="h-4 w-4" />
-                Seleccionar con IA
+                <BarChart3 className="h-4 w-4" />
+                Ranking AI
               </>
             )}
           </Button>

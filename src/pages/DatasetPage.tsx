@@ -324,7 +324,11 @@ const DatasetPage = () => {
 
   // ── Ranking ────────────────────────────────────────────────────────────────
   const runRanking = async (objective: string) => {
-    const nctIds = Array.from(selectedIds);
+    console.log("runRanking called", { objective, selectedIds: selectedIds.size, studies: studies.length });
+    const nctIds = selectedIds.size > 0
+      ? Array.from(selectedIds)
+      : studies.map((s) => s.nct_id);
+    console.log("nctIds", nctIds);
     if (nctIds.length === 0) return;
 
     setIsRanking(true);
