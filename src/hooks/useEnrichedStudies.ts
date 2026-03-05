@@ -5,7 +5,6 @@ export interface EnrichedStudy {
   nct_id: string;
   brief_title: string | null;
   official_title: string | null;
-  brief_summary: string | null;
   study_type: string | null;
   phase: string | null;
   enrollment: number | null;
@@ -31,7 +30,7 @@ export function useEnrichedStudies(nctIds: string[]) {
 
       const { data, error } = await supabaseExternal
         .from("study_index_complete")
-        .select("nct_id,brief_title,official_title,brief_summary,study_type,phase,enrollment,start_date,primary_completion_date,completion_date,results_first_posted_date,conditions,interventions,outcome_measures,design_groups")
+        .select("nct_id,brief_title,official_title,study_type,phase,enrollment,start_date,primary_completion_date,completion_date,results_first_posted_date,conditions,interventions,outcome_measures,design_groups")
         .in("nct_id", nctIds);
 
       if (error) throw error;
