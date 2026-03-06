@@ -216,7 +216,7 @@ const DatasetPage = () => {
       if (paramTypes.length > 0) params.set("paramTypes", paramTypes.join(","));
       if (objective) params.set("objective", objective);
       const qs = params.toString();
-      navigate(qs ? `/?${qs}` : "/");
+      navigate(qs ? `/search?${qs}` : "/search");
     }
   };
 
