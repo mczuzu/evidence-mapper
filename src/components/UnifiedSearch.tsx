@@ -272,7 +272,7 @@ export function UnifiedSearch({ value, onChange }: UnifiedSearchProps) {
                     onClick={() => update({ groupA: [] })}
                   >
                     <X className="h-3 w-3 mr-1" />
-                    Borrar Grupo A
+                    Clear Group A
                   </Button>
                 )}
                 {value.groupB.length > 0 && (
@@ -283,7 +283,7 @@ export function UnifiedSearch({ value, onChange }: UnifiedSearchProps) {
                     onClick={() => update({ groupB: [] })}
                   >
                     <X className="h-3 w-3 mr-1" />
-                    Borrar Grupo B
+                    Clear Group B
                   </Button>
                 )}
                 <Button
@@ -295,7 +295,7 @@ export function UnifiedSearch({ value, onChange }: UnifiedSearchProps) {
                   }
                 >
                   <X className="h-3 w-3 mr-1" />
-                  Borrar todo
+                  Clear all
                 </Button>
               </div>
             )}

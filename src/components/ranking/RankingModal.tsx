@@ -51,15 +51,15 @@ export const RankingModal = ({
             Ranking AI
           </DialogTitle>
           <DialogDescription>
-            Introduce tu objetivo de investigación. El sistema evaluará los{" "}
-            <strong>{selectedCount} estudios seleccionados</strong>{" "}
-            y mostrará solo los relevantes, ordenados por relevancia.
+            Enter your research objective. The system will evaluate the{" "}
+            <strong>{selectedCount} selected studies</strong>{" "}
+            and show only the relevant ones, sorted by relevance.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2 py-4">
           <Textarea
-            placeholder="Ej: interventions that improve muscle function in CKD patients on dialysis"
+            placeholder="E.g.: interventions that improve muscle function in CKD patients on dialysis"
             value={objective}
             onChange={(e) => setObjective(e.target.value)}
             rows={4}
@@ -67,7 +67,7 @@ export const RankingModal = ({
             className="resize-none"
           />
           <p className="text-xs text-muted-foreground">
-            Sé específico: indica población, intervención y outcome de interés.
+            Be specific: indicate population, intervention, and outcome of interest.
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export const RankingModal = ({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            Cancelar
+            Cancel
           </Button>
           <Button
             onClick={handleConfirm}
@@ -92,7 +92,7 @@ export const RankingModal = ({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Evaluando...
+                Evaluating...
               </>
             ) : (
               <>

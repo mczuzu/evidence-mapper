@@ -26,20 +26,20 @@ function NextStudyCard({ study, index }: { study: NextStudy; index: number }) {
 
           <div className="grid gap-2 text-sm">
             <div className="flex gap-2">
-              <span className="text-muted-foreground shrink-0">Población:</span>
+              <span className="text-muted-foreground shrink-0">Population:</span>
               <span className="text-foreground">{study.population}</span>
             </div>
             <div className="flex gap-2">
-              <span className="text-muted-foreground shrink-0">Intervención:</span>
+              <span className="text-muted-foreground shrink-0">Intervention:</span>
               <span className="text-foreground">{study.intervention}</span>
             </div>
             <div className="flex gap-2">
-              <span className="text-muted-foreground shrink-0">Comparador:</span>
+              <span className="text-muted-foreground shrink-0">Comparator:</span>
               <span className="text-foreground">{study.comparator}</span>
             </div>
             {study.follow_up && (
               <div className="flex gap-2">
-                <span className="text-muted-foreground shrink-0">Seguimiento:</span>
+                <span className="text-muted-foreground shrink-0">Follow-up:</span>
                 <span className="text-foreground">{study.follow_up}</span>
               </div>
             )}
@@ -70,7 +70,7 @@ function NextStudyCard({ study, index }: { study: NextStudy; index: number }) {
                   ) : (
                     <ChevronDown className="h-3.5 w-3.5" />
                   )}
-                  Base de evidencia ({study.evidence_basis_snippets!.length})
+                  Evidence basis ({study.evidence_basis_snippets!.length})
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-2 mt-2">
@@ -93,12 +93,12 @@ export function NextStudiesSection({ studies }: NextStudiesSectionProps) {
         <CardHeader>
           <CardTitle className="font-serif text-lg flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-primary" />
-            Próximos Pasos Sugeridos
+            Suggested Next Steps
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            No hay suficiente evidencia en el payload para esta sección.
+            Not enough evidence in the payload for this section.
           </p>
         </CardContent>
       </Card>
@@ -110,7 +110,7 @@ export function NextStudiesSection({ studies }: NextStudiesSectionProps) {
       <CardHeader>
         <CardTitle className="font-serif text-lg flex items-center gap-2">
           <ArrowRight className="h-5 w-5 text-primary" />
-          Próximos Pasos Sugeridos
+          Suggested Next Steps
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
