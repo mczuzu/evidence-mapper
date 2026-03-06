@@ -40,7 +40,7 @@ function GapCard({ gap }: { gap: OpportunityGap }) {
                   ) : (
                     <ChevronDown className="h-3.5 w-3.5" />
                   )}
-                  Ver citas
+                  View citations
                 </Button>
               </CollapsibleTrigger>
             </Collapsible>
@@ -53,7 +53,7 @@ function GapCard({ gap }: { gap: OpportunityGap }) {
               className="gap-1"
             >
               <Eye className="h-3.5 w-3.5" />
-              Ver estudios ({nctIds.length})
+              View studies ({nctIds.length})
             </Button>
           )}
         </div>
@@ -79,12 +79,12 @@ export function GapsSection({ gaps }: GapsSectionProps) {
         <CardHeader>
           <CardTitle className="font-serif text-lg flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Brechas Identificadas
+            Identified Gaps
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            No hay suficiente evidencia en el payload para esta sección.
+            Not enough evidence in the payload for this section.
           </p>
         </CardContent>
       </Card>
@@ -96,7 +96,7 @@ export function GapsSection({ gaps }: GapsSectionProps) {
       <CardHeader>
         <CardTitle className="font-serif text-lg flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-amber-500" />
-          Brechas Identificadas
+          Identified Gaps
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

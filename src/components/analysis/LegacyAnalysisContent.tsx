@@ -41,7 +41,7 @@ export function LegacyAnalysisContent({ analysis }: LegacyAnalysisContentProps) 
           <CardHeader>
             <CardTitle className="font-serif text-lg flex items-center gap-2">
               <Compass className="h-5 w-5 text-primary" />
-              Dirección del Análisis
+              Analysis Direction
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -56,7 +56,7 @@ export function LegacyAnalysisContent({ analysis }: LegacyAnalysisContentProps) 
           <CardHeader>
             <CardTitle className="font-serif text-lg flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-primary" />
-              Temas Identificados
+              Identified Themes
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -75,7 +75,7 @@ export function LegacyAnalysisContent({ analysis }: LegacyAnalysisContentProps) 
                       className="shrink-0 gap-1"
                     >
                       <Eye className="h-3.5 w-3.5" />
-                      Ver estudios ({theme.study_ids.length})
+                      View studies ({theme.study_ids.length})
                     </Button>
                   )}
                 </div>
@@ -91,7 +91,7 @@ export function LegacyAnalysisContent({ analysis }: LegacyAnalysisContentProps) 
           <CardHeader>
             <CardTitle className="font-serif text-lg flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Brechas Identificadas
+              Identified Gaps
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -113,7 +113,7 @@ export function LegacyAnalysisContent({ analysis }: LegacyAnalysisContentProps) 
                       className="shrink-0 gap-1"
                     >
                       <Eye className="h-3.5 w-3.5" />
-                      Ver estudios ({gap.study_ids.length})
+                      View studies ({gap.study_ids.length})
                     </Button>
                   )}
                 </div>
@@ -129,7 +129,7 @@ export function LegacyAnalysisContent({ analysis }: LegacyAnalysisContentProps) 
           <CardHeader>
             <CardTitle className="font-serif text-lg flex items-center gap-2">
               <ArrowRight className="h-5 w-5 text-primary" />
-              Próximos Pasos Sugeridos
+              Suggested Next Steps
             </CardTitle>
           </CardHeader>
           <CardContent>

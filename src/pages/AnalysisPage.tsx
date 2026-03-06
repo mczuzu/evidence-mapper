@@ -436,7 +436,7 @@ const AnalysisPage = () => {
               {(hasLegacyTextContent || hasV3Content) && !isLoading && !errorMessage && (
                 <Button variant="outline" size="sm" onClick={() => handlePrint()}>
                   <Printer className="h-4 w-4 mr-2" />
-                  Imprimir PDF
+                  Print PDF
                 </Button>
               )}
             </div>

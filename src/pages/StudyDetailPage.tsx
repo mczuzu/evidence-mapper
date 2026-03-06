@@ -74,7 +74,7 @@ const StudyDetailPage = () => {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              Back
             </Button>
             <span className="font-mono text-sm text-muted-foreground bg-muted px-2 py-1 rounded">{nctId}</span>
           </div>
@@ -167,7 +167,7 @@ const StudyDetailPage = () => {
 
                 {richError && (
                   <div className="bg-muted/50 rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground">No hay datos ricos para este estudio todavía.</p>
+                    <p className="text-sm text-muted-foreground">No rich data available for this study yet.</p>
                     <p className="text-xs text-muted-foreground mt-2">{richError.message}</p>
                   </div>
                 )}

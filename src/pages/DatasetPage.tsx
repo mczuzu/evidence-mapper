@@ -203,7 +203,7 @@ const DatasetPage = () => {
     if (selectAllRequested && allIdsQuery.data && allIdsQuery.data.length > 0) {
       setSelectedIds(new Set(allIdsQuery.data));
       setSelectAllRequested(false);
-      toast.success(`${allIdsQuery.data.length} estudios seleccionados`);
+      toast.success(`${allIdsQuery.data.length} studies selected`);
     }
   }, [selectAllRequested, allIdsQuery.data]);
 
@@ -216,7 +216,7 @@ const DatasetPage = () => {
       if (paramTypes.length > 0) params.set("paramTypes", paramTypes.join(","));
       if (objective) params.set("objective", objective);
       const qs = params.toString();
-      navigate(qs ? `/?${qs}` : "/");
+      navigate(qs ? `/search?${qs}` : "/search");
     }
   };
 
@@ -280,11 +280,11 @@ const DatasetPage = () => {
       setTier("silver");
 
       const msg = result.capped
-        ? `Dataset Silver: ${result.total_filtered} estudios (limitado a 200). Keywords: ${result.keywords.join(", ")}`
-        : `Dataset Silver: ${result.total_filtered} de ${result.total_input} estudios. Keywords: ${result.keywords.join(", ")}`;
+        ? `Silver dataset: ${result.total_filtered} studies (capped at 200). Keywords: ${result.keywords.join(", ")}`
+        : `Silver dataset: ${result.total_filtered} of ${result.total_input} studies. Keywords: ${result.keywords.join(", ")}`;
       toast.success(msg);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al filtrar con IA");
+      toast.error(err instanceof Error ? err.message : "Error filtering with AI");
       setFilterMethod(null);
     } finally {
       setIsFilteringAI(false);
@@ -296,7 +296,7 @@ const DatasetPage = () => {
     setSilverIds(Array.from(selectedIds));
     setTier("silver");
     setFilterMethod("manual");
-    toast.success(`Dataset Silver: ${selectedIds.size} estudios seleccionados manualmente.`);
+    toast.success(`Silver dataset: ${selectedIds.size} studies selected manually.`);
   };
 
   // ── Validate to Gold with AI (ia-ranking) ─────────────────────────────────
@@ -323,16 +323,16 @@ const DatasetPage = () => {
       if (!Array.isArray(result?.ranked)) throw new Error("Invalid response from ranking API");
 
       if (result.ranked.length === 0) {
-        toast.warning("La IA no encontró estudios suficientemente relevantes. Prueba con otro objetivo.");
+        toast.warning("AI found no sufficiently relevant studies. Try a different objective.");
         return;
       }
 
       setGoldResults(result.ranked);
       setSelectedIds(new Set(result.ranked.map((r: RankedStudy) => r.nct_id)));
       setTier("gold");
-      toast.success(`Dataset Gold: ${result.ranked.length} estudios validados de ${nctIds.length} evaluados.`);
+      toast.success(`Gold dataset: ${result.ranked.length} studies validated out of ${nctIds.length} evaluated.`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al validar con IA");
+      toast.error(err instanceof Error ? err.message : "Error validating with AI");
     } finally {
       setIsRanking(false);
     }
@@ -407,12 +407,12 @@ const DatasetPage = () => {
           : Object.keys(result.found_paths && typeof result.found_paths === "object" ? result.found_paths : {});
 
       if (available.length === 0) {
-        toast.warning(`No se encontraron datos para los estudios seleccionados.`);
+        toast.warning(`No data found for the selected studies.`);
         setShowAnalysisModal(false);
         return;
       }
 
-      if (missing.length > 0) toast.info(`${missing.length} estudio(s) sin datos disponibles.`);
+      if (missing.length > 0) toast.info(`${missing.length} study(ies) with no available data.`);
 
       const analysisPayload = result.analysis;
       if (!analysisPayload) throw { message: "Missing analysis in response payload" };
@@ -475,25 +475,25 @@ const DatasetPage = () => {
             <div className="flex items-center gap-2">
               <TierBadge tier="bronze" />
               <span className="text-sm font-semibold text-foreground">
-                {totalCount.toLocaleString()} estudios encontrados
+                {totalCount.toLocaleString()} studies found
               </span>
             </div>
             {objective && (
               <p className="text-xs text-muted-foreground">
-                Objetivo: <span className="text-foreground italic">"{objective}"</span>
+                Objective: <span className="text-foreground italic">"{objective}"</span>
               </p>
             )}
           </div>
 
           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
             <p>
-              <strong className="text-foreground">Bronze = dataset crudo.</strong> Contiene todos los estudios que coinciden con tus criterios de búsqueda pero puede incluir ruido. Para un análisis fiable necesitas reducirlo primero.
+              <strong className="text-foreground">Bronze = raw dataset.</strong> Contains all studies matching your search criteria but may include noise. For a reliable analysis you need to reduce it first.
             </p>
             <div>
-              <p className="font-medium text-foreground mb-1">¿Cómo quieres filtrar?</p>
+              <p className="font-medium text-foreground mb-1">How do you want to filter?</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><strong>Con IA:</strong> extrae keywords de tu objetivo y filtra los estudios que las contienen en título o resumen. Rápido, ~10 segundos.</li>
-                <li><strong>Manual:</strong> selecciona tú mismo los estudios relevantes usando los checkboxes de la tabla.</li>
+                <li><strong>With AI:</strong> extracts keywords from your objective and filters studies containing them in title or abstract. Fast, ~10 seconds.</li>
+                <li><strong>Manual:</strong> select the relevant studies yourself using the table checkboxes.</li>
               </ul>
             </div>
           </div>
@@ -507,11 +507,11 @@ const DatasetPage = () => {
             >
               {isFilteringAI ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Filtrando con IA...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Filtering with AI...
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" /> Filtrar con IA → Silver
+                  <Sparkles className="h-4 w-4" /> Filter with AI → Silver
                 </>
               )}
             </Button>
@@ -522,18 +522,18 @@ const DatasetPage = () => {
               disabled={totalCount === 0}
             >
               <CheckSquare className="h-4 w-4" />
-              Seleccionar manualmente
+              Manually select
             </Button>
           </div>
           {filterMethod === "manual" && (
             <div className="flex items-center gap-3 pt-2 border-t border-border">
               <p className="text-sm text-muted-foreground flex-1">
-                Selecciona los estudios relevantes en la tabla.{" "}
-                <span className="font-medium text-foreground">{selectedIds.size} / 200</span> seleccionados.
+                Select the relevant studies in the table.{" "}
+                <span className="font-medium text-foreground">{selectedIds.size} / 200</span> selected.
               </p>
               <Button onClick={confirmManualSilver} disabled={selectedIds.size === 0} className="gap-2">
                 <ArrowRight className="h-4 w-4" />
-                Confirmar selección → Silver
+                Confirm selection → Silver
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setFilterMethod(null)}>
                 <X className="h-4 w-4" />
@@ -551,7 +551,7 @@ const DatasetPage = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <TierBadge tier="silver" />
-              <span className="text-sm font-semibold text-foreground">{studies.length} estudios filtrados</span>
+              <span className="text-sm font-semibold text-foreground">{studies.length} filtered studies</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -563,7 +563,7 @@ const DatasetPage = () => {
                   setSelectedIds(new Set());
                 }}
               >
-                ← Volver a Bronze
+                ← Back to Bronze
               </Button>
             </div>
             <PipelineTracker />
@@ -571,7 +571,7 @@ const DatasetPage = () => {
 
           {filterMethod === "ai" && silverKeywords.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs text-muted-foreground">Keywords inferidas:</span>
+              <span className="text-xs text-muted-foreground">Inferred keywords:</span>
               {silverKeywords.map((kw) => (
                 <Badge key={kw} variant="secondary" className="text-xs">
                   {kw}
@@ -579,17 +579,17 @@ const DatasetPage = () => {
               ))}
             </div>
           )}
-          {filterMethod === "manual" && <p className="text-xs text-muted-foreground">Seleccionados manualmente.</p>}
+          {filterMethod === "manual" && <p className="text-xs text-muted-foreground">Manually selected.</p>}
 
           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
             <p>
-              La IA extrajo estas keywords de tu objetivo y filtró los estudios que las contienen en título o resumen.
+              AI extracted these keywords from your objective and filtered studies containing them in title or abstract.
             </p>
             <div>
-              <p className="font-medium text-foreground mb-1">¿Qué hacer ahora?</p>
+              <p className="font-medium text-foreground mb-1">What to do now?</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><strong>Validar con IA (recomendado):</strong> la IA lee los resúmenes completos y descarta los que solo coinciden superficialmente. Puntuación mínima para pasar: 4/10.</li>
-                <li><strong>Saltar validación:</strong> pasar directamente al análisis con estos {studies.length} estudios. Puede haber ruido en el dataset.</li>
+                <li><strong>Validate with AI (recommended):</strong> AI reads full abstracts and discards those that only match superficially. Minimum score to pass: 4/10.</li>
+                <li><strong>Skip validation:</strong> proceed directly to analysis with these {studies.length} studies. The dataset may contain noise.</li>
               </ul>
             </div>
           </div>
@@ -598,11 +598,11 @@ const DatasetPage = () => {
             <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2">
               {isRanking ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Validando relevancia...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" /> Validar relevancia → Gold
+                  <Sparkles className="h-4 w-4" /> Validate relevance → Gold
                 </>
               )}
             </Button>
@@ -616,7 +616,7 @@ const DatasetPage = () => {
               className="gap-2"
             >
               <ArrowRight className="h-4 w-4" />
-              Saltar validación → Gold
+              Skip validation → Gold
             </Button>
           </div>
         </StepPanel>
@@ -631,7 +631,7 @@ const DatasetPage = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <TierBadge tier="gold" />
-                <span className="text-sm font-semibold text-foreground">{studies.length} estudios validados</span>
+                <span className="text-sm font-semibold text-foreground">{studies.length} validated studies</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -641,16 +641,16 @@ const DatasetPage = () => {
                     setGoldResults(null);
                   }}
                 >
-                  ← Volver a Silver
+                  ← Back to Silver
                 </Button>
               </div>
               <PipelineTracker />
 
               {goldResults && (
                 <p className="text-xs text-muted-foreground flex items-center gap-3">
-                  <span><span className="inline-block w-2 h-2 rounded-full bg-primary mr-1" />≥8 Alta relevancia</span>
-                  <span><span className="inline-block w-2 h-2 rounded-full bg-secondary mr-1" />≥6 Media</span>
-                  <span><span className="inline-block w-2 h-2 rounded-full border border-border mr-1" />&lt;6 Baja</span>
+                   <span><span className="inline-block w-2 h-2 rounded-full bg-primary mr-1" />≥8 High relevance</span>
+                  <span><span className="inline-block w-2 h-2 rounded-full bg-secondary mr-1" />≥6 Medium</span>
+                  <span><span className="inline-block w-2 h-2 rounded-full border border-border mr-1" />&lt;6 Low</span>
                 </p>
               )}
             </div>
@@ -662,11 +662,11 @@ const DatasetPage = () => {
             >
               {isAnalyzing ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Analizando...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Analyzing...
                 </>
               ) : (
                 <>
-                  <FlaskConical className="h-4 w-4" /> Analizar evidencia
+                  <FlaskConical className="h-4 w-4" /> Analyze evidence
                 </>
               )}
               {selectedIds.size > 0 && (
@@ -679,9 +679,9 @@ const DatasetPage = () => {
 
           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
             <p>
-              La IA leyó los resúmenes y puntuó cada estudio de 0 a 10 según su relevancia para tu objetivo. Solo pasan los que superan 4/10.
+              AI read the abstracts and scored each study from 0 to 10 based on relevance to your objective. Only those scoring above 4/10 pass.
             </p>
-            <p>Puedes deseleccionar estudios en la tabla antes de lanzar el análisis.</p>
+            <p>You can deselect studies in the table before running the analysis.</p>
           </div>
         </StepPanel>
       );
@@ -698,7 +698,7 @@ const DatasetPage = () => {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {isUrlIdsMode ? "Volver" : "Volver a búsqueda"}
+              {isUrlIdsMode ? "Back" : "Back to search"}
             </Button>
             <div className="flex items-center gap-3">
               <h1 className="font-serif text-xl font-bold text-foreground">Dataset</h1>
@@ -714,11 +714,11 @@ const DatasetPage = () => {
             <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
               <div className="flex items-center gap-2 text-primary">
                 <Filter className="h-4 w-4" />
-                <span className="text-sm font-medium">Vista filtrada por estudios relacionados</span>
+                <span className="text-sm font-medium">Filtered view by related studies</span>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="gap-2">
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Volver
+                Back
               </Button>
             </div>
           )}
@@ -726,7 +726,7 @@ const DatasetPage = () => {
           {/* Column filters */}
           <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
             <div className="flex items-center gap-6">
-              <span className="text-sm font-medium text-muted-foreground">Filtrar por:</span>
+              <span className="text-sm font-medium text-muted-foreground">Filter by:</span>
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 <Select value={filterAnalyzable} onValueChange={setFilterAnalyzable}>
@@ -734,9 +734,9 @@ const DatasetPage = () => {
                     <SelectValue placeholder="Analyzable" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="yes">Con datos numéricos</SelectItem>
-                    <SelectItem value="no">Sin datos numéricos</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="yes">With numeric data</SelectItem>
+                    <SelectItem value="no">Without numeric data</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -747,9 +747,9 @@ const DatasetPage = () => {
                     <SelectValue placeholder="Comparable" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="yes">Con comparación A vs B</SelectItem>
-                    <SelectItem value="no">Sin comparación</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="yes">With A vs B comparison</SelectItem>
+                    <SelectItem value="no">Without comparison</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -763,7 +763,7 @@ const DatasetPage = () => {
                   }}
                   className="text-xs"
                 >
-                  Limpiar filtros
+                  Clear filters
                 </Button>
               )}
             </div>
@@ -771,7 +771,7 @@ const DatasetPage = () => {
               {tier === "bronze" && filterMethod === "manual" && (
                 <Button variant="outline" size="sm" onClick={toggleSelectAll} className="gap-1.5 text-xs">
                   <CheckSquare className="h-3.5 w-3.5" />
-                  {allVisibleSelected ? "Deseleccionar página" : "Seleccionar página"}
+                  {allVisibleSelected ? "Deselect page" : "Select page"}
                 </Button>
               )}
             </div>
@@ -788,7 +788,7 @@ const DatasetPage = () => {
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
-              <p className="text-sm text-muted-foreground">Cargando estudios...</p>
+              <p className="text-sm text-muted-foreground">Loading studies...</p>
             </div>
           )}
 
@@ -796,11 +796,11 @@ const DatasetPage = () => {
           {!isLoading && !error && studies.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileSearch className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-serif text-lg font-semibold text-foreground mb-2">No se encontraron estudios</h3>
+              <h3 className="font-serif text-lg font-semibold text-foreground mb-2">No studies found</h3>
               <p className="text-sm text-muted-foreground max-w-sm">
                 {tier !== "bronze"
-                  ? "El filtro no encontró estudios relevantes. Vuelve a Bronze y prueba con otro objetivo."
-                  : "Ajusta los filtros de búsqueda para ver resultados."}
+                  ? "The filter found no relevant studies. Go back to Bronze and try a different objective."
+                  : "Adjust search filters to see results."}
               </p>
             </div>
           )}
@@ -831,7 +831,7 @@ const DatasetPage = () => {
                       <TableHead className="w-24">Completion</TableHead>
                       <TableHead className="w-24">Results Posted</TableHead>
                       {tier === "gold" && goldResults && <TableHead className="w-28 min-w-[7rem] text-center">Score IA</TableHead>}
-                      <TableHead className="w-16 text-right">Acción</TableHead>
+                      <TableHead className="w-16 text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -934,10 +934,10 @@ const DatasetPage = () => {
               {/* Score legend — only in Gold */}
               {tier === "gold" && goldResults && (
                 <p className="text-xs text-muted-foreground pt-2 px-1">
-                  Puntuación de relevancia IA:{" "}
-                  <span className="inline-block w-2 h-2 rounded-full bg-primary mr-0.5 align-middle" /> ≥8 Alta ·{" "}
-                  <span className="inline-block w-2 h-2 rounded-full bg-secondary mr-0.5 align-middle" /> ≥6 Media ·{" "}
-                  <span className="inline-block w-2 h-2 rounded-full border border-border mr-0.5 align-middle" /> &lt;6 Baja
+                  AI relevance score:{" "}
+                  <span className="inline-block w-2 h-2 rounded-full bg-primary mr-0.5 align-middle" /> ≥8 High ·{" "}
+                  <span className="inline-block w-2 h-2 rounded-full bg-secondary mr-0.5 align-middle" /> ≥6 Medium ·{" "}
+                  <span className="inline-block w-2 h-2 rounded-full border border-border mr-0.5 align-middle" /> &lt;6 Low
                 </p>
               )}
 
@@ -945,9 +945,9 @@ const DatasetPage = () => {
               {tier === "bronze" && totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
                   <p className="text-sm text-muted-foreground">
-                    Mostrando <span className="font-medium text-foreground">{startIndex}</span>–
-                    <span className="font-medium text-foreground">{endIndex}</span> de{" "}
-                    <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> estudios
+                    Showing <span className="font-medium text-foreground">{startIndex}</span>–
+                    <span className="font-medium text-foreground">{endIndex}</span> of{" "}
+                    <span className="font-medium text-foreground">{totalCount.toLocaleString()}</span> studies
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
@@ -958,10 +958,10 @@ const DatasetPage = () => {
                       className="gap-1"
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Anterior
+                      Previous
                     </Button>
                     <span className="text-sm text-muted-foreground px-4">
-                      Página {page + 1} de {totalPages}
+                      Page {page + 1} of {totalPages}
                     </span>
                     <Button
                       variant="outline"
@@ -970,7 +970,7 @@ const DatasetPage = () => {
                       disabled={page >= totalPages - 1}
                       className="gap-1"
                     >
-                      Siguiente
+                      Next
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>

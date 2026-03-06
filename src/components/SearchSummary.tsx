@@ -47,7 +47,7 @@ export function SearchSummary({
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-6 w-6 text-primary animate-spin" />
-        <span className="ml-3 text-sm text-muted-foreground">Calculando resultados...</span>
+        <span className="ml-3 text-sm text-muted-foreground">Calculating results...</span>
       </div>
     );
   }
@@ -55,7 +55,7 @@ export function SearchSummary({
   if (!hasAnyData) {
     return (
       <div className="text-center py-12 text-muted-foreground text-sm">
-        Selecciona una condición MeSH o introduce términos de búsqueda para ver el resumen.
+        Select a MeSH condition or enter search terms to see the summary.
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function SearchSummary({
 
   if (counts.groupATotal !== null) {
     cards.push({
-      label: `Grupo A: ${search.groupA.join(" | ")}`,
+      label: `Group A: ${search.groupA.join(" | ")}`,
       value: counts.groupATotal,
       icon: <FlaskConical className="h-5 w-5" />,
       color: "border-emerald-500/30 bg-emerald-500/5",
@@ -91,7 +91,7 @@ export function SearchSummary({
 
   if (counts.groupBTotal !== null) {
     cards.push({
-      label: `Grupo B: ${search.groupB.join(" | ")}`,
+      label: `Group B: ${search.groupB.join(" | ")}`,
       value: counts.groupBTotal,
       icon: <FlaskConical className="h-5 w-5" />,
       color: "border-amber-500/30 bg-amber-500/5",
@@ -123,7 +123,7 @@ export function SearchSummary({
         <div className="flex-1">
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dataset Bronze</p>
           <p className="text-3xl font-bold text-foreground tabular-nums">{counts.intersectionTotal.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground mt-1">estudios que cumplen todos los criterios activos</p>
+          <p className="text-xs text-muted-foreground mt-1">studies matching all active criteria</p>
         </div>
 
         {counts.intersectionTotal > 0 && (
@@ -132,9 +132,9 @@ export function SearchSummary({
               onClick={handleViewDataset}
               disabled={!canViewDataset}
               className="gap-2"
-              title={!objective.trim() ? "Define tu objetivo primero" : undefined}
+              title={!objective.trim() ? "Define your objective first" : undefined}
             >
-              Ver dataset Bronze
+              View Bronze dataset
               <Badge variant="secondary" className="ml-1 text-xs">
                 {counts.intersectionTotal.toLocaleString()}
               </Badge>
@@ -142,7 +142,7 @@ export function SearchSummary({
             {!objective.trim() && (
               <p className="text-xs text-amber-600 flex items-center gap-1">
                 <Lock className="h-3 w-3" />
-                Define tu objetivo para continuar
+                Define your objective to continue
               </p>
             )}
           </div>

@@ -39,7 +39,7 @@ function HypothesisCard({ hypothesis }: { hypothesis: DirectionHypothesis }) {
       {supportingToShow.length > 0 && (
         <div className="space-y-2 mt-3">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Evidencia de soporte
+            Supporting evidence
           </p>
           {supportingToShow.map((snippet, idx) => (
             <SnippetCard key={idx} snippet={snippet} />
@@ -56,7 +56,7 @@ function HypothesisCard({ hypothesis }: { hypothesis: DirectionHypothesis }) {
               ) : (
                 <ChevronDown className="h-3.5 w-3.5" />
               )}
-              Contraste ({hypothesis.counter_snippets!.length})
+              Contrast ({hypothesis.counter_snippets!.length})
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 mt-2">
@@ -79,12 +79,12 @@ export function HypothesisSection({ hypotheses }: HypothesisSectionProps) {
         <CardHeader>
           <CardTitle className="font-serif text-lg flex items-center gap-2">
             <Compass className="h-5 w-5 text-primary" />
-            Dirección del Análisis
+            Analysis Direction
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            No hay suficiente evidencia en el payload para esta sección.
+            Not enough evidence in the payload for this section.
           </p>
         </CardContent>
       </Card>
@@ -96,7 +96,7 @@ export function HypothesisSection({ hypotheses }: HypothesisSectionProps) {
       <CardHeader>
         <CardTitle className="font-serif text-lg flex items-center gap-2">
           <Compass className="h-5 w-5 text-primary" />
-          Dirección del Análisis
+          Analysis Direction
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

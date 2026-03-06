@@ -44,15 +44,15 @@ const Index = () => {
                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
                   1
                 </div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Define tu objetivo</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Define your objective</h2>
               </div>
               <p className="text-sm text-muted-foreground pl-8">
-                Antes de explorar la evidencia, define qué quieres investigar. Tu objetivo guiará el filtrado
-                inteligente y el análisis final.
+                Before exploring the evidence, define what you want to investigate. Your objective will guide
+                intelligent filtering and the final analysis.
               </p>
               <div className="pl-8">
                 <Textarea
-                  placeholder="Ej: Evaluar la eficacia de intervenciones nutricionales para mejorar la masa muscular en pacientes mayores con sarcopenia..."
+                  placeholder="E.g.: Evaluate the efficacy of nutritional interventions to improve muscle mass in elderly patients with sarcopenia..."
                   value={objective}
                   onChange={(e) => setObjective(e.target.value)}
                   rows={3}
@@ -61,12 +61,12 @@ const Index = () => {
                 {objective.trim().length > 0 && (
                   <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                     <Target className="h-3 w-3 text-primary" />
-                    Objetivo definido · {objective.trim().length} caracteres
+                    Objective defined · {objective.trim().length} characters
                   </p>
                 )}
                 {objective.trim().length === 0 && (
                   <p className="text-xs text-amber-600 mt-1.5">
-                    El objetivo es obligatorio para acceder al dataset y al análisis.
+                    An objective is required to access the dataset and analysis.
                   </p>
                 )}
               </div>
@@ -81,11 +81,11 @@ const Index = () => {
                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
                   2
                 </div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Filtra la evidencia</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Filter the evidence</h2>
               </div>
               <p className="text-sm text-muted-foreground pl-8">
-                Selecciona la condición clínica y añade términos de búsqueda para acotar el dataset inicial. Este será
-                tu <span className="font-medium text-foreground">dataset Bronze</span> — el punto de partida.
+                Select the clinical condition and add search terms to narrow down the initial dataset. This will be
+                your <span className="font-medium text-foreground">Bronze dataset</span> — the starting point.
               </p>
               <div className="pl-8 space-y-4">
                 <MeshConditionSearch value={selectedMeshConditions} onChange={setSelectedMeshConditions} />
@@ -105,8 +105,8 @@ const Index = () => {
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Dataset Bronze</h2>
               </div>
               <p className="text-sm text-muted-foreground pl-8">
-                Estudios que coinciden con tus criterios de búsqueda. Accede al dataset para filtrarlos y validarlos
-                antes del análisis.
+                Studies matching your search criteria. Access the dataset to filter and validate them
+                before analysis.
               </p>
               <div className="pl-8">
                 {error ? (

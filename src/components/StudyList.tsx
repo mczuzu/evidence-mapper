@@ -88,7 +88,7 @@ export function StudyList({
           className="gap-2"
         >
           <Database className="h-4 w-4" />
-          Ver dataset ({totalCount.toLocaleString()})
+          View dataset ({totalCount.toLocaleString()})
         </Button>
       </div>
 
