@@ -250,4 +250,119 @@ function SearchRowComponent({ row, index, isOnly, onUpdate, onRemove }: {
       <div className="pt-1.5 shrink-0">
         <TypeSelector value={row.type} onChange={type => onUpdate({ ...row, type, terms: [] })} />
       </div>
-      {row.type ==
+      {row.type === "freetext"
+        ? <FreeTextField terms={row.terms} onAdd={t => onUpdate({ ...row, terms: [...row.terms, t] })} onRemove={i => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })} />
+        : <GuidedField fieldType={row.type} terms={row.terms} onAdd={t => onUpdate({ ...row, terms: [...row.terms, t] })} onRemove={i => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })} />
+      }
+      {!isOnly && (
+        <button onClick={onRemove} className="mt-2.5 p-1.5 rounded-lg text-muted-foreground/30 hover:text-muted-foreground hover:bg-muted transition-all opacity-0 group-hover:opacity-100">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────
+let rowId = 10;
+
+interface SearchBuilderProps {
+  value: SearchInput;
+  onChange: (v: SearchInput) => void;
+  objective?: string;
+}
+
+export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiApplied, setAiApplied] = useState(false);
+
+  const rows = value.rows;
+  const setRows = (rows: SearchRow[]) => onChange({ rows });
+
+  const addRow = () => setRows([...rows, { id: ++rowId, type: "freetext", terms: [], operator: "AND" }]);
+  const updateRow = (id: number, u: SearchRow) => setRows(rows.map(r => r.id === id ? u : r));
+  const removeRow = (id: number) => setRows(rows.filter(r => r.id !== id));
+
+  const handleGenerate = async () => {
+    if (!objective?.trim()) return;
+    setIsGenerating(true);
+    try {
+      // TODO: replace with real Claude API call
+      await new Promise(r => setTimeout(r, 1400));
+      // Placeholder strategy — real implementation calls Claude API
+      setRows([
+        { id: ++rowId, type: "condition", terms: [], operator: "AND" },
+        { id: ++rowId, type: "intervention", terms: [], operator: "AND" },
+        { id: ++rowId, type: "freetext", terms: [], operator: "AND" },
+      ]);
+      setAiApplied(true);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const hasTerms = rows.some(r => r.terms.length > 0);
+  const queryPreview = rows.filter(r => r.terms.length > 0).map((r, i) => {
+    const terms = r.terms.length > 1 ? `(${r.terms.join(" OR ")})` : r.terms[0];
+    const type = r.type === "freetext" ? "TEXT" : r.type.slice(0, 4).toUpperCase();
+    return `${i > 0 ? ` ${r.operator} ` : ""}[${type}] ${terms}`;
+  }).join("");
+
+  return (
+    <div className="space-y-4">
+      {/* Header + AI button */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+          {Object.entries(FIELD_TYPES).map(([k, fc]) => (
+            <span key={k} className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${fc.dotClass}`} />
+              {fc.label}
+            </span>
+          ))}
+        </div>
+        <button onClick={handleGenerate} disabled={!objective?.trim() || isGenerating}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all shrink-0 ${
+            !objective?.trim() || isGenerating
+              ? "border-border text-muted-foreground cursor-not-allowed bg-background"
+              : aiApplied
+                ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
+                : "border-foreground bg-foreground text-background hover:bg-foreground/90"}`}>
+          <Sparkles className="h-3.5 w-3.5" />
+          {isGenerating ? "Generating…" : aiApplied ? "Regenerate" : "Generate from objective"}
+        </button>
+      </div>
+
+      {/* AI notice */}
+      {aiApplied && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50 border border-green-200 text-xs text-green-700">
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>AI-generated strategy · all fields are editable</span>
+          <button onClick={() => { setAiApplied(false); onChange(emptySearch()); }} className="ml-auto opacity-50 hover:opacity-100">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Rows */}
+      <div className="space-y-4">
+        {rows.map((row, i) => (
+          <SearchRowComponent key={row.id} row={row} index={i} isOnly={rows.length === 1}
+            onUpdate={u => updateRow(row.id, u)} onRemove={() => removeRow(row.id)} />
+        ))}
+      </div>
+
+      {/* Add field */}
+      <button onClick={addRow} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors pl-[4.5rem]">
+        <Plus className="h-3.5 w-3.5" /> Add search field
+      </button>
+
+      {/* Query preview */}
+      {queryPreview && (
+        <div className="px-3 py-2.5 rounded-xl bg-muted/30 border border-border">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Query preview</p>
+          <code className="text-xs text-muted-foreground break-all leading-relaxed">{queryPreview}</code>
+        </div>
+      )}
+    </div>
+  );
+}
