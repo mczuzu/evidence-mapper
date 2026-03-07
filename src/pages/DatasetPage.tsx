@@ -170,17 +170,18 @@ const DatasetPage = () => {
 
   const highlightTerms = useMemo(() => {
     const terms: string[] = [];
-    if (search.baseQuery.trim()) terms.push(search.baseQuery.trim());
-    terms.push(...search.groupA.filter((t) => t.trim()));
-    terms.push(...search.groupB.filter((t) => t.trim()));
-    for (const m of meshConditions) {
-      if (m.trim()) {
-        terms.push(m.trim());
-        const words = m
-          .trim()
-          .split(/\s+/)
-          .filter((w) => w.length > 2);
-        terms.push(...words);
+    for (const row of search.rows) {
+      for (const t of row.terms) {
+        if (t.trim()) {
+          terms.push(t.trim());
+          if (row.type === "condition") {
+            const words = t
+              .trim()
+              .split(/\s+/)
+              .filter((w) => w.length > 2);
+            terms.push(...words);
+          }
+        }
       }
     }
     const seen = new Set<string>();
@@ -190,7 +191,7 @@ const DatasetPage = () => {
       seen.add(key);
       return true;
     });
-  }, [search, meshConditions]);
+  }, [search]);
 
   const startIndex = page * pageSize + 1;
   const endIndex = Math.min((page + 1) * pageSize, totalCount);
