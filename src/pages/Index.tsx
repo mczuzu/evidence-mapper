@@ -1,134 +1,106 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { FilterSidebar } from "@/components/FilterSidebar";
-import { UnifiedSearch } from "@/components/UnifiedSearch";
-import { MeshConditionSearch } from "@/components/MeshConditionSearch";
 import { SearchSummary } from "@/components/SearchSummary";
+import { SearchBuilder } from "@/components/SearchBuilder";
 import { useSearchCounts } from "@/hooks/useSearchCounts";
-import { UnifiedSearchInput, paramsToSearch, parseMeshFromParams } from "@/types/search";
+import { SearchInput, emptySearch, paramsToSearch, searchToParams } from "@/types/search";
 import { Textarea } from "@/components/ui/textarea";
 import { Target } from "lucide-react";
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const initialSearch = paramsToSearch(searchParams);
-  const [search, setSearch] = useState<UnifiedSearchInput>(initialSearch);
+  const [search, setSearch] = useState<SearchInput>(paramsToSearch(searchParams));
   const [objective, setObjective] = useState<string>("");
-  const [selectedLabels, setSelectedLabels] = useState<string[]>(
-    searchParams.get("labels")?.split(",").filter(Boolean) || [],
-  );
-  const [selectedParamTypes, setSelectedParamTypes] = useState<string[]>(
-    searchParams.get("paramTypes")?.split(",").filter(Boolean) || [],
-  );
-  const [selectedMeshConditions, setSelectedMeshConditions] = useState<string[]>(parseMeshFromParams(searchParams));
 
-  const {
-    data: counts,
-    isLoading,
-    error,
-  } = useSearchCounts({
-    search,
-    selectedMeshConditions,
-  });
+  const { data: counts, isLoading, error } = useSearchCounts({ search });
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* ── STEP 0: OBJETIVO ── */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                  1
-                </div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Define your objective</h2>
-              </div>
-              <p className="text-sm text-muted-foreground pl-8">
-                Before exploring the evidence, define what you want to investigate. Your objective will guide
-                intelligent filtering and the final analysis.
-              </p>
-              <div className="pl-8">
-                <Textarea
-                  placeholder="E.g.: Evaluate the efficacy of nutritional interventions to improve muscle mass in elderly patients with sarcopenia..."
-                  value={objective}
-                  onChange={(e) => setObjective(e.target.value)}
-                  rows={3}
-                  className="resize-none text-sm"
-                />
-                {objective.trim().length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                    <Target className="h-3 w-3 text-primary" />
-                    Objective defined · {objective.trim().length} characters
-                  </p>
-                )}
-                {objective.trim().length === 0 && (
-                  <p className="text-xs text-amber-600 mt-1.5">
-                    An objective is required to access the dataset and analysis.
-                  </p>
-                )}
-              </div>
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-4xl mx-auto space-y-8">
+
+          {/* Step 1 — Objective */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Define your objective</h2>
             </div>
-
-            {/* Divider */}
-            <div className="border-t border-border" />
-
-            {/* ── STEP 1: FILTRAR EVIDENCIA ── */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                  2
-                </div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Filter the evidence</h2>
-              </div>
-              <p className="text-sm text-muted-foreground pl-8">
-                Select the clinical condition and add search terms to narrow down the initial dataset. This will be
-                your <span className="font-medium text-foreground">Bronze dataset</span> — the starting point.
-              </p>
-              <div className="pl-8 space-y-4">
-                <MeshConditionSearch value={selectedMeshConditions} onChange={setSelectedMeshConditions} />
-                <UnifiedSearch value={search} onChange={setSearch} />
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="border-t border-border" />
-
-            {/* ── RESULTS ── */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                  3
-                </div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Dataset Bronze</h2>
-              </div>
-              <p className="text-sm text-muted-foreground pl-8">
-                Studies matching your search criteria. Access the dataset to filter and validate them
-                before analysis.
-              </p>
-              <div className="pl-8">
-                {error ? (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                    <p className="text-sm text-destructive">Error loading studies: {error.message}</p>
-                  </div>
-                ) : (
-                  <SearchSummary
-                    counts={counts}
-                    isLoading={isLoading}
-                    search={search}
-                    selectedMeshConditions={selectedMeshConditions}
-                    selectedLabels={selectedLabels}
-                    selectedParamTypes={selectedParamTypes}
-                    objective={objective}
-                  />
-                )}
-              </div>
+            <p className="text-sm text-muted-foreground pl-8">
+              Before exploring the evidence, define what you want to investigate. Your objective will guide intelligent filtering and the final analysis.
+            </p>
+            <div className="pl-8">
+              <Textarea
+                placeholder="E.g.: Evaluate the efficacy of nutritional interventions to improve muscle mass in elderly patients with sarcopenia..."
+                value={objective}
+                onChange={(e) => setObjective(e.target.value)}
+                rows={3}
+                className="resize-none text-sm"
+              />
+              {objective.trim().length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                  <Target className="h-3 w-3 text-primary" />
+                  Objective defined · {objective.trim().length} characters
+                </p>
+              )}
+              {objective.trim().length === 0 && (
+                <p className="text-xs text-amber-600 mt-1.5">
+                  An objective is required to access the dataset and analysis.
+                </p>
+              )}
             </div>
           </div>
-        </main>
-      </div>
+
+          <div className="border-t border-border" />
+
+          {/* Step 2 — Search strategy */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Filter the evidence</h2>
+            </div>
+            <p className="text-sm text-muted-foreground pl-8">
+              Build your search strategy using conditions, interventions, or free text. This will be your{" "}
+              <span className="font-medium text-foreground">Bronze dataset</span> — the starting point.
+            </p>
+            <div className="pl-8">
+              <SearchBuilder value={search} onChange={setSearch} objective={objective} />
+            </div>
+          </div>
+
+          <div className="border-t border-border" />
+
+          {/* Step 3 — Results */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">3</div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Dataset Bronze</h2>
+            </div>
+            <p className="text-sm text-muted-foreground pl-8">
+              Studies matching your search criteria. Access the dataset to filter and validate them before analysis.
+            </p>
+            <div className="pl-8">
+              {error ? (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                  <p className="text-sm text-destructive">Error loading studies: {error.message}</p>
+                </div>
+              ) : (
+                <SearchSummary
+                  counts={counts}
+                  isLoading={isLoading}
+                  search={search}
+                  selectedMeshConditions={[]}
+                  selectedLabels={[]}
+                  selectedParamTypes={[]}
+                  objective={objective}
+                />
+              )}
+            </div>
+          </div>
+
+        </div>
+      </main>
     </div>
   );
 };
