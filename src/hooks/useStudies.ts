@@ -39,26 +39,54 @@ async function executeSearch(rows: SearchRow[]): Promise<{ nctIds: string[]; ran
 
   const rowSets = await Promise.all(
     activeRows.map(async (row) => {
-      const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));
-      // Track best rank across all terms
-      for (const results of termResults) {
-        for (const r of results) {
-          const existing = globalRankMap.get(r.nct_id);
-          if (existing === undefined || r.rank > existing) globalRankMap.set(r.nct_id, r.rank);
+      let ids: string[] = [];
+
+      if (row.type === "condition") {
+        const results = await Promise.all(
+          row.terms.map(async (t) => {
+            const { data, error } = await supabaseExternal
+              .from("mesh_condition")
+              .select("nct_id")
+              .ilike("mesh_term", t);
+            if (error) throw error;
+            return (data || []).map((r) => r.nct_id);
+          }),
+        );
+        ids = [...new Set(results.flat())];
+      } else if (row.type === "intervention") {
+        const results = await Promise.all(
+          row.terms.map(async (t) => {
+            const { data, error } = await supabaseExternal
+              .from("intervention")
+              .select("nct_id")
+              .ilike("intervention_name", `%${t}%`);
+            if (error) throw error;
+            return (data || []).map((r) => r.nct_id);
+          }),
+        );
+        ids = [...new Set(results.flat())];
+      } else {
+        // freetext
+        const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));
+        for (const results of termResults) {
+          for (const r of results) {
+            const existing = globalRankMap.get(r.nct_id);
+            if (existing === undefined || r.rank > existing) globalRankMap.set(r.nct_id, r.rank);
+          }
         }
+        ids = [...new Set(termResults.flat().map((r) => r.nct_id))];
       }
-      return unionSets(...termResults.map((res) => new Set(res.map((r) => r.nct_id))));
+
+      return new Set(ids);
     }),
   );
 
-  // Combine rows with their operators
   let finalSet = rowSets[0];
   for (let i = 1; i < activeRows.length; i++) {
     finalSet = activeRows[i].operator === "AND" ? intersectSets(finalSet, rowSets[i]) : unionSets(finalSet, rowSets[i]);
   }
 
   const nctIds = [...finalSet].sort((a, b) => (globalRankMap.get(b) ?? 0) - (globalRankMap.get(a) ?? 0));
-
   return { nctIds, rankMap: globalRankMap };
 }
 
