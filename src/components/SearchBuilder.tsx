@@ -31,7 +31,9 @@ const FIELD_TYPES = {
 // ── Chip ───────────────────────────────────────────────────────
 function Chip({ label, badgeClass, onRemove }: { label: string; badgeClass: string; onRemove: () => void }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium shrink-0 ${badgeClass}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium shrink-0 ${badgeClass}`}
+    >
       {label}
       <button onClick={onRemove} className="ml-0.5 opacity-40 hover:opacity-80 transition-opacity">
         <X className="h-3 w-3" />
@@ -41,15 +43,35 @@ function Chip({ label, badgeClass, onRemove }: { label: string; badgeClass: stri
 }
 
 // ── Operator toggle ────────────────────────────────────────────
-function OperatorToggle({ value, onChange, isFirst }: { value: "AND" | "OR"; onChange: (v: "AND" | "OR") => void; isFirst: boolean }) {
-  if (isFirst) return <span className="text-[11px] font-bold text-muted-foreground w-14 text-right shrink-0 pr-1 select-none">WHERE</span>;
+function OperatorToggle({
+  value,
+  onChange,
+  isFirst,
+}: {
+  value: "AND" | "OR";
+  onChange: (v: "AND" | "OR") => void;
+  isFirst: boolean;
+}) {
+  if (isFirst)
+    return (
+      <span className="text-[11px] font-bold text-muted-foreground w-14 text-right shrink-0 pr-1 select-none">
+        WHERE
+      </span>
+    );
   return (
     <div className="flex rounded-lg border border-border overflow-hidden shrink-0 text-[11px] font-bold">
-      {(["AND", "OR"] as const).map(op => (
-        <button key={op} onClick={() => onChange(op)}
-          className={`px-2.5 py-1.5 transition-colors ${value === op
-            ? op === "AND" ? "bg-foreground text-background" : "bg-amber-500 text-white"
-            : "bg-background text-muted-foreground hover:text-foreground"}`}>
+      {(["AND", "OR"] as const).map((op) => (
+        <button
+          key={op}
+          onClick={() => onChange(op)}
+          className={`px-2.5 py-1.5 transition-colors ${
+            value === op
+              ? op === "AND"
+                ? "bg-foreground text-background"
+                : "bg-amber-500 text-white"
+              : "bg-background text-muted-foreground hover:text-foreground"
+          }`}
+        >
           {op}
         </button>
       ))}
@@ -64,31 +86,43 @@ function TypeSelector({ value, onChange }: { value: SearchRow["type"]; onChange:
   const cfg = FIELD_TYPES[value];
 
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
   return (
     <div className="relative shrink-0" ref={ref}>
-      <button onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground hover:border-border/80 transition-colors whitespace-nowrap">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground hover:border-border/80 transition-colors whitespace-nowrap"
+      >
         <span className={`w-2 h-2 rounded-full ${cfg.dotClass}`} />
         {cfg.label}
         <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 z-50 w-52 rounded-xl border border-border bg-background shadow-xl overflow-hidden">
-          {(Object.entries(FIELD_TYPES) as [SearchRow["type"], typeof FIELD_TYPES[keyof typeof FIELD_TYPES]][]).map(([key, fc]) => (
-            <button key={key} onMouseDown={() => { onChange(key); setOpen(false); }}
-              className={`w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors ${value === key ? "bg-muted" : ""}`}>
-              <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${fc.dotClass}`} />
-              <div>
-                <p className="text-xs font-semibold text-foreground">{fc.label}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{fc.hint}</p>
-              </div>
-            </button>
-          ))}
+          {(Object.entries(FIELD_TYPES) as [SearchRow["type"], (typeof FIELD_TYPES)[keyof typeof FIELD_TYPES]][]).map(
+            ([key, fc]) => (
+              <button
+                key={key}
+                onMouseDown={() => {
+                  onChange(key);
+                  setOpen(false);
+                }}
+                className={`w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors ${value === key ? "bg-muted" : ""}`}
+              >
+                <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${fc.dotClass}`} />
+                <div>
+                  <p className="text-xs font-semibold text-foreground">{fc.label}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{fc.hint}</p>
+                </div>
+              </button>
+            ),
+          )}
         </div>
       )}
     </div>
@@ -96,7 +130,12 @@ function TypeSelector({ value, onChange }: { value: SearchRow["type"]; onChange:
 }
 
 // ── Guided field (condition / intervention) ────────────────────
-function GuidedField({ fieldType, terms, onAdd, onRemove }: {
+function GuidedField({
+  fieldType,
+  terms,
+  onAdd,
+  onRemove,
+}: {
   fieldType: "condition" | "intervention";
   terms: string[];
   onAdd: (t: string) => void;
@@ -135,37 +174,60 @@ function GuidedField({ fieldType, terms, onAdd, onRemove }: {
   }, [open, query]);
 
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false); };
+    const h = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
   const addTerm = (name: string) => {
-    if (name && !terms.map(t => t.toLowerCase()).includes(name.toLowerCase())) onAdd(name);
-    setQuery("");
+    if (name && !terms.map((t) => t.toLowerCase()).includes(name.toLowerCase())) onAdd(name);
+    // No reseteamos query — la lista se queda donde está
     inputRef.current?.focus();
   };
 
-  const filtered = suggestions.filter(s => !terms.map(t => t.toLowerCase()).includes(s.name.toLowerCase()));
+  const filtered = suggestions.filter((s) => !terms.map((t) => t.toLowerCase()).includes(s.name.toLowerCase()));
 
   return (
     <div className="relative flex-1" ref={containerRef}>
-      <div onClick={() => { inputRef.current?.focus(); setOpen(true); }}
-        className={`flex flex-wrap items-center gap-1.5 min-h-[2.5rem] rounded-xl border bg-background px-3 py-1.5 cursor-text transition-all ${open ? "border-foreground/30 ring-2 ring-foreground/10" : "border-border hover:border-border/80"}`}>
-        {terms.map((t, i) => <Chip key={i} label={t} badgeClass={cfg.badgeClass} onRemove={() => onRemove(i)} />)}
+      <div
+        onClick={() => {
+          inputRef.current?.focus();
+          setOpen(true);
+        }}
+        className={`flex flex-wrap items-center gap-1.5 min-h-[2.5rem] rounded-xl border bg-background px-3 py-1.5 cursor-text transition-all ${open ? "border-foreground/30 ring-2 ring-foreground/10" : "border-border hover:border-border/80"}`}
+      >
+        {terms.map((t, i) => (
+          <Chip key={i} label={t} badgeClass={cfg.badgeClass} onRemove={() => onRemove(i)} />
+        ))}
         <div className="flex items-center flex-1 min-w-[120px]">
-          <input ref={inputRef} value={query}
-            onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            }}
             onFocus={() => setOpen(true)}
-            onKeyDown={e => {
+            onKeyDown={(e) => {
               if (e.key === "Backspace" && !query && terms.length > 0) onRemove(terms.length - 1);
               if (e.key === "Escape") setOpen(false);
-              if (e.key === "Enter" && filtered.length === 1) { e.preventDefault(); addTerm(filtered[0].name); }
+              if (e.key === "Enter" && filtered.length === 1) {
+                e.preventDefault();
+                addTerm(filtered[0].name);
+              }
             }}
             placeholder={terms.length === 0 ? cfg.placeholder : "Add more…"}
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
-          <button onMouseDown={e => { e.preventDefault(); setOpen(o => !o); }}
-            className="ml-1 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          />
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setOpen((o) => !o);
+            }}
+            className="ml-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
             {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
         </div>
@@ -178,19 +240,31 @@ function GuidedField({ fieldType, terms, onAdd, onRemove }: {
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {loading ? "Loading…" : query ? `${filtered.length} results` : `Top ${filtered.length} · type to filter`}
             </span>
-            {query && <button onClick={() => setQuery("")} className="text-[10px] text-muted-foreground hover:text-foreground">Clear</button>}
+            {query && (
+              <button onClick={() => setQuery("")} className="text-[10px] text-muted-foreground hover:text-foreground">
+                Clear
+              </button>
+            )}
           </div>
           <div className="max-h-52 overflow-y-auto">
-            {filtered.length === 0 && !loading
-              ? <p className="px-3 py-3 text-xs text-muted-foreground italic">No matches found</p>
-              : filtered.map((item, i) => (
-                <button key={i} onMouseDown={() => addTerm(item.name)}
-                  className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted transition-colors text-left">
+            {filtered.length === 0 && !loading ? (
+              <p className="px-3 py-3 text-xs text-muted-foreground italic">No matches found</p>
+            ) : (
+              filtered.map((item, i) => (
+                <button
+                  key={i}
+                  onMouseDown={() => addTerm(item.name)}
+                  className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted transition-colors text-left"
+                >
                   <span className="text-sm text-foreground">{item.name}</span>
-                  {item.n != null && <span className="text-[10px] text-muted-foreground font-mono ml-2 shrink-0">{item.n.toLocaleString()} studies</span>}
+                  {item.n != null && (
+                    <span className="text-[10px] text-muted-foreground font-mono ml-2 shrink-0">
+                      {item.n.toLocaleString()} studies
+                    </span>
+                  )}
                 </button>
               ))
-            }
+            )}
           </div>
         </div>
       )}
@@ -199,36 +273,61 @@ function GuidedField({ fieldType, terms, onAdd, onRemove }: {
 }
 
 // ── Free text field ────────────────────────────────────────────
-function FreeTextField({ terms, onAdd, onRemove }: { terms: string[]; onAdd: (t: string) => void; onRemove: (i: number) => void }) {
+function FreeTextField({
+  terms,
+  onAdd,
+  onRemove,
+}: {
+  terms: string[];
+  onAdd: (t: string) => void;
+  onRemove: (i: number) => void;
+}) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const cfg = FIELD_TYPES.freetext;
 
   const addTerm = (term: string) => {
     const t = term.trim();
-    if (t && !terms.map(x => x.toLowerCase()).includes(t.toLowerCase())) onAdd(t);
+    if (t && !terms.map((x) => x.toLowerCase()).includes(t.toLowerCase())) onAdd(t);
     setQuery("");
     inputRef.current?.focus();
   };
 
   return (
     <div className="flex-1">
-      <div onClick={() => inputRef.current?.focus()}
-        className="flex flex-wrap items-center gap-1.5 min-h-[2.5rem] rounded-xl border border-border bg-background px-3 py-1.5 cursor-text hover:border-border/80 focus-within:border-foreground/30 focus-within:ring-2 focus-within:ring-foreground/10 transition-all">
-        {terms.map((t, i) => <Chip key={i} label={t} badgeClass={cfg.badgeClass} onRemove={() => onRemove(i)} />)}
-        <input ref={inputRef} value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => {
-            if ((e.key === "Enter" || e.key === ",") && query.trim()) { e.preventDefault(); addTerm(query); }
+      <div
+        onClick={() => inputRef.current?.focus()}
+        className="flex flex-wrap items-center gap-1.5 min-h-[2.5rem] rounded-xl border border-border bg-background px-3 py-1.5 cursor-text hover:border-border/80 focus-within:border-foreground/30 focus-within:ring-2 focus-within:ring-foreground/10 transition-all"
+      >
+        {terms.map((t, i) => (
+          <Chip key={i} label={t} badgeClass={cfg.badgeClass} onRemove={() => onRemove(i)} />
+        ))}
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.key === "Enter" || e.key === ",") && query.trim()) {
+              e.preventDefault();
+              addTerm(query);
+            }
             if (e.key === "Backspace" && !query && terms.length > 0) onRemove(terms.length - 1);
           }}
-          onPaste={e => {
+          onPaste={(e) => {
             const text = e.clipboardData.getData("text");
-            if (/[,;\n]/.test(text)) { e.preventDefault(); text.split(/[,;\n]/).map(t => t.trim()).filter(Boolean).forEach(addTerm); }
+            if (/[,;\n]/.test(text)) {
+              e.preventDefault();
+              text
+                .split(/[,;\n]/)
+                .map((t) => t.trim())
+                .filter(Boolean)
+                .forEach(addTerm);
+            }
           }}
           onBlur={() => query.trim() && addTerm(query)}
           placeholder={terms.length === 0 ? cfg.placeholder : "Add more…"}
-          className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+          className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+        />
       </div>
       <p className="text-[10px] text-muted-foreground mt-1 pl-1">
         {cfg.hint} · press Enter or , to add · paste comma-separated lists
@@ -238,24 +337,50 @@ function FreeTextField({ terms, onAdd, onRemove }: { terms: string[]; onAdd: (t:
 }
 
 // ── Search row ─────────────────────────────────────────────────
-function SearchRowComponent({ row, index, isOnly, onUpdate, onRemove }: {
-  row: SearchRow; index: number; isOnly: boolean;
-  onUpdate: (r: SearchRow) => void; onRemove: () => void;
+function SearchRowComponent({
+  row,
+  index,
+  isOnly,
+  onUpdate,
+  onRemove,
+}: {
+  row: SearchRow;
+  index: number;
+  isOnly: boolean;
+  onUpdate: (r: SearchRow) => void;
+  onRemove: () => void;
 }) {
   return (
     <div className="flex items-start gap-2 group">
       <div className="pt-2.5 shrink-0 w-14 flex justify-end">
-        <OperatorToggle value={row.operator} onChange={op => onUpdate({ ...row, operator: op })} isFirst={index === 0} />
+        <OperatorToggle
+          value={row.operator}
+          onChange={(op) => onUpdate({ ...row, operator: op })}
+          isFirst={index === 0}
+        />
       </div>
       <div className="pt-1.5 shrink-0">
-        <TypeSelector value={row.type} onChange={type => onUpdate({ ...row, type, terms: [] })} />
+        <TypeSelector value={row.type} onChange={(type) => onUpdate({ ...row, type, terms: [] })} />
       </div>
-      {row.type === "freetext"
-        ? <FreeTextField terms={row.terms} onAdd={t => onUpdate({ ...row, terms: [...row.terms, t] })} onRemove={i => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })} />
-        : <GuidedField fieldType={row.type} terms={row.terms} onAdd={t => onUpdate({ ...row, terms: [...row.terms, t] })} onRemove={i => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })} />
-      }
+      {row.type === "freetext" ? (
+        <FreeTextField
+          terms={row.terms}
+          onAdd={(t) => onUpdate({ ...row, terms: [...row.terms, t] })}
+          onRemove={(i) => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })}
+        />
+      ) : (
+        <GuidedField
+          fieldType={row.type}
+          terms={row.terms}
+          onAdd={(t) => onUpdate({ ...row, terms: [...row.terms, t] })}
+          onRemove={(i) => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })}
+        />
+      )}
       {!isOnly && (
-        <button onClick={onRemove} className="mt-2.5 p-1.5 rounded-lg text-muted-foreground/30 hover:text-muted-foreground hover:bg-muted transition-all opacity-0 group-hover:opacity-100">
+        <button
+          onClick={onRemove}
+          className="mt-2.5 p-1.5 rounded-lg text-muted-foreground/30 hover:text-muted-foreground hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
+        >
           <X className="h-3.5 w-3.5" />
         </button>
       )}
@@ -280,15 +405,15 @@ export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps
   const setRows = (rows: SearchRow[]) => onChange({ rows });
 
   const addRow = () => setRows([...rows, { id: ++rowId, type: "freetext", terms: [], operator: "AND" }]);
-  const updateRow = (id: number, u: SearchRow) => setRows(rows.map(r => r.id === id ? u : r));
-  const removeRow = (id: number) => setRows(rows.filter(r => r.id !== id));
+  const updateRow = (id: number, u: SearchRow) => setRows(rows.map((r) => (r.id === id ? u : r)));
+  const removeRow = (id: number) => setRows(rows.filter((r) => r.id !== id));
 
   const handleGenerate = async () => {
     if (!objective?.trim()) return;
     setIsGenerating(true);
     try {
       // TODO: replace with real Claude API call
-      await new Promise(r => setTimeout(r, 1400));
+      await new Promise((r) => setTimeout(r, 1400));
       // Placeholder strategy — real implementation calls Claude API
       setRows([
         { id: ++rowId, type: "condition", terms: [], operator: "AND" },
@@ -301,12 +426,15 @@ export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps
     }
   };
 
-  const hasTerms = rows.some(r => r.terms.length > 0);
-  const queryPreview = rows.filter(r => r.terms.length > 0).map((r, i) => {
-    const terms = r.terms.length > 1 ? `(${r.terms.join(" OR ")})` : r.terms[0];
-    const type = r.type === "freetext" ? "TEXT" : r.type.slice(0, 4).toUpperCase();
-    return `${i > 0 ? ` ${r.operator} ` : ""}[${type}] ${terms}`;
-  }).join("");
+  const hasTerms = rows.some((r) => r.terms.length > 0);
+  const queryPreview = rows
+    .filter((r) => r.terms.length > 0)
+    .map((r, i) => {
+      const terms = r.terms.length > 1 ? `(${r.terms.join(" OR ")})` : r.terms[0];
+      const type = r.type === "freetext" ? "TEXT" : r.type.slice(0, 4).toUpperCase();
+      return `${i > 0 ? ` ${r.operator} ` : ""}[${type}] ${terms}`;
+    })
+    .join("");
 
   return (
     <div className="space-y-4">
@@ -320,13 +448,17 @@ export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps
             </span>
           ))}
         </div>
-        <button onClick={handleGenerate} disabled={!objective?.trim() || isGenerating}
+        <button
+          onClick={handleGenerate}
+          disabled={!objective?.trim() || isGenerating}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all shrink-0 ${
             !objective?.trim() || isGenerating
               ? "border-border text-muted-foreground cursor-not-allowed bg-background"
               : aiApplied
                 ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
-                : "border-foreground bg-foreground text-background hover:bg-foreground/90"}`}>
+                : "border-foreground bg-foreground text-background hover:bg-foreground/90"
+          }`}
+        >
           <Sparkles className="h-3.5 w-3.5" />
           {isGenerating ? "Generating…" : aiApplied ? "Regenerate" : "Generate from objective"}
         </button>
@@ -337,7 +469,13 @@ export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50 border border-green-200 text-xs text-green-700">
           <Sparkles className="h-3.5 w-3.5" />
           <span>AI-generated strategy · all fields are editable</span>
-          <button onClick={() => { setAiApplied(false); onChange(emptySearch()); }} className="ml-auto opacity-50 hover:opacity-100">
+          <button
+            onClick={() => {
+              setAiApplied(false);
+              onChange(emptySearch());
+            }}
+            className="ml-auto opacity-50 hover:opacity-100"
+          >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -346,13 +484,22 @@ export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps
       {/* Rows */}
       <div className="space-y-4">
         {rows.map((row, i) => (
-          <SearchRowComponent key={row.id} row={row} index={i} isOnly={rows.length === 1}
-            onUpdate={u => updateRow(row.id, u)} onRemove={() => removeRow(row.id)} />
+          <SearchRowComponent
+            key={row.id}
+            row={row}
+            index={i}
+            isOnly={rows.length === 1}
+            onUpdate={(u) => updateRow(row.id, u)}
+            onRemove={() => removeRow(row.id)}
+          />
         ))}
       </div>
 
       {/* Add field */}
-      <button onClick={addRow} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors pl-[4.5rem]">
+      <button
+        onClick={addRow}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors pl-[4.5rem]"
+      >
         <Plus className="h-3.5 w-3.5" /> Add search field
       </button>
 
