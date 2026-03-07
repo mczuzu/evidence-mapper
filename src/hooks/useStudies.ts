@@ -1,20 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabaseExternal } from "@/lib/supabase-external";
-import { StudyListItem, FacetSemanticLabel, FacetParamType } from "@/types/database";
-import { UnifiedSearchInput, isSearchActive } from "@/types/search";
+import { StudyListItem } from "@/types/database";
+import { SearchInput, SearchRow, isSearchActive } from "@/types/search";
 
 const PAGE_SIZE = 20;
 
 interface RpcSearchResult {
   nct_id: string;
-  brief_title: string;
-  official_title: string | null;
   rank: number;
 }
 
-// ─── RPC helper ───────────────────────────────────────────────
-/** Call the existing search_studies_advanced RPC with a single query term. */
-async function callRpc(q: string, limit = 500): Promise<RpcSearchResult[]> {
+async function callRpc(q: string, limit = 5000): Promise<RpcSearchResult[]> {
   const { data, error } = await supabaseExternal.rpc("search_studies_advanced_prefix", {
     q: q.trim(),
     limit_n: limit,
@@ -23,34 +19,6 @@ async function callRpc(q: string, limit = 500): Promise<RpcSearchResult[]> {
   return (data as RpcSearchResult[]) || [];
 }
 
-/**
- * Call the mesh-aware RPC so SQL applies keyword search + mesh nct_id filter together.
- * Falls back to client filtering only if the RPC is not available.
- */
-async function callRpcWithMesh(
-  q: string,
-  meshNctIds: string[],
-  limit = 5000
-): Promise<RpcSearchResult[]> {
-  const { data, error } = await supabaseExternal.rpc("search_studies_with_mesh", {
-    q: q.trim(),
-    mesh_nct_ids: meshNctIds,
-    limit_n: limit,
-  });
-
-  if (!error) return (data as RpcSearchResult[]) || [];
-
-  // Graceful fallback while RPC is rolled out in the DB
-  if (error.message?.toLowerCase().includes("search_studies_with_mesh")) {
-    const fallback = await callRpc(q, limit);
-    const meshSet = new Set(meshNctIds);
-    return fallback.filter((r) => meshSet.has(r.nct_id));
-  }
-
-  throw error;
-}
-
-// ─── Set operations ───────────────────────────────────────────
 function unionSets(...sets: Set<string>[]): Set<string> {
   const result = new Set<string>();
   for (const s of sets) for (const v of s) result.add(v);
@@ -63,342 +31,93 @@ function intersectSets(a: Set<string>, b: Set<string>): Set<string> {
   return result;
 }
 
-// ─── Unified search executor ──────────────────────────────────
-/**
- * Execute the unified search using the existing RPC.
- *
- * Strategy:
- * - base query → single RPC call (AND between tokens, handled by RPC)
- * - group terms → parallel RPC calls per term, union within group (OR)
- * - combine groups with AND (intersect) or OR (union)
- * - if base query + groups, intersect base results with group results
- *
- * Returns the ordered list of nct_ids and a rank map.
- */
-async function executeUnifiedSearch(
-  search: UnifiedSearchInput
-): Promise<{ nctIds: string[]; rankMap: Map<string, number> }> {
-  const promises: { key: string; promise: Promise<RpcSearchResult[]> }[] = [];
+async function executeSearch(rows: SearchRow[]): Promise<{ nctIds: string[]; rankMap: Map<string, number> }> {
+  const activeRows = rows.filter((r) => r.terms.length > 0);
+  if (activeRows.length === 0) return { nctIds: [], rankMap: new Map() };
 
-  // Base query
-  if (search.baseQuery.trim()) {
-    promises.push({ key: "base", promise: callRpc(search.baseQuery.trim()) });
-  }
-
-  // Group A terms (each gets its own RPC call)
-  for (const term of search.groupA) {
-    promises.push({ key: `ga:${term}`, promise: callRpc(term) });
-  }
-
-  // Group B terms
-  for (const term of search.groupB) {
-    promises.push({ key: `gb:${term}`, promise: callRpc(term) });
-  }
-
-  // Execute all in parallel
-  const results = await Promise.all(
-    promises.map(async (p) => ({
-      key: p.key,
-      data: await p.promise,
-    }))
-  );
-
-  // Build rank map (best rank wins across all calls)
   const globalRankMap = new Map<string, number>();
-  for (const { data } of results) {
-    for (const r of data) {
-      const existing = globalRankMap.get(r.nct_id);
-      if (existing === undefined || r.rank > existing) {
-        globalRankMap.set(r.nct_id, r.rank);
+
+  const rowSets = await Promise.all(
+    activeRows.map(async (row) => {
+      const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));
+      // Track best rank across all terms
+      for (const results of termResults) {
+        for (const r of results) {
+          const existing = globalRankMap.get(r.nct_id);
+          if (existing === undefined || r.rank > existing) globalRankMap.set(r.nct_id, r.rank);
+        }
       }
-    }
-  }
-
-  // Build sets
-  const baseResult = results.find((r) => r.key === "base");
-  const baseSet = baseResult
-    ? new Set(baseResult.data.map((r) => r.nct_id))
-    : null;
-
-  // Group A: union of all ga: results
-  const gaResults = results.filter((r) => r.key.startsWith("ga:"));
-  const gaSet =
-    gaResults.length > 0
-      ? unionSets(...gaResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
-      : null;
-
-  // Group B: union of all gb: results
-  const gbResults = results.filter((r) => r.key.startsWith("gb:"));
-  const gbSet =
-    gbResults.length > 0
-      ? unionSets(...gbResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
-      : null;
-
-  // Combine groups
-  let groupsCombined: Set<string> | null = null;
-  if (gaSet && gbSet) {
-    groupsCombined =
-      search.operatorBetweenGroups === "AND"
-        ? intersectSets(gaSet, gbSet)
-        : unionSets(gaSet, gbSet);
-  } else if (gaSet) {
-    groupsCombined = gaSet;
-  } else if (gbSet) {
-    groupsCombined = gbSet;
-  }
-
-  // Combine base + groups
-  let finalSet: Set<string>;
-  if (baseSet && groupsCombined) {
-    finalSet = intersectSets(baseSet, groupsCombined);
-  } else if (baseSet) {
-    finalSet = baseSet;
-  } else if (groupsCombined) {
-    finalSet = groupsCombined;
-  } else {
-    finalSet = new Set();
-  }
-
-  // Sort by rank descending
-  const nctIds = [...finalSet].sort(
-    (a, b) => (globalRankMap.get(b) ?? 0) - (globalRankMap.get(a) ?? 0)
+      return unionSets(...termResults.map((res) => new Set(res.map((r) => r.nct_id))));
+    }),
   );
+
+  // Combine rows with their operators
+  let finalSet = rowSets[0];
+  for (let i = 1; i < activeRows.length; i++) {
+    finalSet = activeRows[i].operator === "AND" ? intersectSets(finalSet, rowSets[i]) : unionSets(finalSet, rowSets[i]);
+  }
+
+  const nctIds = [...finalSet].sort((a, b) => (globalRankMap.get(b) ?? 0) - (globalRankMap.get(a) ?? 0));
 
   return { nctIds, rankMap: globalRankMap };
 }
 
-/**
- * Same boolean search flow as executeUnifiedSearch, but each term is pre-filtered
- * in SQL by the provided MeSH nct_id set.
- */
-async function executeUnifiedSearchWithMesh(
-  search: UnifiedSearchInput,
-  meshNctIds: string[]
-): Promise<{ nctIds: string[]; rankMap: Map<string, number> }> {
-  const promises: { key: string; promise: Promise<RpcSearchResult[]> }[] = [];
-
-  if (search.baseQuery.trim()) {
-    promises.push({ key: "base", promise: callRpcWithMesh(search.baseQuery.trim(), meshNctIds) });
-  }
-
-  for (const term of search.groupA) {
-    promises.push({ key: `ga:${term}`, promise: callRpcWithMesh(term, meshNctIds) });
-  }
-
-  for (const term of search.groupB) {
-    promises.push({ key: `gb:${term}`, promise: callRpcWithMesh(term, meshNctIds) });
-  }
-
-  const results = await Promise.all(
-    promises.map(async (p) => ({
-      key: p.key,
-      data: await p.promise,
-    }))
-  );
-
-  const globalRankMap = new Map<string, number>();
-  for (const { data } of results) {
-    for (const r of data) {
-      const existing = globalRankMap.get(r.nct_id);
-      if (existing === undefined || r.rank > existing) {
-        globalRankMap.set(r.nct_id, r.rank);
-      }
-    }
-  }
-
-  const baseResult = results.find((r) => r.key === "base");
-  const baseSet = baseResult ? new Set(baseResult.data.map((r) => r.nct_id)) : null;
-
-  const gaResults = results.filter((r) => r.key.startsWith("ga:"));
-  const gaSet =
-    gaResults.length > 0
-      ? unionSets(...gaResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
-      : null;
-
-  const gbResults = results.filter((r) => r.key.startsWith("gb:"));
-  const gbSet =
-    gbResults.length > 0
-      ? unionSets(...gbResults.map((r) => new Set(r.data.map((d) => d.nct_id))))
-      : null;
-
-  let groupsCombined: Set<string> | null = null;
-  if (gaSet && gbSet) {
-    groupsCombined =
-      search.operatorBetweenGroups === "AND"
-        ? intersectSets(gaSet, gbSet)
-        : unionSets(gaSet, gbSet);
-  } else if (gaSet) {
-    groupsCombined = gaSet;
-  } else if (gbSet) {
-    groupsCombined = gbSet;
-  }
-
-  let finalSet: Set<string>;
-  if (baseSet && groupsCombined) {
-    finalSet = intersectSets(baseSet, groupsCombined);
-  } else if (baseSet) {
-    finalSet = baseSet;
-  } else if (groupsCombined) {
-    finalSet = groupsCombined;
-  } else {
-    finalSet = new Set();
-  }
-
-  const nctIds = [...finalSet].sort(
-    (a, b) => (globalRankMap.get(b) ?? 0) - (globalRankMap.get(a) ?? 0)
-  );
-
-  return { nctIds, rankMap: globalRankMap };
-}
-
-// ─── MeSH condition helper ────────────────────────────────────
-/** Get nct_ids matching a MeSH condition from mesh_condition table */
-async function fetchNctIdsForMesh(meshTerm: string): Promise<string[]> {
-  const { data, error } = await supabaseExternal
-    .from("mesh_condition")
-    .select("nct_id")
-    .eq("mesh_term", meshTerm)
-    .limit(5000);
-  if (error) throw error;
-  return (data || []).map((r) => r.nct_id);
-}
-
-/** Get nct_ids for multiple MeSH conditions (union) */
-async function fetchNctIdsForMeshMulti(meshTerms: string[]): Promise<string[]> {
-  if (meshTerms.length === 0) return [];
-  if (meshTerms.length === 1) return fetchNctIdsForMesh(meshTerms[0]);
-  const allIds = await Promise.all(meshTerms.map(fetchNctIdsForMesh));
-  const set = new Set<string>();
-  for (const ids of allIds) for (const id of ids) set.add(id);
-  return [...set];
-}
-
-// ─── Hook params ──────────────────────────────────────────────
+// ── Main hook ──────────────────────────────────────────────────
 interface UseStudiesParams {
-  search: UnifiedSearchInput;
-  selectedLabels: string[];
-  selectedParamTypes: string[];
+  search: SearchInput;
+  selectedLabels?: string[];
+  selectedParamTypes?: string[];
   selectedMeshConditions?: string[];
   page: number;
   onlyAnalyzable?: boolean;
   onlyComparable?: boolean;
-  measurementClusters?: string[];
 }
 
 export function useStudies({
   search,
-  selectedLabels,
-  selectedParamTypes,
+  selectedLabels = [],
+  selectedParamTypes = [],
   selectedMeshConditions = [],
   page,
   onlyAnalyzable = false,
   onlyComparable = false,
-  measurementClusters = [],
 }: UseStudiesParams) {
   return useQuery({
     queryKey: [
       "studies",
-      search.baseQuery,
-      search.groupA,
-      search.groupB,
-      search.operatorBetweenGroups,
+      search.rows.map((r) => `${r.type}:${r.terms.join(",")}:${r.operator}`),
       selectedLabels,
       selectedParamTypes,
-      selectedMeshConditions,
       page,
       onlyAnalyzable,
       onlyComparable,
-      measurementClusters,
     ],
     queryFn: async () => {
       const searchActive = isSearchActive(search);
 
-      // ── Path A: search active → use RPC then fetch full data ──
       if (searchActive) {
-        let nctIds: string[] = [];
-
-        // When MeSH + keyword search are both active, apply intersection in SQL via RPC.
-        if (selectedMeshConditions.length > 0) {
-          const meshNctIds = await fetchNctIdsForMeshMulti(selectedMeshConditions);
-          if (meshNctIds.length === 0) {
-            return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
-          }
-
-          const searchResult = await executeUnifiedSearchWithMesh(search, meshNctIds);
-          nctIds = searchResult.nctIds;
-        } else {
-          const searchResult = await executeUnifiedSearch(search);
-          nctIds = searchResult.nctIds;
-        }
+        const { nctIds, rankMap } = await executeSearch(search.rows);
 
         if (nctIds.length === 0) {
           return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
         }
 
-        // Fetch full study data for matched IDs
-        let query = supabaseExternal
-          .from("v_ui_study_list_v2")
-          .select("*")
-          .in("nct_id", nctIds);
-
-        // Apply post-filters
-        if (onlyAnalyzable) query = query.eq("has_numeric_results", true);
-        if (onlyComparable) query = query.eq("has_group_comparison", true);
-        if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
-        if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
-
-        const { data: v2Data, error: v2Error } = await query;
-        if (v2Error) throw v2Error;
-
-        // Re-order by rank from RPC
-        const rankIndex = new Map(nctIds.map((id, i) => [id, i]));
-        const studies = ((v2Data as StudyListItem[]) || []).sort(
-          (a, b) => (rankIndex.get(a.nct_id) ?? 999) - (rankIndex.get(b.nct_id) ?? 999)
-        );
-
-        // Client-side pagination
-        const from = page * PAGE_SIZE;
-        const paginatedStudies = studies.slice(from, from + PAGE_SIZE);
-
-        return {
-          studies: paginatedStudies,
-          totalCount: studies.length,
-          pageSize: PAGE_SIZE,
-          currentPage: page,
-          totalPages: Math.ceil(studies.length / PAGE_SIZE),
-        };
-      }
-
-      // ── Path B: no search → direct query on view ──
-      // If mesh condition is selected, first get matching nct_ids
-      if (selectedMeshConditions.length > 0) {
-        const meshNctIds = await fetchNctIdsForMeshMulti(selectedMeshConditions);
-        if (meshNctIds.length === 0) {
-          return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
-        }
-
-        let query = supabaseExternal
-          .from("v_ui_study_list_v2")
-          .select("*")
-          .in("nct_id", meshNctIds);
+        let query = supabaseExternal.from("v_ui_study_list_v2").select("*").in("nct_id", nctIds);
 
         if (onlyAnalyzable) query = query.eq("has_numeric_results", true);
         if (onlyComparable) query = query.eq("has_group_comparison", true);
-        if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
-        if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
 
         const { data, error } = await query;
         if (error) throw error;
 
+        const rankIndex = new Map(nctIds.map((id, i) => [id, i]));
         const studies = ((data as StudyListItem[]) || []).sort(
-          (a, b) => b.nct_id.localeCompare(a.nct_id)
+          (a, b) => (rankIndex.get(a.nct_id) ?? 999) - (rankIndex.get(b.nct_id) ?? 999),
         );
 
         const from = page * PAGE_SIZE;
-        const paginatedStudies = studies.slice(from, from + PAGE_SIZE);
-
         return {
-          studies: paginatedStudies,
+          studies: studies.slice(from, from + PAGE_SIZE),
           totalCount: studies.length,
           pageSize: PAGE_SIZE,
           currentPage: page,
@@ -406,6 +125,7 @@ export function useStudies({
         };
       }
 
+      // No search — direct query
       let query = supabaseExternal
         .from("v_ui_study_list_v2")
         .select("*", { count: "exact" })
@@ -413,8 +133,6 @@ export function useStudies({
 
       if (onlyAnalyzable) query = query.eq("has_numeric_results", true);
       if (onlyComparable) query = query.eq("has_group_comparison", true);
-      if (measurementClusters.length > 0) query = query.overlaps("measurement_clusters", measurementClusters);
-      if (selectedLabels.length > 0) query = query.overlaps("semantic_labels", selectedLabels);
 
       const from = page * PAGE_SIZE;
       query = query.range(from, from + PAGE_SIZE - 1);
@@ -433,55 +151,30 @@ export function useStudies({
   });
 }
 
-// ─── All study IDs (for "Select All") ──────────────────────────
+// ── All study IDs (for Select All) ────────────────────────────
 export function useAllStudyIds({
   search,
-  selectedLabels,
+  selectedLabels = [],
   selectedMeshConditions = [],
   enabled = false,
 }: {
-  search: UnifiedSearchInput;
-  selectedLabels: string[];
+  search: SearchInput;
+  selectedLabels?: string[];
   selectedMeshConditions?: string[];
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: ["all-study-ids", search.baseQuery, search.groupA, search.groupB, search.operatorBetweenGroups, selectedLabels, selectedMeshConditions],
+    queryKey: ["all-study-ids", search.rows, selectedLabels],
     queryFn: async (): Promise<string[]> => {
-      const searchActive = isSearchActive(search);
-
-      // Get MeSH nct_ids if conditions are selected
-      let meshNctIds: string[] | null = null;
-      if (selectedMeshConditions.length > 0) {
-        meshNctIds = await fetchNctIdsForMeshMulti(selectedMeshConditions);
-        if (meshNctIds.length === 0) return [];
-      }
-
-      if (searchActive) {
-        if (meshNctIds) {
-          const { nctIds } = await executeUnifiedSearchWithMesh(search, meshNctIds);
-          return nctIds;
-        }
-        const { nctIds } = await executeUnifiedSearch(search);
+      if (isSearchActive(search)) {
+        const { nctIds } = await executeSearch(search.rows);
         return nctIds;
       }
-
-      // No search → fetch IDs from view, optionally filtered by MeSH
-      let query = supabaseExternal
+      const { data, error } = await supabaseExternal
         .from("v_ui_study_list_v2")
         .select("nct_id")
         .order("nct_id", { ascending: false })
         .limit(1000);
-
-      if (meshNctIds) {
-        query = query.in("nct_id", meshNctIds);
-      }
-
-      if (selectedLabels.length > 0) {
-        query = query.overlaps("semantic_labels", selectedLabels);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       return (data || []).map((r) => r.nct_id);
     },
@@ -490,7 +183,7 @@ export function useAllStudyIds({
   });
 }
 
-// ─── Facet hooks (unchanged) ──────────────────────────────────
+// ── Facet hooks ────────────────────────────────────────────────
 export function useSemanticLabelsFacet() {
   return useQuery({
     queryKey: ["facet-semantic-labels"],
@@ -500,7 +193,7 @@ export function useSemanticLabelsFacet() {
         .select("*")
         .order("n_studies", { ascending: false });
       if (error) throw error;
-      return (data as FacetSemanticLabel[]) || [];
+      return data || [];
     },
   });
 }
@@ -514,7 +207,7 @@ export function useParamTypeFacet() {
         .select("*")
         .order("n_studies", { ascending: false });
       if (error) throw error;
-      return (data as FacetParamType[]) || [];
+      return data || [];
     },
   });
 }
