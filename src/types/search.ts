@@ -1,39 +1,68 @@
-export interface UnifiedSearchInput {
-  baseQuery: string;
-  groupA: string[];
-  groupB: string[];
-  operatorBetweenGroups: "AND" | "OR";
+// ── Row-based search model ─────────────────────────────────────
+export interface SearchRow {
+  id: number;
+  type: "condition" | "intervention" | "freetext";
+  terms: string[];
+  operator: "AND" | "OR";
 }
 
-export function isSearchActive(search: UnifiedSearchInput): boolean {
-  return (
-    search.baseQuery.trim().length > 0 ||
-    search.groupA.length > 0 ||
-    search.groupB.length > 0
-  );
+export interface SearchInput {
+  rows: SearchRow[];
 }
 
-/** Encode search state to URL params */
-export function searchToParams(search: UnifiedSearchInput, meshConditions?: string[]): URLSearchParams {
-  const params = new URLSearchParams();
-  if (search.baseQuery.trim()) params.set("q", search.baseQuery.trim());
-  if (search.groupA.length > 0) params.set("ga", search.groupA.join(","));
-  if (search.groupB.length > 0) params.set("gb", search.groupB.join(","));
-  if (search.operatorBetweenGroups !== "AND") params.set("op", search.operatorBetweenGroups);
-  if (meshConditions && meshConditions.length > 0) params.set("mesh", meshConditions.join(","));
-  return params;
+export function isSearchActive(input: SearchInput): boolean {
+  return input.rows.some((r) => r.terms.length > 0);
 }
 
-/** Parse search state from URL params */
-export function paramsToSearch(params: URLSearchParams): UnifiedSearchInput {
+export function emptySearch(): SearchInput {
   return {
-    baseQuery: params.get("q") || "",
-    groupA: params.get("ga")?.split(",").filter(Boolean) || [],
-    groupB: params.get("gb")?.split(",").filter(Boolean) || [],
-    operatorBetweenGroups: (params.get("op") as "AND" | "OR") || "AND",
+    rows: [{ id: 1, type: "condition", terms: [], operator: "AND" }],
   };
 }
 
-export function parseMeshFromParams(params: URLSearchParams): string[] {
-  return params.get("mesh")?.split(",").filter(Boolean) || [];
+// ── URL serialization ──────────────────────────────────────────
+export function searchToParams(input: SearchInput): URLSearchParams {
+  const params = new URLSearchParams();
+  const active = input.rows.filter((r) => r.terms.length > 0);
+  if (active.length > 0) {
+    params.set(
+      "rows",
+      JSON.stringify(
+        active.map((r) => ({
+          t: r.type[0], // c/i/f
+          terms: r.terms,
+          op: r.operator,
+        })),
+      ),
+    );
+  }
+  return params;
+}
+
+export function paramsToSearch(params: URLSearchParams): SearchInput {
+  const raw = params.get("rows");
+  if (!raw) return emptySearch();
+  try {
+    const parsed = JSON.parse(raw);
+    const typeMap: Record<string, SearchRow["type"]> = {
+      c: "condition",
+      i: "intervention",
+      f: "freetext",
+    };
+    const rows: SearchRow[] = parsed.map((r: any, i: number) => ({
+      id: i + 1,
+      type: typeMap[r.t] ?? "freetext",
+      terms: r.terms ?? [],
+      operator: r.op ?? "AND",
+    }));
+    return { rows };
+  } catch {
+    return emptySearch();
+  }
+}
+
+// ── Legacy compat ──────────────────────────────────────────────
+// Kept to avoid breaking DatasetPage until full migration
+export function parseMeshFromParams(_params: URLSearchParams): string[] {
+  return [];
 }
