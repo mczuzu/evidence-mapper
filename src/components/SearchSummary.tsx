@@ -1,17 +1,17 @@
-import { Loader2, Database, Layers, FlaskConical, GitMerge, Lock } from "lucide-react";
+import { Loader2, Database, GitMerge, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SearchCounts } from "@/hooks/useSearchCounts";
-import { UnifiedSearchInput, searchToParams } from "@/types/search";
+import { SearchInput, searchToParams } from "@/types/search";
 
 interface SearchSummaryProps {
   counts: SearchCounts | undefined;
   isLoading: boolean;
-  search: UnifiedSearchInput;
-  selectedMeshConditions: string[];
-  selectedLabels: string[];
-  selectedParamTypes: string[];
+  search: SearchInput;
+  selectedMeshConditions?: string[];
+  selectedLabels?: string[];
+  selectedParamTypes?: string[];
   objective: string;
 }
 
@@ -19,24 +19,16 @@ export function SearchSummary({
   counts,
   isLoading,
   search,
-  selectedMeshConditions,
-  selectedLabels,
-  selectedParamTypes,
+  selectedLabels = [],
+  selectedParamTypes = [],
   objective = "",
 }: SearchSummaryProps) {
   const navigate = useNavigate();
 
-  const hasAnyData =
-    counts &&
-    (counts.meshTotal !== null ||
-      counts.baseTotal !== null ||
-      counts.groupATotal !== null ||
-      counts.groupBTotal !== null);
-
   const canViewDataset = objective.trim().length > 0 && (counts?.intersectionTotal ?? 0) > 0;
 
   const handleViewDataset = () => {
-    const params = searchToParams(search, selectedMeshConditions);
+    const params = searchToParams(search);
     if (selectedLabels.length > 0) params.set("labels", selectedLabels.join(","));
     if (selectedParamTypes.length > 0) params.set("paramTypes", selectedParamTypes.join(","));
     params.set("objective", objective.trim());
@@ -52,70 +44,48 @@ export function SearchSummary({
     );
   }
 
-  if (!hasAnyData) {
+  const hasResults = counts && counts.intersectionTotal > 0;
+  const hasSearch = search.rows.some((r) => r.terms.length > 0);
+
+  if (!hasSearch) {
     return (
       <div className="text-center py-12 text-muted-foreground text-sm">
-        Select a MeSH condition or enter search terms to see the summary.
+        Add at least one search term to see results.
       </div>
     );
   }
 
-  const cards: { label: string; value: number | null; icon: React.ReactNode; color: string }[] = [];
-
-  if (counts.meshTotal !== null) {
-    cards.push({
-      label: `MeSH: ${selectedMeshConditions.join(" + ")}`,
-      value: counts.meshTotal,
-      icon: <Database className="h-5 w-5" />,
-      color: "border-blue-500/30 bg-blue-500/5",
-    });
-  }
-
-  if (counts.baseTotal !== null) {
-    cards.push({
-      label: `Base: "${search.baseQuery}"`,
-      value: counts.baseTotal,
-      icon: <Layers className="h-5 w-5" />,
-      color: "border-violet-500/30 bg-violet-500/5",
-    });
-  }
-
-  if (counts.groupATotal !== null) {
-    cards.push({
-      label: `Group A: ${search.groupA.join(" | ")}`,
-      value: counts.groupATotal,
-      icon: <FlaskConical className="h-5 w-5" />,
-      color: "border-emerald-500/30 bg-emerald-500/5",
-    });
-  }
-
-  if (counts.groupBTotal !== null) {
-    cards.push({
-      label: `Group B: ${search.groupB.join(" | ")}`,
-      value: counts.groupBTotal,
-      icon: <FlaskConical className="h-5 w-5" />,
-      color: "border-amber-500/30 bg-amber-500/5",
-    });
-  }
+  if (!counts) return null;
 
   return (
     <div className="space-y-4">
-      {/* Dimension cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {cards.map((card) => (
-          <div key={card.label} className={`flex items-center gap-4 rounded-lg border p-4 ${card.color}`}>
-            <div className="text-muted-foreground">{card.icon}</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground truncate">{card.label}</p>
-              <p className="text-2xl font-bold text-foreground tabular-nums">
-                {card.value != null ? card.value.toLocaleString() : "—"}
-              </p>
+      {/* Per-row counts */}
+      {counts.rowCounts.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {counts.rowCounts.map((row, i) => (
+            <div
+              key={i}
+              className={`flex items-center gap-4 rounded-lg border p-4 ${
+                row.type === "condition"
+                  ? "border-blue-500/30 bg-blue-500/5"
+                  : row.type === "intervention"
+                    ? "border-violet-500/30 bg-violet-500/5"
+                    : "border-slate-500/30 bg-slate-500/5"
+              }`}
+            >
+              <Database className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground truncate capitalize">
+                  {row.type}: {row.terms.join(" | ")}
+                </p>
+                <p className="text-2xl font-bold text-foreground tabular-nums">{row.count.toLocaleString()}</p>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Intersection + CTA */}
+      {/* Final intersection + CTA */}
       <div className="flex items-center gap-4 rounded-lg border-2 border-primary/40 bg-primary/5 p-5">
         <div className="text-primary">
           <GitMerge className="h-6 w-6" />
@@ -126,7 +96,7 @@ export function SearchSummary({
           <p className="text-xs text-muted-foreground mt-1">studies matching all active criteria</p>
         </div>
 
-        {counts.intersectionTotal > 0 && (
+        {hasResults && (
           <div className="flex flex-col items-end gap-2">
             <Button
               onClick={handleViewDataset}
