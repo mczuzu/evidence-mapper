@@ -474,9 +474,7 @@ const DatasetPage = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <TierBadge tier="bronze" />
-              <span className="text-sm font-semibold text-foreground">
-                {totalCount.toLocaleString()} studies found
-              </span>
+              <span className="text-sm font-semibold text-foreground">{totalCount.toLocaleString()} studies found</span>
             </div>
             {objective && (
               <p className="text-xs text-muted-foreground">
@@ -487,13 +485,19 @@ const DatasetPage = () => {
 
           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
             <p>
-              <strong className="text-foreground">Bronze = raw dataset.</strong> Contains all studies matching your search criteria but may include noise. For a reliable analysis you need to reduce it first.
+              <strong className="text-foreground">Bronze = raw dataset.</strong> Contains all studies matching your
+              search criteria but may include noise. For a reliable analysis you need to reduce it first.
             </p>
             <div>
               <p className="font-medium text-foreground mb-1">How do you want to filter?</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><strong>With AI:</strong> extracts keywords from your objective and filters studies containing them in title or abstract. Fast, ~10 seconds.</li>
-                <li><strong>Manual:</strong> select the relevant studies yourself using the table checkboxes.</li>
+                <li>
+                  <strong>With AI:</strong> extracts keywords from your objective and filters studies containing them in
+                  title or abstract. Fast, ~10 seconds.
+                </li>
+                <li>
+                  <strong>Manual:</strong> select the relevant studies yourself using the table checkboxes.
+                </li>
               </ul>
             </div>
           </div>
@@ -588,8 +592,14 @@ const DatasetPage = () => {
             <div>
               <p className="font-medium text-foreground mb-1">What to do now?</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><strong>Validate with AI (recommended):</strong> AI reads full abstracts and discards those that only match superficially. Minimum score to pass: 4/10.</li>
-                <li><strong>Skip validation:</strong> proceed directly to analysis with these {studies.length} studies. The dataset may contain noise.</li>
+                <li>
+                  <strong>Validate with AI (recommended):</strong> AI reads full abstracts and discards those that only
+                  match superficially. Minimum score to pass: 4/10.
+                </li>
+                <li>
+                  <strong>Skip validation:</strong> proceed directly to analysis with these {studies.length} studies.
+                  The dataset may contain noise.
+                </li>
               </ul>
             </div>
           </div>
@@ -648,9 +658,18 @@ const DatasetPage = () => {
 
               {goldResults && (
                 <p className="text-xs text-muted-foreground flex items-center gap-3">
-                   <span><span className="inline-block w-2 h-2 rounded-full bg-primary mr-1" />≥8 High relevance</span>
-                  <span><span className="inline-block w-2 h-2 rounded-full bg-secondary mr-1" />≥6 Medium</span>
-                  <span><span className="inline-block w-2 h-2 rounded-full border border-border mr-1" />&lt;6 Low</span>
+                  <span>
+                    <span className="inline-block w-2 h-2 rounded-full bg-primary mr-1" />
+                    ≥8 High relevance
+                  </span>
+                  <span>
+                    <span className="inline-block w-2 h-2 rounded-full bg-secondary mr-1" />
+                    ≥6 Medium
+                  </span>
+                  <span>
+                    <span className="inline-block w-2 h-2 rounded-full border border-border mr-1" />
+                    &lt;6 Low
+                  </span>
                 </p>
               )}
             </div>
@@ -679,7 +698,8 @@ const DatasetPage = () => {
 
           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
             <p>
-              AI read the abstracts and scored each study from 0 to 10 based on relevance to your objective. Only those scoring above 4/10 pass.
+              AI read the abstracts and scored each study from 0 to 10 based on relevance to your objective. Only those
+              scoring above 4/10 pass.
             </p>
             <p>You can deselect studies in the table before running the analysis.</p>
           </div>
@@ -830,7 +850,9 @@ const DatasetPage = () => {
                       <TableHead className="w-24">Start</TableHead>
                       <TableHead className="w-24">Completion</TableHead>
                       <TableHead className="w-24">Results Posted</TableHead>
-                      {tier === "gold" && goldResults && <TableHead className="w-28 min-w-[7rem] text-center">Score IA</TableHead>}
+                      {tier === "gold" && goldResults && (
+                        <TableHead className="w-28 min-w-[7rem] text-center">Score IA</TableHead>
+                      )}
                       <TableHead className="w-16 text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -937,7 +959,8 @@ const DatasetPage = () => {
                   AI relevance score:{" "}
                   <span className="inline-block w-2 h-2 rounded-full bg-primary mr-0.5 align-middle" /> ≥8 High ·{" "}
                   <span className="inline-block w-2 h-2 rounded-full bg-secondary mr-0.5 align-middle" /> ≥6 Medium ·{" "}
-                  <span className="inline-block w-2 h-2 rounded-full border border-border mr-0.5 align-middle" /> &lt;6 Low
+                  <span className="inline-block w-2 h-2 rounded-full border border-border mr-0.5 align-middle" /> &lt;6
+                  Low
                 </p>
               )}
 
