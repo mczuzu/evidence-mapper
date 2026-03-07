@@ -44,12 +44,9 @@ async function executeSearch(rows: SearchRow[]): Promise<{ nctIds: string[]; ran
       if (row.type === "condition") {
         const results = await Promise.all(
           row.terms.map(async (t) => {
-            const { data, error } = await supabaseExternal
-              .from("mesh_condition")
-              .select("nct_id")
-              .ilike("mesh_term", t);
+            const { data, error } = await supabaseExternal.rpc("search_studies_by_mesh", { mesh_term_input: t });
             if (error) throw error;
-            return (data || []).map((r) => r.nct_id);
+            return (data || []).map((r: any) => r.nct_id);
           }),
         );
         ids = [...new Set(results.flat())];
