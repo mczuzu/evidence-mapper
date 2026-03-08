@@ -96,16 +96,6 @@ const Index = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [cameFromExample, setCameFromExample] = useState(false);
 
-  // Auto-trigger example when arriving from WelcomePage with ?tryExample=1
-  useEffect(() => {
-    if (tryExampleParam && !isTyping && !objective) {
-      // Clear the param so it doesn't re-trigger
-      setSearchParams({}, { replace: true });
-      handleTryExample();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tryExampleParam]);
-
   // Example filter animation state
   const [exampleAnimating, setExampleAnimating] = useState(false);
   const [visibleExampleRows, setVisibleExampleRows] = useState(0);
@@ -119,7 +109,7 @@ const Index = () => {
 
   const activeFilterCount = search.rows.filter((r) => r.terms.length > 0).length;
 
-  const handleTryExample = () => {
+  const handleTryExample = useCallback(() => {
     if (isTyping) return;
     setIsTyping(true);
     setCameFromExample(true);
