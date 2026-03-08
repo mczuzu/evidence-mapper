@@ -312,7 +312,10 @@ const Index = () => {
               <div className="flex items-center gap-3 rounded-lg border border-border p-4">
                 <div className="flex-1">
                   {isLoading ? (
-                    <p className="text-sm text-muted-foreground">Counting studies…</p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Counting studies…
+                    </p>
                   ) : error ? (
                     <p className="text-sm text-destructive">Error: {error.message}</p>
                   ) : (
