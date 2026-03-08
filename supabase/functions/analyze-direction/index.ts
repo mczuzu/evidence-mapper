@@ -589,14 +589,36 @@ NEXT_STEPS_TEXT STRUCTURE
 Write next_steps_text as a series of bold section headings followed by bullet lines.
 Use this EXACT format:
 
+**${isEs ? "Clusters de intervención y puntuación de oportunidad" : "Intervention Clusters & Opportunity Score"}**
+For each distinct intervention cluster identified in the studies (e.g. SGLT2 inhibitors, GLP-1 agonists, DPP-4 inhibitors, etc.):
+1. Count how many studies belong to this cluster
+2. Assess evidence saturation (how many studies, how consistent the results, how recent)
+3. Assign an Opportunity Score: HIGH / MEDIUM / LOW
+
+Opportunity Score logic:
+- LOW: 5+ studies, consistent results, recent trials → saturated space
+- MEDIUM: 2-4 studies OR mixed results → selective opportunity
+- HIGH: 0-1 studies OR older evidence only → white space, first-mover
+
+Format each cluster as:
+- **[Cluster name]** · [N studies] · Opportunity: **[HIGH/MEDIUM/LOW]** — [One sentence explaining the score]
+
+End this section with:
+- **${isEs ? "Cluster de mayor oportunidad" : "Highest opportunity cluster"}**: [name] — [brief rationale]
+
 **${h.opps}**
 - **[opportunity name]**: [description grounded in specific studies] — [${isEs ? "Aplicar ahora" : "Apply now"} | ${isEs ? "Piloto 4-12 semanas" : "Pilot 4-12 weeks"} | ${isEs ? "Requiere RCT 12-24 meses" : "Requires RCT 12-24 months"}]
 - [repeat — ONLY opportunities directly derived from objective + payload]
 
 **${h.gaps}**
+IMPORTANT: Use explicit R&D pipeline language in this section:
+- Use "pipeline opportunity" instead of "research gap"
+- Use "first-mover advantage available" instead of "more studies needed"
+- Use "white space in the evidence landscape" instead of "limited evidence"
 - **[gap type from gap_proxies]** (${isEs ? "afecta" : "affects"} N ${isEs ? "estudios" : "studies"}, ${isEs ? "severidad" : "severity"}: [high|medium|low]): [what is missing and why it matters for the objective]
 - **${isEs ? "Estudios de alto ROI a ejecutar" : "High-ROI studies to run"}**: [specific design + timeline to close the gap]
 - **${isEs ? "No financiar" : "Do not fund"}**: [what would be redundant or low-signal]
+- **${isEs ? "Señal Go/No-Go" : "Go/No-Go signal"}**: [GO | CONDITIONAL GO | NO-GO] — [one-sentence rationale based on evidence density, gap severity, and opportunity score]
 
 **${h.fasttests}**
 - **[test name]**: [specific pilot under 12 weeks aligned with objective]
@@ -617,6 +639,7 @@ STRICT FORMATTING RULES
 - Do NOT add blank lines between the heading and its first bullet
 - Respond in ${isEs ? "Spanish" : "English"} throughout — zero language mixing
 - Never recommend "digital health app" by default
+- This analysis is specifically designed for R&D pipeline decisions
 `.trim()
 }
 
