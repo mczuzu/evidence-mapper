@@ -67,6 +67,49 @@ function StepPanel({ children }: { children: React.ReactNode }) {
   return <div className="rounded-xl border border-border bg-muted/20 px-6 py-5 space-y-4">{children}</div>;
 }
 
+// ── AI filtering loading state ────────────────────────────────────────────
+const AI_PROGRESS_MESSAGES = [
+  "Analysing study titles...",
+  "Reading abstracts...",
+  "Checking relevance against your objective...",
+  "Filtering noise...",
+];
+
+function AIFilteringLoadingState() {
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setMsgIndex((prev) => (prev + 1) % AI_PROGRESS_MESSAGES.length);
+        setFade(true);
+      }, 200);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 gap-4">
+      <Loader2
+        className="animate-spin text-indigo"
+        style={{ width: 40, height: 40 }}
+      />
+      <p className="text-lg font-semibold text-foreground">Reading abstracts...</p>
+      <p className="text-sm text-muted-foreground">
+        AI is filtering studies that don't address your objective
+      </p>
+      <p
+        className="text-sm text-muted-foreground transition-opacity duration-200"
+        style={{ opacity: fade ? 1 : 0 }}
+      >
+        {AI_PROGRESS_MESSAGES[msgIndex]}
+      </p>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 const DatasetPage = () => {
   const [searchParams] = useSearchParams();
@@ -496,8 +539,16 @@ const DatasetPage = () => {
   // ── Render step panel ─────────────────────────────────────────────────────
   const renderStepPanel = () => {
 
-    // BRONZE — choose filter method
+    // BRONZE — choose filter method (or full-screen AI loading)
     if (tier === "bronze") {
+      if (isFilteringAI) {
+        return (
+          <StepPanel>
+            <AIFilteringLoadingState />
+          </StepPanel>
+        );
+      }
+
       return (
         <StepPanel>
           <div className="space-y-1">
@@ -522,19 +573,11 @@ const DatasetPage = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               onClick={runAIFilter}
-              disabled={isFilteringAI || !objective || totalCount === 0 || isLoading}
+              disabled={!objective || totalCount === 0 || isLoading}
               variant="default"
               className="gap-2"
             >
-              {isFilteringAI ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Filtering with AI...
-                </>
-               ) : (
-                 <>
-                   <Sparkles className="h-4 w-4 text-indigo" /> Remove noise with AI →
-                 </>
-               )}
+              <Sparkles className="h-4 w-4" /> Remove noise with AI →
             </Button>
              <Button
                onClick={() => setFilterMethod("manual")}
@@ -613,7 +656,7 @@ const DatasetPage = () => {
            </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2 bg-indigo text-indigo-foreground hover:bg-indigo-dark">
+            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2 bg-[#0a0a0a] text-white hover:bg-[#1a1a1a]">
                {isRanking ? (
                  <>
                    <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
@@ -752,7 +795,7 @@ const DatasetPage = () => {
           )}
 
           {/* Column filters — hidden in bronze until user picks a method */}
-          {!(tier === "bronze" && filterMethod === null) && <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
+          {!(tier === "bronze" && (filterMethod === null || isFilteringAI)) && <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
             <div className="flex items-center gap-6">
               <span className="text-sm font-medium text-muted-foreground">Filter by:</span>
               <div className="flex items-center gap-2">
@@ -834,7 +877,7 @@ const DatasetPage = () => {
           )}
 
           {/* Table — hidden in bronze until user picks a method */}
-          {!isLoading && !error && studies.length > 0 && !(tier === "bronze" && filterMethod === null) && (
+          {!isLoading && !error && studies.length > 0 && !(tier === "bronze" && (filterMethod === null || isFilteringAI)) && (
             <>
               <div className="border border-border rounded-lg overflow-hidden">
                 <Table>
