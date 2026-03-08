@@ -473,7 +473,8 @@ const DatasetPage = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <TierBadge tier="bronze" />
-              <span className="text-sm font-semibold text-foreground">{totalCount.toLocaleString()} studies found</span>
+              <span className="text-sm font-semibold text-foreground">All studies matching your search</span>
+              <span className="text-xs text-muted-foreground">({totalCount.toLocaleString()})</span>
             </div>
             {objective && (
               <p className="text-xs text-muted-foreground">
