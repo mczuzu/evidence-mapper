@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { exampleSearchUrl } from "@/lib/example-search";
 
 const steps = [
   { emoji: "🟤", label: "Define your objective & search" },
