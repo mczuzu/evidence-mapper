@@ -575,22 +575,9 @@ const DatasetPage = () => {
 
            <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
              <p>
-               AI read the titles and abstracts and kept only the studies that directly address your objective.
+               AI read every title and abstract and kept only the studies that directly address your objective. Review the inferred keywords below.
              </p>
-            <div>
-              <p className="font-medium text-foreground mb-1">What to do now?</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>
-                  <strong>Validate with AI (recommended):</strong> AI reads full abstracts and discards those that only
-                  match superficially. Minimum score to pass: 4/10.
-                </li>
-                <li>
-                  <strong>Skip validation:</strong> proceed directly to analysis with these {studies.length} studies.
-                  The dataset may contain noise.
-                </li>
-              </ul>
-            </div>
-          </div>
+           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
             <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2">
