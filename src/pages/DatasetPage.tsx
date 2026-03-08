@@ -609,11 +609,11 @@ const DatasetPage = () => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
                 </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" /> Validate relevance → Gold
-                </>
-              )}
+               ) : (
+                 <>
+                   <Sparkles className="h-4 w-4" /> Score each study against my objective →
+                 </>
+               )}
             </Button>
             <Button
               variant="outline"
