@@ -802,7 +802,7 @@ const DatasetPage = () => {
                 </Button>
               )}
             </div>
-          </div>
+          </div>}
 
           {/* Error */}
           {error && (
