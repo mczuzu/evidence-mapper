@@ -345,6 +345,45 @@ function FreeTextField({
   );
 }
 
+// ── Phase field (chip selector) ────────────────────────────────
+function PhaseField({
+  terms,
+  onToggle,
+  onRemove,
+}: {
+  terms: string[];
+  onToggle: (t: string) => void;
+  onRemove: (i: number) => void;
+}) {
+  const cfg = FIELD_TYPES.phase;
+  return (
+    <div className="flex-1">
+      <div className="flex flex-wrap items-center gap-1.5 min-h-[2.5rem] rounded-xl border border-border bg-background px-3 py-1.5 transition-all">
+        {PHASE_OPTIONS.map((phase) => {
+          const active = terms.includes(phase);
+          return (
+            <button
+              key={phase}
+              onClick={() => onToggle(phase)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                active
+                  ? cfg.badgeClass
+                  : "bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted"
+              }`}
+            >
+              {phase.replace("_", " ")}
+              {active && (
+                <X className="h-3 w-3 opacity-40 hover:opacity-80" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-1 pl-1">{cfg.hint} · click to toggle</p>
+    </div>
+  );
+}
+
 // ── Search row ─────────────────────────────────────────────────
 function SearchRowComponent({
   row,
