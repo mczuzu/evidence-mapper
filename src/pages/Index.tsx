@@ -7,7 +7,7 @@ import { useSearchCounts } from "@/hooks/useSearchCounts";
 import { SearchInput, emptySearch, paramsToSearch, searchToParams, isSearchActive } from "@/types/search";
 import { Textarea } from "@/components/ui/textarea";
 import { PipelineTracker } from "@/components/PipelineTracker";
-import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2 } from "lucide-react";
 import { EXAMPLE_OBJECTIVE, EXAMPLE_SEARCH } from "@/lib/example-search";
 
 type Step = 1 | 2 | 3;
@@ -54,6 +54,7 @@ const Index = () => {
   const [step, setStep] = useState<Step>(
     initObjective && isSearchActive(paramsToSearch(searchParams)) ? 2 : 1
   );
+  const [isTyping, setIsTyping] = useState(false);
 
   const { data: counts, isLoading, error } = useSearchCounts({ search });
 
@@ -63,9 +64,21 @@ const Index = () => {
   const activeFilterCount = search.rows.filter((r) => r.terms.length > 0).length;
 
   const handleTryExample = () => {
-    setObjective(EXAMPLE_OBJECTIVE);
+    if (isTyping) return;
+    setIsTyping(true);
     setSearch(EXAMPLE_SEARCH);
-    setStep(2);
+
+    let i = 0;
+    const text = EXAMPLE_OBJECTIVE;
+    setObjective("");
+    const interval = setInterval(() => {
+      i++;
+      setObjective(text.slice(0, i));
+      if (i >= text.length) {
+        clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 18);
   };
 
   const handleViewDataset = () => {
@@ -120,9 +133,14 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Not sure where to start?</p>
               <button
                 onClick={handleTryExample}
-                className="inline-flex items-center gap-2 rounded-lg border border-amber-700/40 text-amber-700 px-4 py-2 text-xs font-medium transition-colors hover:bg-amber-50"
+                disabled={isTyping}
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-700/40 text-amber-700 px-4 py-2 text-xs font-medium transition-colors hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                {isTyping ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
                 Try: Diabetes Type 2 · Metformin · Phase 3
               </button>
             </div>
