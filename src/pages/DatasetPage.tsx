@@ -613,7 +613,7 @@ const DatasetPage = () => {
            </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2 bg-indigo text-indigo-foreground hover:bg-indigo-dark">
+            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2 bg-[#0a0a0a] text-white hover:bg-[#1a1a1a]">
                {isRanking ? (
                  <>
                    <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
