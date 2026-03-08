@@ -211,16 +211,28 @@ const DatasetPage = () => {
     }
   }, [selectAllRequested, allIdsQuery.data]);
 
+  const handleBackToSearch = () => {
+    const params = searchToParams(search);
+    if (labels.length > 0) params.set("labels", labels.join(","));
+    if (paramTypes.length > 0) params.set("paramTypes", paramTypes.join(","));
+    if (objective) params.set("objective", objective);
+    const qs = params.toString();
+    navigate(qs ? `/search?${qs}` : "/search");
+  };
+
   const handleBack = () => {
     if (isUrlIdsMode) {
       navigate(-1);
+    } else if (tier === "gold") {
+      setTier("silver");
+      setGoldResults(null);
+    } else if (tier === "silver") {
+      setTier("bronze");
+      setSilverIds(null);
+      setFilterMethod(null);
+      setSelectedIds(new Set());
     } else {
-      const params = searchToParams(search);
-      if (labels.length > 0) params.set("labels", labels.join(","));
-      if (paramTypes.length > 0) params.set("paramTypes", paramTypes.join(","));
-      if (objective) params.set("objective", objective);
-      const qs = params.toString();
-      navigate(qs ? `/search?${qs}` : "/search");
+      handleBackToSearch();
     }
   };
 
@@ -717,7 +729,7 @@ const DatasetPage = () => {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {isUrlIdsMode ? "Back" : "Back to search"}
+              {isUrlIdsMode ? "Back" : tier === "gold" ? "Back to Silver" : tier === "silver" ? "Back to Bronze" : "Back to search"}
             </Button>
           </div>
 
