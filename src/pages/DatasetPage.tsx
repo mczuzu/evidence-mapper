@@ -256,17 +256,7 @@ const DatasetPage = () => {
     }
   }, [selectAllRequested, allIdsQuery.data]);
 
-  // Auto-start AI filtering or manual mode from URL flags
   const [autoStartTriggered, setAutoStartTriggered] = useState(false);
-  useEffect(() => {
-    if (autoStartTriggered || isLoading || totalCount === 0) return;
-    if (autoStartAI && objective && bronzeStudies.length > 0) {
-      setAutoStartTriggered(true);
-      runAIFilter();
-    } else if (autoStartManual) {
-      setAutoStartTriggered(true);
-    }
-  }, [autoStartAI, autoStartManual, isLoading, totalCount, bronzeStudies.length, autoStartTriggered]);
 
   const handleBackToSearch = () => {
     const params = searchToParams(search);
