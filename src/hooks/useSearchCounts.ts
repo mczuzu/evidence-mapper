@@ -9,10 +9,13 @@ export interface SearchCounts {
 }
 
 function termsByType(rows: SearchRow[]) {
+  const dateRow = rows.find((r) => r.type === "daterange" && r.terms.length >= 2);
   return {
     conditionTerms: rows.filter((r) => r.type === "condition").flatMap((r) => r.terms).filter(Boolean),
     interventionTerms: rows.filter((r) => r.type === "intervention").flatMap((r) => r.terms).filter(Boolean),
     phaseTerms: rows.filter((r) => r.type === "phase").flatMap((r) => r.terms).filter(Boolean),
+    yearFrom: dateRow ? parseInt(dateRow.terms[0]) : null,
+    yearTo: dateRow ? parseInt(dateRow.terms[1]) : null,
   };
 }
 
