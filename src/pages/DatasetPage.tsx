@@ -827,14 +827,16 @@ const DatasetPage = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={allVisibleSelected}
-                          onCheckedChange={toggleSelectAll}
-                          aria-label="Select all"
-                          className={someVisibleSelected && !allVisibleSelected ? "opacity-50" : ""}
-                        />
-                      </TableHead>
+                      {tier !== "gold" && (
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={allVisibleSelected}
+                            onCheckedChange={toggleSelectAll}
+                            aria-label="Select all"
+                            className={someVisibleSelected && !allVisibleSelected ? "opacity-50" : ""}
+                          />
+                        </TableHead>
+                      )}
                       <TableHead className="w-28">NCT ID</TableHead>
                       <TableHead className="min-w-[200px]">Title</TableHead>
                       <TableHead className="w-40">Conditions</TableHead>
