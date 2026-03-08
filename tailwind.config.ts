@@ -89,8 +89,14 @@ export default {
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
   			},
-  			label: {
-  				placebo: 'hsl(var(--label-placebo))',
+			indigo: {
+				DEFAULT: 'hsl(var(--indigo))',
+				light: 'hsl(var(--indigo-light))',
+				dark: 'hsl(var(--indigo-dark))',
+				foreground: 'hsl(var(--indigo-foreground))',
+			},
+			label: {
+				placebo: 'hsl(var(--label-placebo))',
   				'placebo-foreground': 'hsl(var(--label-placebo-foreground))',
   				drug: 'hsl(var(--label-drug))',
   				'drug-foreground': 'hsl(var(--label-drug-foreground))',

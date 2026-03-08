@@ -532,7 +532,7 @@ const DatasetPage = () => {
                 </>
                ) : (
                  <>
-                   <Sparkles className="h-4 w-4" /> Remove noise with AI →
+                   <Sparkles className="h-4 w-4 text-indigo" /> Remove noise with AI →
                  </>
                )}
             </Button>
@@ -596,11 +596,11 @@ const DatasetPage = () => {
             <div className="space-y-1.5">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Keywords inferred by AI from your objective</span>
               <div className="flex items-center gap-1.5 flex-wrap">
-                {silverKeywords.map((kw) => (
-                  <span key={kw} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground select-none">
-                    {kw}
-                  </span>
-                ))}
+                 {silverKeywords.map((kw) => (
+                   <span key={kw} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-light text-indigo-dark select-none">
+                     {kw}
+                   </span>
+                 ))}
               </div>
             </div>
           )}
@@ -613,29 +613,29 @@ const DatasetPage = () => {
            </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2">
-              {isRanking ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
-                </>
-               ) : (
+            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2 bg-indigo text-indigo-foreground hover:bg-indigo-dark">
+               {isRanking ? (
                  <>
-                   <Sparkles className="h-4 w-4" /> Score each study against my objective →
+                   <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
                  </>
-               )}
-            </Button>
-             <Button
-               variant="outline"
-               onClick={() => {
-                 setSelectedIds(new Set(silverIds ?? []));
-                 setGoldResults(null);
-                 setTier("gold");
-               }}
-               className="gap-2"
-             >
-               <ArrowRight className="h-4 w-4" />
-               Skip scoring
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" /> Score each study against my objective →
+                  </>
+                )}
              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSelectedIds(new Set(silverIds ?? []));
+                  setGoldResults(null);
+                  setTier("gold");
+                }}
+                className="gap-2 text-indigo hover:text-indigo-dark"
+              >
+                <ArrowRight className="h-4 w-4" />
+                Skip scoring
+              </Button>
           </div>
         </StepPanel>
       );
@@ -907,7 +907,7 @@ const DatasetPage = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="gap-1 text-xs text-muted-foreground h-7 px-2"
+                                className="gap-1 text-xs h-7 px-2 text-indigo border-indigo/30 hover:bg-indigo-light"
                               >
                                 View ↗
                               </Button>

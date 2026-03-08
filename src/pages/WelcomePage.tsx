@@ -60,7 +60,7 @@ const WelcomePage = () => {
           </button>
           <button
             onClick={() => navigate(EXAMPLE_URL)}
-            className="inline-flex items-center gap-2 rounded-lg border border-white/30 text-white px-7 py-3 text-sm font-medium hover:bg-white/10 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg border border-indigo text-indigo px-7 py-3 text-sm font-medium hover:bg-indigo-light/10 transition-colors"
           >
             See a live example
           </button>
@@ -120,9 +120,7 @@ const WelcomePage = () => {
                 each study against your objective, and keeps only what's genuinely
                 relevant.
               </p>
-              <span className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
-                style={{ borderColor: "rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.7)" }}
-              >
+              <span className="mt-6 inline-flex self-start items-center rounded-full px-3 py-1 text-xs font-semibold bg-indigo text-indigo-foreground">
                 Silver → Gold → Report
               </span>
             </div>

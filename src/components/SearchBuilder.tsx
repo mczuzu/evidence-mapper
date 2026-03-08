@@ -82,9 +82,7 @@ function OperatorToggle({
           onClick={() => onChange(op)}
           className={`px-2.5 py-1.5 transition-colors ${
             value === op
-              ? op === "AND"
-                ? "bg-foreground text-background"
-                : "bg-amber-500 text-white"
+              ? "bg-indigo text-indigo-foreground"
               : "bg-background text-muted-foreground hover:text-foreground"
           }`}
         >
