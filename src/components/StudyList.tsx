@@ -12,7 +12,7 @@ interface StudyListProps {
   totalPages: number;
   isLoading: boolean;
   onPageChange: (page: number) => void;
-  search?: UnifiedSearchInput;
+  search?: SearchInput;
   selectedLabels?: string[];
   selectedParamTypes?: string[];
   selectedMeshConditions?: string[];
