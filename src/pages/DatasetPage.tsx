@@ -484,8 +484,8 @@ const DatasetPage = () => {
 
           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
             <p>
-              <strong className="text-foreground">Bronze = raw dataset.</strong> Contains all studies matching your
-              search criteria but may include noise. For a reliable analysis you need to reduce it first.
+              These are all studies that match your search criteria. They may include noise — studies that mention your
+              terms but don't actually address your question.
             </p>
             <div>
               <p className="font-medium text-foreground mb-1">How do you want to filter?</p>
