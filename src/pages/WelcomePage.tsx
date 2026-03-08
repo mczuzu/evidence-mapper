@@ -84,21 +84,21 @@ const WelcomePage = () => {
                 01
               </span>
               <h3 className="mt-4 font-serif text-xl font-bold" style={{ color: "#0a0a0a" }}>
-                Find the studies
+                Map the competitive landscape
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#555" }}>
-                Structured search across 63,000+ trials
+                Search 63,000+ completed trials by indication and intervention
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#ddd" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#666" }}>
-                Define your clinical question using conditions, interventions,
-                trial phase and date range. Evidence Mapper searches MeSH-indexed
-                ClinicalTrials.gov data and returns every study that matches.
+                Filter by condition, intervention, trial phase and date range.
+                Evidence Mapper searches MeSH-indexed ClinicalTrials.gov data and
+                returns every completed trial that matches your pipeline question.
               </p>
               <span className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
                 style={{ borderColor: "rgb(180 83 9 / 0.3)", backgroundColor: "rgb(180 83 9 / 0.1)", color: "rgb(180 83 9)" }}
               >
-                Bronze dataset
+                Competitive landscape
               </span>
             </div>
 
