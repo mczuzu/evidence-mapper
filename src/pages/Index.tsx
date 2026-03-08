@@ -53,28 +53,28 @@ function ExampleBanner({
   onDismiss: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 space-y-3 relative">
+    <div className="rounded-xl border border-indigo-200 bg-indigo-light px-5 py-4 space-y-3 relative">
       <button
         onClick={onDismiss}
-        className="absolute top-3 right-3 text-amber-400 hover:text-amber-600 transition-colors"
+        className="absolute top-3 right-3 text-indigo/40 hover:text-indigo transition-colors"
       >
         <X className="h-4 w-4" />
       </button>
       <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-amber-600 shrink-0" />
-        <span className="text-sm font-medium text-amber-900">
+        <Sparkles className="h-4 w-4 text-indigo shrink-0" />
+        <span className="text-sm font-medium text-indigo-dark">
           {phase === "loading"
             ? "Building your search strategy from the objective..."
             : "✓ Search strategy built from your objective. Feel free to edit any filter."}
         </span>
       </div>
       {/* Animated loading bar */}
-      <div className="h-1 w-full rounded-full bg-amber-200/60 overflow-hidden">
+      <div className="h-1 w-full rounded-full bg-indigo/20 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ease-linear ${
             phase === "loading"
-              ? "bg-amber-500 animate-[example-bar_2.8s_ease-in-out_forwards]"
-              : "bg-amber-500 w-full"
+              ? "bg-indigo animate-[example-bar_2.8s_ease-in-out_forwards]"
+              : "bg-indigo w-full"
           }`}
           style={phase === "done" ? { width: "100%" } : undefined}
         />
