@@ -11,6 +11,7 @@ import { AnalysisStatusBanner } from "@/components/analysis/AnalysisStatusBanner
 import { MarkdownText } from "@/components/analysis/MarkdownText";
 import { V3AnalysisContent } from "@/components/analysis/V3AnalysisContent";
 import { LegacyAnalysisContent } from "@/components/analysis/LegacyAnalysisContent";
+import { EvidenceLandscape } from "@/components/analysis/EvidenceLandscape";
 import type { AnalysisV3 } from "@/types/analysis";
 
 /* =========================
@@ -365,7 +366,11 @@ const AnalysisPage = () => {
   });
 
   // optimistic navigation state (optional)
-  const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
+  const navState = location.state as any;
+  const stateRun = navState?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
+  const bronzeCount: number = navState?.bronzeCount ?? 0;
+  const goldCount: number = navState?.goldCount ?? 0;
+  const conditionName: string = navState?.conditionName ?? "";
 
   const stateRunMatches = !!analysisId && stateRun?.id === analysisId;
 
@@ -482,6 +487,14 @@ const AnalysisPage = () => {
                 </Card>
               ) : (
                 <div ref={printRef} className="space-y-6 print:p-0">
+                  {/* Evidence Landscape panel */}
+                  {(bronzeCount > 0 || goldCount > 0 || conditionName) && (
+                    <EvidenceLandscape
+                      conditionName={conditionName}
+                      bronzeCount={bronzeCount}
+                      goldCount={goldCount}
+                    />
+                  )}
                   {/* Print header (only visible when printing) */}
                   <div className="hidden print:block print:mb-6">
                     <h1 className="text-2xl font-bold text-foreground">Direction Analysis Report</h1>

@@ -515,6 +515,9 @@ const DatasetPage = () => {
             prompt_version: result.prompt_version ?? "v3",
             schema_version: result.schema_version ?? "V3",
           },
+          bronzeCount: totalCount,
+          goldCount: goldResults?.length ?? 0,
+          conditionName: search?.rows?.find((r: any) => r.t === "c")?.terms?.[0] ?? "",
         },
       });
     } catch (err) {
