@@ -698,6 +698,18 @@ const DatasetPage = () => {
 
     // GOLD — ready to analyze
     if (tier === "gold") {
+      if (isAnalyzing) {
+        return (
+          <StepPanel>
+            <AILoadingState
+              title="Generating your evidence report..."
+              subtitle="AI is synthesizing findings and identifying gaps"
+              messages={AI_REPORT_MESSAGES}
+            />
+          </StepPanel>
+        );
+      }
+
       return (
         <StepPanel>
           <div className="flex items-start justify-between gap-4 flex-wrap">
