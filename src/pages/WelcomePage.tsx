@@ -6,18 +6,18 @@ const EXAMPLE_URL = "/search?tryExample=1";
 const comparisons = [
   {
     icon: Search,
-    bold: "PubMed finds papers.",
-    rest: "Evidence Mapper tells you what they mean for your objective.",
+    bold: "PubMed returns papers.",
+    rest: "Evidence Mapper returns pipeline intelligence.",
   },
   {
     icon: Sparkles,
-    bold: "PubMed returns thousands of results.",
-    rest: "Evidence Mapper returns a focused, scored dataset.",
+    bold: "PubMed doesn't score trials against your R&D objective.",
+    rest: "Evidence Mapper does.",
   },
   {
     icon: FlaskConical,
-    bold: "PubMed stops at search.",
-    rest: "Evidence Mapper generates a gap analysis with recommendations.",
+    bold: "PubMed has no gap analysis.",
+    rest: "Evidence Mapper identifies white space in the evidence.",
   },
 ];
 
