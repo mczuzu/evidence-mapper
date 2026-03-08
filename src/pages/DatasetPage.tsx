@@ -851,6 +851,10 @@ const DatasetPage = () => {
                       )}
                       <TableHead className="w-28">NCT ID</TableHead>
                       <TableHead className="min-w-[200px]">Title</TableHead>
+                      <TableHead className="w-16 text-right">Action</TableHead>
+                      {tier === "gold" && goldResults && (
+                        <TableHead className="w-28 min-w-[7rem] text-center">Score IA</TableHead>
+                      )}
                       <TableHead className="w-40">Conditions</TableHead>
                       <TableHead className="w-40">Interventions</TableHead>
                       <TableHead className="w-28">Study Type</TableHead>
@@ -859,10 +863,6 @@ const DatasetPage = () => {
                       <TableHead className="w-24">Start</TableHead>
                       <TableHead className="w-24">Completion</TableHead>
                       <TableHead className="w-24">Results Posted</TableHead>
-                      {tier === "gold" && goldResults && (
-                        <TableHead className="w-28 min-w-[7rem] text-center">Score IA</TableHead>
-                      )}
-                      <TableHead className="w-16 text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
