@@ -60,7 +60,7 @@ const WelcomePage = () => {
           </button>
           <button
             onClick={() => navigate(EXAMPLE_URL)}
-            className="inline-flex items-center gap-2 rounded-lg border border-white/30 text-white px-7 py-3 text-sm font-medium hover:bg-white/10 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg border border-indigo text-indigo px-7 py-3 text-sm font-medium hover:bg-indigo-light/10 transition-colors"
           >
             See a live example
           </button>
