@@ -89,7 +89,7 @@ export function MilestoneToast({ data, onDismiss }: MilestoneToastProps) {
             data.onAction();
             dismiss();
           }}
-          className="shrink-0 rounded-lg bg-background text-foreground px-3.5 py-1.5 text-xs font-medium hover:bg-background/90 transition-colors"
+          className="shrink-0 rounded-lg bg-indigo text-indigo-foreground px-3.5 py-1.5 text-xs font-medium hover:bg-indigo-dark transition-colors"
         >
           {data.actionLabel}
         </button>

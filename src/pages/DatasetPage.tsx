@@ -613,29 +613,29 @@ const DatasetPage = () => {
            </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2">
-              {isRanking ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
-                </>
-               ) : (
+            <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2 bg-indigo text-indigo-foreground hover:bg-indigo-dark">
+               {isRanking ? (
                  <>
-                   <Sparkles className="h-4 w-4" /> Score each study against my objective →
+                   <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
                  </>
-               )}
-            </Button>
-             <Button
-               variant="outline"
-               onClick={() => {
-                 setSelectedIds(new Set(silverIds ?? []));
-                 setGoldResults(null);
-                 setTier("gold");
-               }}
-               className="gap-2"
-             >
-               <ArrowRight className="h-4 w-4" />
-               Skip scoring
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" /> Score each study against my objective →
+                  </>
+                )}
              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSelectedIds(new Set(silverIds ?? []));
+                  setGoldResults(null);
+                  setTier("gold");
+                }}
+                className="gap-2 text-indigo hover:text-indigo-dark"
+              >
+                <ArrowRight className="h-4 w-4" />
+                Skip scoring
+              </Button>
           </div>
         </StepPanel>
       );

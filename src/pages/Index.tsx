@@ -245,7 +245,7 @@ const Index = () => {
               <button
                 onClick={handleTryExample}
                 disabled={isTyping}
-                className="inline-flex items-center gap-2 rounded-lg border border-amber-700/40 text-amber-700 px-4 py-2 text-xs font-medium transition-colors hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 rounded-lg border border-indigo text-indigo px-4 py-2 text-xs font-medium transition-colors hover:bg-indigo-light disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isTyping ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />

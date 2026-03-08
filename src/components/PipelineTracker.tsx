@@ -55,8 +55,9 @@ export function PipelineTracker({ currentStep }: { currentStep: 1 | 2 | 3 | 4 | 
                   <span
                     className="text-[10px] font-medium leading-none"
                     style={{
-                      color:
-                        isComplete || isCurrent
+                      color: isCurrent
+                        ? "hsl(var(--indigo))"
+                        : isComplete
                           ? "hsl(var(--foreground))"
                           : "hsl(var(--muted-foreground))",
                       fontWeight: isComplete || isCurrent ? 600 : 400,
