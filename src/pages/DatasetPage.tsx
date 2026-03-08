@@ -67,15 +67,16 @@ function StepPanel({ children }: { children: React.ReactNode }) {
   return <div className="rounded-xl border border-border bg-muted/20 px-6 py-5 space-y-4">{children}</div>;
 }
 
-// ── AI filtering loading state ────────────────────────────────────────────
-const AI_PROGRESS_MESSAGES = [
-  "Analysing study titles...",
-  "Reading abstracts...",
-  "Checking relevance against your objective...",
-  "Filtering noise...",
-];
-
-function AIFilteringLoadingState() {
+// ── Full-panel loading state ────────────────────────────────────────────
+function FullPanelLoadingState({
+  title,
+  subtitle,
+  messages,
+}: {
+  title: string;
+  subtitle: string;
+  messages: string[];
+}) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [fade, setFade] = useState(true);
 
@@ -83,12 +84,12 @@ function AIFilteringLoadingState() {
     const interval = setInterval(() => {
       setFade(false);
       setTimeout(() => {
-        setMsgIndex((prev) => (prev + 1) % AI_PROGRESS_MESSAGES.length);
+        setMsgIndex((prev) => (prev + 1) % messages.length);
         setFade(true);
       }, 200);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
 
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -96,19 +97,29 @@ function AIFilteringLoadingState() {
         className="animate-spin text-indigo"
         style={{ width: 40, height: 40 }}
       />
-      <p className="text-lg font-semibold text-foreground">Reading abstracts...</p>
-      <p className="text-sm text-muted-foreground">
-        AI is filtering studies that don't address your objective
-      </p>
+      <p className="text-lg font-semibold text-foreground">{title}</p>
+      <p className="text-sm text-muted-foreground">{subtitle}</p>
       <p
         className="text-sm text-muted-foreground transition-opacity duration-200"
         style={{ opacity: fade ? 1 : 0 }}
       >
-        {AI_PROGRESS_MESSAGES[msgIndex]}
+        {messages[msgIndex]}
       </p>
     </div>
   );
 }
+
+const AI_FILTER_MESSAGES = [
+  "Analysing study titles...",
+  "Reading abstracts...",
+  "Checking relevance against your objective...",
+  "Filtering noise...",
+];
+
+const AI_RANKING_MESSAGES = [
+  "Reading study abstracts...",
+  "Scoring against your objective...",
+];
 
 // ── Main component ────────────────────────────────────────────────────────────
 const DatasetPage = () => {
