@@ -108,20 +108,20 @@ const WelcomePage = () => {
                 02
               </span>
               <h3 className="mt-4 font-serif text-xl font-bold text-white">
-                Focus on what matters
+                Get the signal, not the noise
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#888" }}>
-                AI removes noise. You get signal.
+                AI scores each trial against your R&D objective.
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#333" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#aaa" }}>
-                Most results include studies that mention your terms but don't
+                Most searches return trials that mention your terms but don't
                 answer your question. Evidence Mapper reads every abstract, scores
-                each study against your objective, and keeps only what's genuinely
-                relevant.
+                each trial against your specific objective, and surfaces only what's
+                relevant to your pipeline decision.
               </p>
               <span className="mt-6 inline-flex self-start items-center rounded-full px-3 py-1 text-xs font-semibold bg-indigo text-indigo-foreground">
-                Silver → Gold → Report
+                Evidence signal → Gap analysis
               </span>
             </div>
           </div>
