@@ -92,27 +92,16 @@ export function useStudies({
         const totalCount = rows.length > 0 ? Number(rows[0].total_count) : 0;
 
         // Map RPC results to StudyListItem shape
-        const studies: StudyListItem[] = rows.map((r) => ({
-          nct_id: r.nct_id,
-          brief_title: r.brief_title,
-          official_title: r.official_title,
-          phase: r.phase,
-          updated_at: r.updated_at,
-          n_result_rows: r.n_result_rows,
-          n_unique_outcomes: r.n_unique_outcomes,
-          n_unique_measurements: r.n_unique_measurements,
-          n_unique_units: r.n_unique_units,
-          param_type_set: r.param_type_set,
-          total_n_reported: r.total_n_reported,
-          max_n_reported: r.max_n_reported,
-          has_placebo_or_control_label: r.has_placebo_or_control_label,
-          n_design_groups: r.n_design_groups,
-          structural_comparative_candidate: r.structural_comparative_candidate,
-          structural_comparative_success: r.structural_comparative_success,
-          primary_non_comparability_reason: r.primary_non_comparability_reason,
-        }));
+        const studies = (rows as StudyListItem[]);
 
         return {
+          studies,
+          totalCount,
+          pageSize: PAGE_SIZE,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / PAGE_SIZE),
+        };
+      }
           studies,
           totalCount,
           pageSize: PAGE_SIZE,
