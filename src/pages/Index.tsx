@@ -125,7 +125,15 @@ const Index = () => {
         setIsTyping(false);
       }
     }, 18);
-  };
+  }, [isTyping]);
+
+  // Auto-trigger example when arriving from WelcomePage with ?tryExample=1
+  useEffect(() => {
+    if (tryExampleParam && !objective) {
+      setSearchParams({}, { replace: true });
+      handleTryExample();
+    }
+  }, [tryExampleParam, handleTryExample]);
 
   // Clean up animation timers
   useEffect(() => {
