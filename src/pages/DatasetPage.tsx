@@ -283,10 +283,16 @@ const DatasetPage = () => {
       setSilverIds(result.nct_ids_filtered ?? []);
       setTier("silver");
 
-      const msg = result.capped
-        ? `Silver dataset: ${result.total_filtered} studies (capped at 200). Keywords: ${result.keywords.join(", ")}`
-        : `Silver dataset: ${result.total_filtered} of ${result.total_input} studies. Keywords: ${result.keywords.join(", ")}`;
-      toast.success(msg);
+      const filtered = result.total_filtered ?? result.nct_ids_filtered?.length ?? 0;
+      const removed = (result.total_input ?? nctIds.length) - filtered;
+      setMilestoneToast({
+        type: "silver",
+        title: "Silver dataset ready",
+        subtitle: `${filtered} studies focused on your question`,
+        detail: `AI removed ${removed} studies that didn't address your objective`,
+        actionLabel: "Score with AI →",
+        onAction: () => runGoldValidation(),
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error filtering with AI");
       setFilterMethod(null);
