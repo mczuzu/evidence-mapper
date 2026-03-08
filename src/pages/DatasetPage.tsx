@@ -613,7 +613,7 @@ const DatasetPage = () => {
       if (isRanking) {
         return (
           <StepPanel>
-            <FullPanelLoadingState
+            <AILoadingState
               title="Scoring studies..."
               subtitle="AI is reading each study and scoring it against your objective"
               messages={AI_RANKING_MESSAGES}
