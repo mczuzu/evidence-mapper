@@ -548,10 +548,11 @@ const DatasetPage = () => {
           </div>
           {filterMethod === "manual" && (
             <div className="flex items-center gap-3 pt-2 border-t border-border">
-              <p className="text-sm text-muted-foreground flex-1">
-                Select the relevant studies in the table below.{" "}
-                <span className="font-medium text-foreground">{selectedIds.size} / 200</span> selected.
-              </p>
+               <p className="text-sm text-muted-foreground flex-1">
+                 Select the relevant studies in the table below.{" "}
+                 <span className="font-medium text-foreground">{selectedIds.size}</span> selected
+                 <span className="text-xs ml-2">(Max: 200 for processing)</span>
+               </p>
               <Button onClick={confirmManualSilver} disabled={selectedIds.size === 0} className="gap-2">
                 <ArrowRight className="h-4 w-4" />
                 Confirm selection →
