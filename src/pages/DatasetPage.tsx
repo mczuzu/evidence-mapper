@@ -33,6 +33,7 @@ import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_K
 import { toast } from "sonner";
 import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
 import { RankingModal } from "@/components/ranking/RankingModal";
+import { MilestoneToast, type MilestoneToastData } from "@/components/MilestoneToast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type DatasetTier = "bronze" | "silver" | "gold";
@@ -96,6 +97,7 @@ const DatasetPage = () => {
   // Modals
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisError, setAnalysisError] = useState<{ message: string; details?: string } | null>(null);
+  const [milestoneToast, setMilestoneToast] = useState<MilestoneToastData | null>(null);
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -281,10 +283,16 @@ const DatasetPage = () => {
       setSilverIds(result.nct_ids_filtered ?? []);
       setTier("silver");
 
-      const msg = result.capped
-        ? `Silver dataset: ${result.total_filtered} studies (capped at 200). Keywords: ${result.keywords.join(", ")}`
-        : `Silver dataset: ${result.total_filtered} of ${result.total_input} studies. Keywords: ${result.keywords.join(", ")}`;
-      toast.success(msg);
+      const filtered = result.total_filtered ?? result.nct_ids_filtered?.length ?? 0;
+      const removed = (result.total_input ?? nctIds.length) - filtered;
+      setMilestoneToast({
+        type: "silver",
+        title: "Silver dataset ready",
+        subtitle: `${filtered} studies focused on your question`,
+        detail: `AI removed ${removed} studies that didn't address your objective`,
+        actionLabel: "Score with AI →",
+        onAction: () => runGoldValidation(),
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error filtering with AI");
       setFilterMethod(null);
@@ -298,7 +306,14 @@ const DatasetPage = () => {
     setSilverIds(Array.from(selectedIds));
     setTier("silver");
     setFilterMethod("manual");
-    toast.success(`Silver dataset: ${selectedIds.size} studies selected manually.`);
+    setMilestoneToast({
+      type: "silver",
+      title: "Silver dataset ready",
+      subtitle: `${selectedIds.size} studies selected manually`,
+      detail: `You selected ${selectedIds.size} studies from the Bronze dataset`,
+      actionLabel: "Score with AI →",
+      onAction: () => runGoldValidation(),
+    });
   };
 
   // ── Validate to Gold with AI (ia-ranking) ─────────────────────────────────
@@ -332,7 +347,17 @@ const DatasetPage = () => {
       setGoldResults(result.ranked);
       setSelectedIds(new Set(result.ranked.map((r: RankedStudy) => r.nct_id)));
       setTier("gold");
-      toast.success(`Gold dataset: ${result.ranked.length} studies validated out of ${nctIds.length} evaluated.`);
+      const avgScore = result.ranked.length > 0
+        ? (result.ranked.reduce((sum: number, r: RankedStudy) => sum + r.score, 0) / result.ranked.length).toFixed(1)
+        : "0";
+      setMilestoneToast({
+        type: "gold",
+        title: "Gold dataset ready",
+        subtitle: `${result.ranked.length} studies scored against your objective`,
+        detail: `${nctIds.length} studies scored · average score ${avgScore}/10`,
+        actionLabel: "Generate report →",
+        onAction: () => runAnalysis(),
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error validating with AI");
     } finally {
@@ -679,6 +704,7 @@ const DatasetPage = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       {!isUrlIdsMode && <PipelineTracker currentStep={pipelineStep} />}
+      <MilestoneToast data={milestoneToast} onDismiss={() => setMilestoneToast(null)} />
 
       <main className="flex-1 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
