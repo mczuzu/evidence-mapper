@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { PipelineTracker } from "@/components/PipelineTracker";
 import {
   ArrowLeft,
   Loader2,
@@ -452,19 +453,11 @@ const DatasetPage = () => {
     }
   };
 
+  // ── Pipeline step mapping ───────────────────────────────────────────────
+  const pipelineStep: 1 | 2 | 3 | 4 | 5 | 6 = tier === "gold" ? 5 : tier === "silver" ? 4 : 3;
+
   // ── Render step panel ─────────────────────────────────────────────────────
   const renderStepPanel = () => {
-    // Pipeline tracker inline
-    const PipelineTracker = () => {
-      if (tier === "bronze") return null;
-      return (
-        <p className="text-xs text-muted-foreground font-mono">
-          📍 Pipeline: Bronze {totalCount.toLocaleString()}
-          {(tier === "silver" || tier === "gold") && <> → Silver {silverIds?.length ?? "—"}</>}
-          {tier === "gold" && <> → Gold {goldResults?.length ?? "—"}</>}
-        </p>
-      );
-    };
 
     // BRONZE — choose filter method
     if (tier === "bronze") {
@@ -558,7 +551,7 @@ const DatasetPage = () => {
                 ← Back to Bronze
               </Button>
             </div>
-            <PipelineTracker />
+            {/* pipeline info removed — using top-level tracker */}
           </div>
 
           {filterMethod === "ai" && silverKeywords.length > 0 && (
@@ -630,7 +623,7 @@ const DatasetPage = () => {
                   ← Back to Silver
                 </Button>
               </div>
-              <PipelineTracker />
+              {/* pipeline info removed — using top-level tracker */}
 
               {goldResults && (
                 <p className="text-xs text-muted-foreground flex items-center gap-3">
@@ -685,6 +678,7 @@ const DatasetPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
+      {!isUrlIdsMode && <PipelineTracker currentStep={pipelineStep} />}
 
       <main className="flex-1 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -694,10 +688,6 @@ const DatasetPage = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               {isUrlIdsMode ? "Back" : "Back to search"}
             </Button>
-            <div className="flex items-center gap-3">
-              <h1 className="font-serif text-xl font-bold text-foreground">Dataset</h1>
-              <TierBadge tier={tier} />
-            </div>
           </div>
 
           {/* Step panel */}
