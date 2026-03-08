@@ -419,6 +419,7 @@ const AnalysisPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
+      <PipelineTracker currentStep={6} />
 
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
