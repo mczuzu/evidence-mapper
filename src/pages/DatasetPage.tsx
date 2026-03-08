@@ -643,6 +643,18 @@ const DatasetPage = () => {
 
     // SILVER — filtered, ready for gold validation
     if (tier === "silver") {
+      if (isRanking) {
+        return (
+          <StepPanel>
+            <FullPanelLoadingState
+              title="Scoring studies..."
+              subtitle="AI is reading each study and scoring it against your objective"
+              messages={AI_RANKING_MESSAGES}
+            />
+          </StepPanel>
+        );
+      }
+
       return (
         <StepPanel>
           <div className="space-y-1">
