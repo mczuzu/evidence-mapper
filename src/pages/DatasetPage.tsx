@@ -729,7 +729,7 @@ const DatasetPage = () => {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {isUrlIdsMode ? "Back" : "Back to search"}
+              {isUrlIdsMode ? "Back" : tier === "gold" ? "Back to Silver" : tier === "silver" ? "Back to Bronze" : "Back to search"}
             </Button>
           </div>
 
