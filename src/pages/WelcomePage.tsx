@@ -1,8 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Search, Sparkles, FlaskConical } from "lucide-react";
 
-const EXAMPLE_URL =
-  "/search?objective=Identify+pharmacological+interventions+that+improve+glycemic+control+in+Type+2+Diabetes+patients%2C+focusing+on+recent+trials+with+measurable+outcomes&rows=%5B%7B%22id%22%3A1%2C%22type%22%3A%22condition%22%2C%22terms%22%3A%5B%22Diabetes+Mellitus%2C+Type+2%22%5D%2C%22operator%22%3A%22AND%22%7D%2C%7B%22id%22%3A2%2C%22type%22%3A%22intervention%22%2C%22terms%22%3A%5B%22metformin%22%5D%2C%22operator%22%3A%22AND%22%7D%2C%7B%22id%22%3A3%2C%22type%22%3A%22phase%22%2C%22terms%22%3A%5B%22PHASE3%22%5D%2C%22operator%22%3A%22AND%22%7D%2C%7B%22id%22%3A4%2C%22type%22%3A%22daterange%22%2C%22terms%22%3A%5B%222018%22%2C%222026%22%5D%2C%22operator%22%3A%22AND%22%7D%5D";
+const EXAMPLE_URL = "/search?tryExample=1";
 
 const comparisons = [
   {

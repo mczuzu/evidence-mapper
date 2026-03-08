@@ -84,9 +84,10 @@ function ExampleBanner({
 }
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const initObjective = searchParams.get("objective") || "";
+  const tryExampleParam = searchParams.get("tryExample") === "1";
   const [search, setSearch] = useState<SearchInput>(paramsToSearch(searchParams));
   const [objective, setObjective] = useState<string>(initObjective);
   const [step, setStep] = useState<Step>(
@@ -94,6 +95,16 @@ const Index = () => {
   );
   const [isTyping, setIsTyping] = useState(false);
   const [cameFromExample, setCameFromExample] = useState(false);
+
+  // Auto-trigger example when arriving from WelcomePage with ?tryExample=1
+  useEffect(() => {
+    if (tryExampleParam && !isTyping && !objective) {
+      // Clear the param so it doesn't re-trigger
+      setSearchParams({}, { replace: true });
+      handleTryExample();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tryExampleParam]);
 
   // Example filter animation state
   const [exampleAnimating, setExampleAnimating] = useState(false);
