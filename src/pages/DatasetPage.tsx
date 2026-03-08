@@ -921,7 +921,7 @@ const DatasetPage = () => {
           )}
 
           {/* Table — hidden in bronze until user picks a method */}
-          {!isLoading && !error && studies.length > 0 && !(tier === "bronze" && (filterMethod === null || isFilteringAI)) && (
+          {!isLoading && !error && studies.length > 0 && !(tier === "bronze" && (filterMethod === null || isFilteringAI)) && !isRanking && (
             <>
               <div className="border border-border rounded-lg overflow-hidden">
                 <Table>
