@@ -10,23 +10,20 @@ export interface SearchCounts {
 
 function termsByType(rows: SearchRow[]) {
   return {
-    conditionTerms: rows.filter((r) => r.type === "condition").flatMap((r) => r.terms),
-    interventionTerms: rows.filter((r) => r.type === "intervention").flatMap((r) => r.terms),
-    freetextTerms: rows.filter((r) => r.type === "freetext").flatMap((r) => r.terms),
-    phaseTerms: rows.filter((r) => r.type === "phase").flatMap((r) => r.terms),
+    conditionTerms: rows.filter((r) => r.type === "condition").flatMap((r) => r.terms).filter(Boolean),
+    interventionTerms: rows.filter((r) => r.type === "intervention").flatMap((r) => r.terms).filter(Boolean),
+    phaseTerms: rows.filter((r) => r.type === "phase").flatMap((r) => r.terms).filter(Boolean),
   };
 }
 
 async function fetchTotalCount(params: {
   conditionTerms: string[];
   interventionTerms: string[];
-  freetextTerms: string[];
   phaseTerms: string[];
 }): Promise<number> {
   const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
     p_condition_terms: params.conditionTerms.length > 0 ? params.conditionTerms : null,
     p_intervention_terms: params.interventionTerms.length > 0 ? params.interventionTerms : null,
-    p_freetext_terms: params.freetextTerms.length > 0 ? params.freetextTerms : null,
     p_phases: params.phaseTerms.length > 0 ? params.phaseTerms : null,
     p_only_analyzable: false,
     p_only_comparable: false,
