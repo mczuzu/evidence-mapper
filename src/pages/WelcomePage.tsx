@@ -152,6 +152,71 @@ const WelcomePage = () => {
         </div>
       </section>
 
+      {/* ── BEFORE / AFTER ───────────────────────────────────── */}
+      <section className="px-6" style={{ backgroundColor: "#0a0a0a", paddingTop: 60, paddingBottom: 60 }}>
+        <div className="max-w-[800px] mx-auto">
+          <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center text-white">
+            What used to take weeks, now takes minutes
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 mt-12 rounded-xl overflow-hidden border" style={{ borderColor: "#222" }}>
+            {/* Before column */}
+            <div className="p-8 space-y-6" style={{ backgroundColor: "#111" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#666" }}>Before</span>
+              <div className="space-y-5">
+                <div>
+                  <p className="text-sm font-medium text-white/70">Manual review</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
+                    Analyst manually reviews hundreds of abstracts
+                  </p>
+                </div>
+                <div style={{ borderTop: "1px solid #222" }} />
+                <div>
+                  <p className="text-sm font-medium text-white/70">Generic output</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
+                    Consultant delivers generic landscape report in 3 weeks
+                  </p>
+                </div>
+                <div style={{ borderTop: "1px solid #222" }} />
+                <div>
+                  <p className="text-sm font-medium text-white/70">Expensive & stale</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
+                    $50,000 IQVIA report with last year's data
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* After column */}
+            <div className="p-8 space-y-6" style={{ backgroundColor: "#0a0a0a", borderLeft: "1px solid #222" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest text-indigo">With Evidence Mapper</span>
+              <div className="space-y-5">
+                <div>
+                  <p className="text-sm font-medium text-white">AI reads every abstract</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
+                    Automatically, in minutes
+                  </p>
+                </div>
+                <div style={{ borderTop: "1px solid #222" }} />
+                <div>
+                  <p className="text-sm font-medium text-white">Scored against YOUR objective</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
+                    You get a report in under 10 minutes
+                  </p>
+                </div>
+                <div style={{ borderTop: "1px solid #222" }} />
+                <div>
+                  <p className="text-sm font-medium text-white">Self-serve, on-demand</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
+                    Updated monthly from ClinicalTrials.gov
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FOOTER ───────────────────────────────────────────── */}
       <footer className="px-6 py-8 text-center text-xs" style={{ backgroundColor: "#0a0a0a", color: "#555" }}>
         Evidence Mapper · Pipeline intelligence powered by ClinicalTrials.gov · 63,394 completed trials indexed
