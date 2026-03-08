@@ -268,7 +268,7 @@ const DatasetPage = () => {
     }
   }, [autoStartAI, autoStartManual, isLoading, totalCount, bronzeStudies.length, autoStartTriggered]);
 
-
+  const handleBackToSearch = () => {
     const params = searchToParams(search);
     if (labels.length > 0) params.set("labels", labels.join(","));
     if (paramTypes.length > 0) params.set("paramTypes", paramTypes.join(","));
