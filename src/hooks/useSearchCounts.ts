@@ -23,11 +23,15 @@ async function fetchTotalCount(params: {
   conditionTerms: string[];
   interventionTerms: string[];
   phaseTerms: string[];
+  yearFrom: number | null;
+  yearTo: number | null;
 }): Promise<number> {
   const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
     p_condition_terms: params.conditionTerms.length > 0 ? params.conditionTerms : null,
     p_intervention_terms: params.interventionTerms.length > 0 ? params.interventionTerms : null,
     p_phases: params.phaseTerms.length > 0 ? params.phaseTerms : null,
+    p_year_from: params.yearFrom,
+    p_year_to: params.yearTo,
     p_only_analyzable: false,
     p_only_comparable: false,
     p_page: 0,

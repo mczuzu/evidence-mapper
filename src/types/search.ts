@@ -23,13 +23,13 @@ export function emptySearch(): SearchInput {
 // ── URL serialization ──────────────────────────────────────────
 export function searchToParams(input: SearchInput): URLSearchParams {
   const params = new URLSearchParams();
-  const active = input.rows.filter((r) => r.terms.length > 0);
+      const active = input.rows.filter((r) => r.terms.length > 0);
   if (active.length > 0) {
     params.set(
       "rows",
       JSON.stringify(
         active.map((r) => ({
-          t: r.type === "phase" ? "p" : r.type[0], // c/i/f/p
+          t: r.type === "phase" ? "p" : r.type === "daterange" ? "d" : r.type[0], // c/i/f/p/d
           terms: r.terms,
           op: r.operator,
         })),
