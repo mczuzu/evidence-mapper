@@ -133,9 +133,14 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Not sure where to start?</p>
               <button
                 onClick={handleTryExample}
-                className="inline-flex items-center gap-2 rounded-lg border border-amber-700/40 text-amber-700 px-4 py-2 text-xs font-medium transition-colors hover:bg-amber-50"
+                disabled={isTyping}
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-700/40 text-amber-700 px-4 py-2 text-xs font-medium transition-colors hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                {isTyping ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
                 Try: Diabetes Type 2 · Metformin · Phase 3
               </button>
             </div>
