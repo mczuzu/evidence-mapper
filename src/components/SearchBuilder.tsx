@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, Plus, X, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Search, Plus, X, ChevronDown, ChevronUp } from "lucide-react";
 import { SearchInput, SearchRow, emptySearch } from "@/types/search";
 import { supabaseExternal } from "@/lib/supabase-external";
 
