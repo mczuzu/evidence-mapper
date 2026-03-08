@@ -1,42 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabaseExternal } from "@/lib/supabase-external";
 import { StudyListItem } from "@/types/database";
-import { SearchInput, SearchRow, isSearchActive } from "@/types/search";
+import { SearchInput, isSearchActive } from "@/types/search";
 
 const PAGE_SIZE = 20;
 
-// ── Helper: extract terms by row type ─────────────────────────
-function extractTermsByType(rows: SearchRow[]): {
-  conditionTerms: string[];
-  interventionTerms: string[];
-  freetextTerms: string[];
-  phaseTerms: string[];
-} {
-  const conditionTerms: string[] = [];
-  const interventionTerms: string[] = [];
-  const freetextTerms: string[] = [];
-  const phaseTerms: string[] = [];
-
-  for (const row of rows) {
-    if (row.terms.length === 0) continue;
-    switch (row.type) {
-      case "condition":
-        conditionTerms.push(...row.terms);
-        break;
-      case "intervention":
-        interventionTerms.push(...row.terms);
-        break;
-      case "freetext":
-        freetextTerms.push(...row.terms);
-        break;
-      case "phase":
-        phaseTerms.push(...row.terms);
-        break;
-    }
-  }
-
-  return { conditionTerms, interventionTerms, freetextTerms, phaseTerms };
-}
 
 // ── Main hook ──────────────────────────────────────────────────
 interface UseStudiesParams {
