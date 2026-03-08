@@ -371,7 +371,16 @@ function SearchRowComponent({
       <div className="pt-1.5 shrink-0">
         <TypeSelector value={row.type} onChange={(type) => onUpdate({ ...row, type, terms: [] })} />
       </div>
-      {row.type === "freetext" ? (
+      {row.type === "phase" ? (
+        <PhaseField
+          terms={row.terms}
+          onToggle={(t) => {
+            const newTerms = row.terms.includes(t) ? row.terms.filter((x) => x !== t) : [...row.terms, t];
+            onUpdate({ ...row, terms: newTerms });
+          }}
+          onRemove={(i) => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })}
+        />
+      ) : row.type === "freetext" ? (
         <FreeTextField
           terms={row.terms}
           onAdd={(t) => onUpdate({ ...row, terms: [...row.terms, t] })}

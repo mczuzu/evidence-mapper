@@ -36,6 +36,19 @@ async function executeSearch(rows: SearchRow[]): Promise<{ nctIds: string[] }> {
   // For each row: fetch each term in parallel, union results within row
   const rowSets = await Promise.all(
     activeRows.map(async (row) => {
+      if (row.type === "phase") {
+        const { data, error } = await supabaseExternal.rpc("search_studies_advanced_prefix", {
+          q: row.terms[0] || "",
+          limit_n: 1,
+        });
+        // For phase, query the view directly
+        const { data: phaseData, error: phaseError } = await supabaseExternal
+          .from("v_ui_study_list_v2")
+          .select("nct_id")
+          .in("phase", row.terms);
+        if (phaseError) throw phaseError;
+        return new Set((phaseData || []).map((r) => r.nct_id));
+      }
       const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));
       return unionSets(...termResults.map((res) => new Set(res.map((r) => r.nct_id))));
     }),
