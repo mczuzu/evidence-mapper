@@ -522,7 +522,7 @@ const DatasetPage = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               onClick={runAIFilter}
-              disabled={isFilteringAI || !objective || totalCount === 0}
+              disabled={isFilteringAI || !objective || totalCount === 0 || isLoading}
               variant="default"
               className="gap-2"
             >
@@ -540,7 +540,7 @@ const DatasetPage = () => {
                onClick={() => setFilterMethod("manual")}
                variant="outline"
                className="gap-2"
-               disabled={totalCount === 0}
+               disabled={totalCount === 0 || isLoading}
              >
                <CheckSquare className="h-4 w-4" />
                I'll select manually
