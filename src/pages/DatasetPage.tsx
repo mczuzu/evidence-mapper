@@ -652,6 +652,9 @@ const DatasetPage = () => {
               </div>
               {/* pipeline info removed — using top-level tracker */}
 
+              <p className="text-xs text-muted-foreground">
+                AI has scored all studies 0–10 against your objective. Studies are ranked by score.
+              </p>
               {goldResults && (
                 <p className="text-xs text-muted-foreground flex items-center gap-3">
                   <span>
