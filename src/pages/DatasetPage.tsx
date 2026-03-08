@@ -117,10 +117,12 @@ const DatasetPage = () => {
 
   // Objective from URL
   const objective = searchParams.get("objective") || "";
+  const autoStartAI = searchParams.get("autoStartAI") === "1";
+  const autoStartManual = searchParams.get("autoStartManual") === "1";
 
   // Dataset tier state
   const [tier, setTier] = useState<DatasetTier>("bronze");
-  const [filterMethod, setFilterMethod] = useState<FilterMethod>(null);
+  const [filterMethod, setFilterMethod] = useState<FilterMethod>(autoStartManual ? "manual" : null);
 
   // Silver: filtered by keywords (AI) or manual selection
   const [silverIds, setSilverIds] = useState<string[] | null>(null);
@@ -254,6 +256,8 @@ const DatasetPage = () => {
     }
   }, [selectAllRequested, allIdsQuery.data]);
 
+  const [autoStartTriggered, setAutoStartTriggered] = useState(false);
+
   const handleBackToSearch = () => {
     const params = searchToParams(search);
     if (labels.length > 0) params.set("labels", labels.join(","));
@@ -355,6 +359,19 @@ const DatasetPage = () => {
       setIsFilteringAI(false);
     }
   };
+
+  // Auto-start AI filtering or manual mode from URL flags
+  useEffect(() => {
+    if (autoStartTriggered || isLoading || totalCount === 0) return;
+    if (autoStartAI && objective && bronzeStudies.length > 0) {
+      setAutoStartTriggered(true);
+      runAIFilter();
+    } else if (autoStartManual) {
+      setAutoStartTriggered(true);
+    }
+  }, [autoStartAI, autoStartManual, isLoading, totalCount, bronzeStudies.length, autoStartTriggered]);
+
+
 
   // ── Confirm manual Silver ─────────────────────────────────────────────────
   const confirmManualSilver = () => {

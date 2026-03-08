@@ -6,7 +6,7 @@ import { useSearchCounts } from "@/hooks/useSearchCounts";
 import { SearchInput, emptySearch, paramsToSearch, searchToParams, isSearchActive } from "@/types/search";
 import { Textarea } from "@/components/ui/textarea";
 import { PipelineTracker } from "@/components/PipelineTracker";
-import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2, X } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2, X, CheckSquare } from "lucide-react";
 import { EXAMPLE_OBJECTIVE, EXAMPLE_SEARCH } from "@/lib/example-search";
 
 type Step = 1 | 2 | 3;
@@ -328,16 +328,50 @@ const Index = () => {
               </div>
             )}
 
-            <button
-              onClick={() => setStep(3)}
-              disabled={!hasSearch || totalCount === 0 || exampleAnimating}
-              className="w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 rounded-lg bg-foreground text-background px-6 py-3.5 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {hasSearch && !isLoading && totalCount > 0
-                ? `View ${totalCount.toLocaleString()} matching studies`
-                : "View matching studies"}
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            {hasSearch && !isLoading && totalCount > 0 && (
+              <div className="space-y-3 w-full max-w-[520px] mx-auto">
+                <p className="text-center text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground tabular-nums">{totalCount.toLocaleString()}</span> studies found · How do you want to proceed?
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      const params = searchToParams(search);
+                      params.set("objective", objective.trim());
+                      params.set("autoStartAI", "1");
+                      navigate(`/dataset?${params.toString()}`);
+                    }}
+                    disabled={exampleAnimating}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-foreground text-background px-5 py-3 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Remove noise with AI →
+                  </button>
+                  <button
+                    onClick={() => {
+                      const params = searchToParams(search);
+                      params.set("objective", objective.trim());
+                      params.set("autoStartManual", "1");
+                      navigate(`/dataset?${params.toString()}`);
+                    }}
+                    disabled={exampleAnimating}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border px-5 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <CheckSquare className="h-4 w-4" />
+                    Select studies manually
+                  </button>
+                </div>
+              </div>
+            )}
+            {(!hasSearch || isLoading || totalCount === 0) && (
+              <button
+                disabled
+                className="w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 rounded-lg bg-foreground text-background px-6 py-3.5 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                View matching studies
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </main>
       )}
