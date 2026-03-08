@@ -348,11 +348,9 @@ const DatasetPage = () => {
     setAnalysisError(null);
 
     try {
-      const activeKeywords = [
-        ...search.groupA,
-        ...search.groupB,
-        ...(search.baseQuery.trim() ? [search.baseQuery.trim()] : []),
-      ].filter(Boolean);
+      const activeKeywords = search.rows
+        .flatMap((r) => r.terms)
+        .filter(Boolean);
 
       const searchMeta = { mesh_terms: meshConditions, keywords: activeKeywords };
       const requestBody: {

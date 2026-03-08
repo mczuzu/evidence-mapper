@@ -33,7 +33,7 @@ export function StudyList({
   const navigate = useNavigate();
 
   const handleViewDataset = () => {
-    const params = search ? searchToParams(search, selectedMeshConditions) : new URLSearchParams();
+    const params = search ? searchToParams(search) : new URLSearchParams();
     if (selectedLabels.length > 0) params.set('labels', selectedLabels.join(','));
     if (selectedParamTypes.length > 0) params.set('paramTypes', selectedParamTypes.join(','));
     
