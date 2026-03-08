@@ -863,13 +863,15 @@ const DatasetPage = () => {
                           className={selectedIds.has(study.nct_id) ? "bg-primary/5" : ""}
                           title={ranked ? `Relevancia: ${ranked.reason}` : undefined}
                         >
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedIds.has(study.nct_id)}
-                              onCheckedChange={() => toggleSelection(study.nct_id)}
-                              aria-label={`Select ${study.nct_id}`}
-                            />
-                          </TableCell>
+                          {tier !== "gold" && (
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedIds.has(study.nct_id)}
+                                onCheckedChange={() => toggleSelection(study.nct_id)}
+                                aria-label={`Select ${study.nct_id}`}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="font-mono text-xs">
                             <HighlightText text={study.nct_id} terms={highlightTerms} />
                           </TableCell>
