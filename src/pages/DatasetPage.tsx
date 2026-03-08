@@ -484,8 +484,8 @@ const DatasetPage = () => {
 
           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
             <p>
-              <strong className="text-foreground">Bronze = raw dataset.</strong> Contains all studies matching your
-              search criteria but may include noise. For a reliable analysis you need to reduce it first.
+              These are all studies that match your search criteria. They may include noise — studies that mention your
+              terms but don't actually address your question.
             </p>
             <div>
               <p className="font-medium text-foreground mb-1">How do you want to filter?</p>
@@ -512,21 +512,21 @@ const DatasetPage = () => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Filtering with AI...
                 </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" /> Filter with AI → Silver
-                </>
-              )}
+               ) : (
+                 <>
+                   <Sparkles className="h-4 w-4" /> Focus on my question with AI →
+                 </>
+               )}
             </Button>
-            <Button
-              onClick={() => setFilterMethod("manual")}
-              variant="outline"
-              className="gap-2"
-              disabled={totalCount === 0}
-            >
-              <CheckSquare className="h-4 w-4" />
-              Manually select
-            </Button>
+             <Button
+               onClick={() => setFilterMethod("manual")}
+               variant="outline"
+               className="gap-2"
+               disabled={totalCount === 0}
+             >
+               <CheckSquare className="h-4 w-4" />
+               I'll select manually
+             </Button>
           </div>
           {filterMethod === "manual" && (
             <div className="flex items-center gap-3 pt-2 border-t border-border">
@@ -552,9 +552,9 @@ const DatasetPage = () => {
       return (
         <StepPanel>
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <TierBadge tier="silver" />
-              <span className="text-sm font-semibold text-foreground">{studies.length} filtered studies</span>
+             <div className="flex items-center gap-2">
+               <TierBadge tier="silver" />
+               <span className="text-sm font-semibold text-foreground">{studies.length} studies focused on your question</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -584,10 +584,10 @@ const DatasetPage = () => {
           )}
           {filterMethod === "manual" && <p className="text-xs text-muted-foreground">Manually selected.</p>}
 
-          <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
-            <p>
-              AI extracted these keywords from your objective and filtered studies containing them in title or abstract.
-            </p>
+           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
+             <p>
+               AI read the titles and abstracts and kept only the studies that directly address your objective.
+             </p>
             <div>
               <p className="font-medium text-foreground mb-1">What to do now?</p>
               <ul className="list-disc list-inside space-y-1">
@@ -609,24 +609,24 @@ const DatasetPage = () => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Validating relevance...
                 </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" /> Validate relevance → Gold
-                </>
-              )}
+               ) : (
+                 <>
+                   <Sparkles className="h-4 w-4" /> Score each study against my objective →
+                 </>
+               )}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSelectedIds(new Set(silverIds ?? []));
-                setGoldResults(null);
-                setTier("gold");
-              }}
-              className="gap-2"
-            >
-              <ArrowRight className="h-4 w-4" />
-              Skip validation → Gold
-            </Button>
+             <Button
+               variant="outline"
+               onClick={() => {
+                 setSelectedIds(new Set(silverIds ?? []));
+                 setGoldResults(null);
+                 setTier("gold");
+               }}
+               className="gap-2"
+             >
+               <ArrowRight className="h-4 w-4" />
+               Skip scoring → use these studies
+             </Button>
           </div>
         </StepPanel>
       );
@@ -638,9 +638,9 @@ const DatasetPage = () => {
         <StepPanel>
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <TierBadge tier="gold" />
-                <span className="text-sm font-semibold text-foreground">{studies.length} validated studies</span>
+               <div className="flex items-center gap-2">
+                 <TierBadge tier="gold" />
+                 <span className="text-sm font-semibold text-foreground">{studies.length} studies scored against your objective</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -682,11 +682,11 @@ const DatasetPage = () => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Analyzing...
                 </>
-              ) : (
-                <>
-                  <FlaskConical className="h-4 w-4" /> Analyze evidence
-                </>
-              )}
+               ) : (
+                 <>
+                   <FlaskConical className="h-4 w-4" /> Generate evidence report
+                 </>
+               )}
               {selectedIds.size > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs">
                   {selectedIds.size}
@@ -695,13 +695,11 @@ const DatasetPage = () => {
             </Button>
           </div>
 
-          <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
-            <p>
-              AI read the abstracts and scored each study from 0 to 10 based on relevance to your objective. Only those
-              scoring above 4/10 pass.
-            </p>
-            <p>You can deselect studies in the table before running the analysis.</p>
-          </div>
+           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
+             <p>
+               Each study has been scored 0-10 based on how well it answers your specific objective. Deselect any you want to exclude.
+             </p>
+           </div>
         </StepPanel>
       );
     }
