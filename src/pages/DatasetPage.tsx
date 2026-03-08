@@ -67,48 +67,6 @@ function StepPanel({ children }: { children: React.ReactNode }) {
   return <div className="rounded-xl border border-border bg-muted/20 px-6 py-5 space-y-4">{children}</div>;
 }
 
-// ── Full-panel loading state ────────────────────────────────────────────
-function FullPanelLoadingState({
-  title,
-  subtitle,
-  messages,
-}: {
-  title: string;
-  subtitle: string;
-  messages: string[];
-}) {
-  const [msgIndex, setMsgIndex] = useState(0);
-  const [fade, setFade] = useState(true);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFade(false);
-      setTimeout(() => {
-        setMsgIndex((prev) => (prev + 1) % messages.length);
-        setFade(true);
-      }, 200);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [messages.length]);
-
-  return (
-    <div className="flex flex-col items-center justify-center py-16 gap-4">
-      <Loader2
-        className="animate-spin text-indigo"
-        style={{ width: 40, height: 40 }}
-      />
-      <p className="text-lg font-semibold text-foreground">{title}</p>
-      <p className="text-sm text-muted-foreground">{subtitle}</p>
-      <p
-        className="text-sm text-muted-foreground transition-opacity duration-200"
-        style={{ opacity: fade ? 1 : 0 }}
-      >
-        {messages[msgIndex]}
-      </p>
-    </div>
-  );
-}
-
 const AI_FILTER_MESSAGES = [
   "Analysing study titles...",
   "Reading abstracts...",
@@ -119,6 +77,15 @@ const AI_FILTER_MESSAGES = [
 const AI_RANKING_MESSAGES = [
   "Reading study abstracts...",
   "Scoring against your objective...",
+  "Calculating relevance scores 0–10...",
+  "Ranking by evidence strength...",
+];
+
+const AI_REPORT_MESSAGES = [
+  "Analysing intervention clusters...",
+  "Identifying evidence gaps...",
+  "Evaluating go/no-go signals...",
+  "Writing your report...",
 ];
 
 // ── Main component ────────────────────────────────────────────────────────────
