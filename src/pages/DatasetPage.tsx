@@ -360,6 +360,19 @@ const DatasetPage = () => {
     }
   };
 
+  // Auto-start AI filtering or manual mode from URL flags
+  useEffect(() => {
+    if (autoStartTriggered || isLoading || totalCount === 0) return;
+    if (autoStartAI && objective && bronzeStudies.length > 0) {
+      setAutoStartTriggered(true);
+      runAIFilter();
+    } else if (autoStartManual) {
+      setAutoStartTriggered(true);
+    }
+  }, [autoStartAI, autoStartManual, isLoading, totalCount, bronzeStudies.length, autoStartTriggered]);
+
+
+
   // ── Confirm manual Silver ─────────────────────────────────────────────────
   const confirmManualSilver = () => {
     setSilverIds(Array.from(selectedIds));
