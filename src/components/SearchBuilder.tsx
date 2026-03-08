@@ -33,6 +33,13 @@ const FIELD_TYPES = {
     dotClass: "bg-emerald-500",
     hint: "Filter by clinical trial phase",
   },
+  daterange: {
+    label: "Results published",
+    placeholder: "Year range for results posting…",
+    badgeClass: "bg-orange-50 text-orange-700 border border-orange-200",
+    dotClass: "bg-orange-500",
+    hint: "Filter by results_first_posted_date year",
+  },
 } as const;
 
 const PHASE_OPTIONS = ["PHASE1", "PHASE2", "PHASE3", "PHASE4", "EARLY_PHASE1", "NA"] as const;
