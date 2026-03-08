@@ -638,9 +638,9 @@ const DatasetPage = () => {
         <StepPanel>
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <TierBadge tier="gold" />
-                <span className="text-sm font-semibold text-foreground">{studies.length} validated studies</span>
+               <div className="flex items-center gap-2">
+                 <TierBadge tier="gold" />
+                 <span className="text-sm font-semibold text-foreground">{studies.length} studies scored against your objective</span>
                 <Button
                   variant="ghost"
                   size="sm"
