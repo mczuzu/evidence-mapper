@@ -30,14 +30,22 @@ const WelcomePage = () => {
           pipeline. Generate objective-driven analysis reports in seconds.
         </p>
 
-        <Button
-          size="lg"
-          onClick={() => navigate("/search")}
-          className="gap-2 text-base px-8"
-        >
-          Start searching
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        <div className="flex flex-col items-center gap-2">
+          <Button
+            size="lg"
+            onClick={() => navigate("/search")}
+            className="gap-2 text-base px-8"
+          >
+            Start searching
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          <button
+            onClick={() => navigate(exampleSearchUrl())}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Try an example →
+          </button>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 pt-4">
           {steps.map((step, i) => (

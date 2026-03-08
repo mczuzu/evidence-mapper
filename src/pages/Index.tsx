@@ -68,6 +68,18 @@ const Index = () => {
             </p>
             <div className="pl-8">
               <SearchBuilder value={search} onChange={setSearch} objective={objective} />
+              {!search.rows.some((r) => r.terms.length > 0) && (
+                <button
+                  onClick={() => {
+                    setObjective(EXAMPLE_OBJECTIVE);
+                    setSearch(EXAMPLE_SEARCH);
+                  }}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted/50 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                >
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Try an example
+                </button>
+              )}
             </div>
           </div>
 
