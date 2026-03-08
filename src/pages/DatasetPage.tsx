@@ -502,7 +502,7 @@ const DatasetPage = () => {
                 </>
                ) : (
                  <>
-                   <Sparkles className="h-4 w-4" /> Focus on my question with AI →
+                   <Sparkles className="h-4 w-4" /> Remove noise with AI →
                  </>
                )}
             </Button>
