@@ -117,10 +117,12 @@ const DatasetPage = () => {
 
   // Objective from URL
   const objective = searchParams.get("objective") || "";
+  const autoStartAI = searchParams.get("autoStartAI") === "1";
+  const autoStartManual = searchParams.get("autoStartManual") === "1";
 
   // Dataset tier state
   const [tier, setTier] = useState<DatasetTier>("bronze");
-  const [filterMethod, setFilterMethod] = useState<FilterMethod>(null);
+  const [filterMethod, setFilterMethod] = useState<FilterMethod>(autoStartManual ? "manual" : null);
 
   // Silver: filtered by keywords (AI) or manual selection
   const [silverIds, setSilverIds] = useState<string[] | null>(null);

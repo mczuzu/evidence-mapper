@@ -6,7 +6,7 @@ import { useSearchCounts } from "@/hooks/useSearchCounts";
 import { SearchInput, emptySearch, paramsToSearch, searchToParams, isSearchActive } from "@/types/search";
 import { Textarea } from "@/components/ui/textarea";
 import { PipelineTracker } from "@/components/PipelineTracker";
-import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2, X } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2, X, CheckSquare } from "lucide-react";
 import { EXAMPLE_OBJECTIVE, EXAMPLE_SEARCH } from "@/lib/example-search";
 
 type Step = 1 | 2 | 3;
