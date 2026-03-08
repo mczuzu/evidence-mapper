@@ -190,3 +190,70 @@
     box-shadow: var(--shadow-lg);
   }
 }
+
+/* ===== Print Styles ===== */
+@media print {
+  @page {
+    margin: 2cm;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide non-report elements */
+  .no-print,
+  header,
+  nav,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* White background override for cards */
+  .bg-background,
+  [class*="bg-card"],
+  [class*="rounded-xl"],
+  [class*="rounded-lg"] {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Evidence Landscape: light grey instead of black */
+  .evidence-landscape-print {
+    background: #f5f5f5 !important;
+    color: black !important;
+  }
+  .evidence-landscape-print * {
+    color: black !important;
+  }
+
+  /* Typography for print */
+  h1, h2, h3, h4, h5, h6 {
+    font-size: 14px !important;
+    color: black !important;
+  }
+
+  p, li, span, div {
+    color: black !important;
+  }
+
+  /* No page breaks inside sections */
+  section, .print-section, [class*="CardContent"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Cards: remove shadow and border for clean print */
+  [class*="shadow"] {
+    box-shadow: none !important;
+  }
+}

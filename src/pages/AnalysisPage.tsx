@@ -418,15 +418,26 @@ const AnalysisPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      <PipelineTracker currentStep={6} />
+      <div className="no-print">
+        <Header />
+        <PipelineTracker currentStep={6} />
+      </div>
 
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Print-only header */}
+          <div className="print-only hidden" style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span style={{ fontWeight: 700, fontSize: '14px' }}>Evidence Mapper</span>
+              <span style={{ color: '#888', fontSize: '12px' }}>evidence-mapper.com</span>
+            </div>
+            <div style={{ height: '1px', backgroundColor: '#ccc', marginTop: '8px' }} />
+          </div>
+
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="no-print">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>

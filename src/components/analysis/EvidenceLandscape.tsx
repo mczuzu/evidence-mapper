@@ -70,7 +70,7 @@ export function EvidenceLandscape({ conditionName, bronzeCount, goldCount }: Evi
 
   return (
     <div
-      className="rounded-xl w-full mb-8"
+      className="rounded-xl w-full mb-8 evidence-landscape-print"
       style={{ backgroundColor: '#0a0a0a', padding: '32px' }}
     >
       {/* TOP ROW */}
