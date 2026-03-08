@@ -1,23 +1,23 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Search, Sparkles, FlaskConical } from "lucide-react";
+import { ArrowRight, Clock, Target, Zap } from "lucide-react";
 
 const EXAMPLE_URL = "/search?tryExample=1";
 
-const comparisons = [
+const valueProps = [
   {
-    icon: Search,
-    bold: "PubMed returns papers.",
-    rest: "Evidence Mapper returns pipeline intelligence.",
+    icon: Clock,
+    title: "Minutes, not weeks",
+    body: "Get a full evidence landscape and gap analysis in under 10 minutes. No analyst, no briefing, no waiting for a report.",
   },
   {
-    icon: Sparkles,
-    bold: "PubMed doesn't score trials against your R&D objective.",
-    rest: "Evidence Mapper does.",
+    icon: Target,
+    title: "Objective-specific, not generic",
+    body: "Unlike off-the-shelf landscape reports, every Evidence Mapper analysis is scored against your exact pipeline question. The output is yours, not a template.",
   },
   {
-    icon: FlaskConical,
-    bold: "PubMed has no gap analysis.",
-    rest: "Evidence Mapper identifies white space in the evidence.",
+    icon: Zap,
+    title: "Self-serve pipeline intelligence",
+    body: "Run as many analyses as you need, on any indication, any intervention, any phase. No enterprise contract required.",
   },
 ];
 
@@ -47,7 +47,7 @@ const WelcomePage = () => {
         <p className="mt-6 text-base md:text-lg leading-relaxed max-w-[520px]" style={{ color: "#888" }}>
           Evidence Mapper scans 63,000+ completed clinical trials, maps
           intervention clusters, detects evidence gaps, and delivers a go/no-go
-          signal for your pipeline decision — in minutes.
+          signal for your pipeline decision — in minutes, not weeks.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-3">
@@ -74,7 +74,7 @@ const WelcomePage = () => {
             Two processes. One answer.
           </h2>
           <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
-            Most tools stop at search. Evidence Mapper delivers pipeline intelligence.
+            AI-native pipeline intelligence. No analysts. No waiting.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-14">
@@ -87,13 +87,13 @@ const WelcomePage = () => {
                 Map the competitive landscape
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#555" }}>
-                Search 63,000+ completed trials by indication and intervention
+                Search 63,000+ completed trials by indication, intervention and phase
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#ddd" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#666" }}>
-                Filter by condition, intervention, trial phase and date range.
-                Evidence Mapper searches MeSH-indexed ClinicalTrials.gov data and
-                returns every completed trial that matches your pipeline question.
+                Filter by condition, intervention, trial phase and date range
+                across all ClinicalTrials.gov completed data. Get the full picture
+                of what's been tried, by whom, and when.
               </p>
               <span className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
                 style={{ borderColor: "rgb(180 83 9 / 0.3)", backgroundColor: "rgb(180 83 9 / 0.1)", color: "rgb(180 83 9)" }}
@@ -111,40 +111,42 @@ const WelcomePage = () => {
                 Get the signal, not the noise
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#888" }}>
-                AI scores each trial against your R&D objective.
+                AI scores every trial against your specific R&D objective
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#333" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#aaa" }}>
-                Most searches return trials that mention your terms but don't
-                answer your question. Evidence Mapper reads every abstract, scores
-                each trial against your specific objective, and surfaces only what's
-                relevant to your pipeline decision.
+                Most searches return irrelevant results. Evidence Mapper reads
+                every abstract, scores each trial 0–10 against your pipeline question,
+                and identifies intervention clusters, evidence gaps, and white space
+                opportunities.
               </p>
               <span className="mt-6 inline-flex self-start items-center rounded-full px-3 py-1 text-xs font-semibold bg-indigo text-indigo-foreground">
-                Evidence signal → Gap analysis
+                Evidence signal · Gap analysis
               </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── VS PUBMED ────────────────────────────────────────── */}
+      {/* ── VALUE PROPS (replaces VS PubMed) ─────────────────── */}
       <section className="px-6" style={{ backgroundColor: "#f9f9f9", paddingTop: 60, paddingBottom: 60 }}>
         <div className="max-w-[800px] mx-auto">
           <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center" style={{ color: "#0a0a0a" }}>
-            Why not just use PubMed Advanced Search?
+            What used to take weeks, now takes minutes
           </h2>
+          <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
+            No consultants. No generic reports. No waiting.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-            {comparisons.map((item, i) => (
-              <div key={i} className="flex flex-col items-center text-center gap-4">
+            {valueProps.map((item, i) => (
+              <div key={i} className="flex flex-col items-center text-center gap-3">
                 <item.icon className="h-6 w-6" style={{ color: "#666" }} />
+                <h3 className="text-sm font-semibold" style={{ color: "#0a0a0a" }}>
+                  {item.title}
+                </h3>
                 <p className="text-sm leading-relaxed" style={{ color: "#555" }}>
-                  <span className="font-semibold" style={{ color: "#0a0a0a" }}>
-                    {item.bold}
-                  </span>
-                  <br />
-                  {item.rest}
+                  {item.body}
                 </p>
               </div>
             ))}
@@ -219,7 +221,7 @@ const WelcomePage = () => {
 
       {/* ── FOOTER ───────────────────────────────────────────── */}
       <footer className="px-6 py-8 text-center text-xs" style={{ backgroundColor: "#0a0a0a", color: "#555" }}>
-        Evidence Mapper · Pipeline intelligence powered by ClinicalTrials.gov · 63,394 completed trials indexed
+        Evidence Mapper · Pipeline intelligence for R&D teams · 63,394 completed trials indexed · Updated monthly
       </footer>
     </div>
   );
