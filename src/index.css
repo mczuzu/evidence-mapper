@@ -44,6 +44,12 @@
 
     --radius: 0.375rem;
 
+    /* Indigo accent */
+    --indigo: 239 84% 67%;
+    --indigo-light: 226 100% 97%;
+    --indigo-dark: 243 75% 59%;
+    --indigo-foreground: 0 0% 100%;
+
     /* Semantic label colors */
     --label-placebo: 45 80% 92%;
     --label-placebo-foreground: 45 70% 30%;
