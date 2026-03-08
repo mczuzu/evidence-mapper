@@ -552,9 +552,9 @@ const DatasetPage = () => {
       return (
         <StepPanel>
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <TierBadge tier="silver" />
-              <span className="text-sm font-semibold text-foreground">{studies.length} filtered studies</span>
+             <div className="flex items-center gap-2">
+               <TierBadge tier="silver" />
+               <span className="text-sm font-semibold text-foreground">{studies.length} studies focused on your question</span>
               <Button
                 variant="ghost"
                 size="sm"
