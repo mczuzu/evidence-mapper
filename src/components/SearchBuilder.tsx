@@ -26,7 +26,16 @@ const FIELD_TYPES = {
     dotClass: "bg-slate-400",
     hint: "Searches title and abstract",
   },
+  phase: {
+    label: "Phase",
+    placeholder: "Select study phases…",
+    badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    dotClass: "bg-emerald-500",
+    hint: "Filter by clinical trial phase",
+  },
 } as const;
+
+const PHASE_OPTIONS = ["PHASE1", "PHASE2", "PHASE3", "PHASE4", "EARLY_PHASE1", "NA"] as const;
 
 // ── Chip ───────────────────────────────────────────────────────
 function Chip({ label, badgeClass, onRemove }: { label: string; badgeClass: string; onRemove: () => void }) {
