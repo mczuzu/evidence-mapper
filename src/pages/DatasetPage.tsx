@@ -907,7 +907,7 @@ const DatasetPage = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="gap-1 text-xs text-muted-foreground h-7 px-2"
+                                className="gap-1 text-xs h-7 px-2 text-indigo border-indigo/30 hover:bg-indigo-light"
                               >
                                 View ↗
                               </Button>
