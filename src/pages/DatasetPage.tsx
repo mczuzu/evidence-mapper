@@ -623,7 +623,7 @@ const DatasetPage = () => {
                   ← Back to Silver
                 </Button>
               </div>
-              <PipelineTracker />
+              {/* pipeline info removed — using top-level tracker */}
 
               {goldResults && (
                 <p className="text-xs text-muted-foreground flex items-center gap-3">
