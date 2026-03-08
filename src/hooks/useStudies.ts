@@ -101,14 +101,8 @@ export function useStudies({
           currentPage: page,
           totalPages: Math.ceil(totalCount / PAGE_SIZE),
         };
-      }
-          studies,
-          totalCount,
-          pageSize: PAGE_SIZE,
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / PAGE_SIZE),
-        };
-      }
+
+
 
       // No search — direct query
       let query = supabaseExternal
