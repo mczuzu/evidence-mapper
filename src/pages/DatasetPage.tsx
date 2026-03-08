@@ -496,8 +496,16 @@ const DatasetPage = () => {
   // ── Render step panel ─────────────────────────────────────────────────────
   const renderStepPanel = () => {
 
-    // BRONZE — choose filter method
+    // BRONZE — choose filter method (or full-screen AI loading)
     if (tier === "bronze") {
+      if (isFilteringAI) {
+        return (
+          <StepPanel>
+            <AIFilteringLoadingState />
+          </StepPanel>
+        );
+      }
+
       return (
         <StepPanel>
           <div className="space-y-1">
@@ -522,19 +530,11 @@ const DatasetPage = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               onClick={runAIFilter}
-              disabled={isFilteringAI || !objective || totalCount === 0 || isLoading}
+              disabled={!objective || totalCount === 0 || isLoading}
               variant="default"
               className="gap-2"
             >
-              {isFilteringAI ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Filtering with AI...
-                </>
-               ) : (
-                 <>
-                   <Sparkles className="h-4 w-4 text-indigo" /> Remove noise with AI →
-                 </>
-               )}
+              <Sparkles className="h-4 w-4" /> Remove noise with AI →
             </Button>
              <Button
                onClick={() => setFilterMethod("manual")}
