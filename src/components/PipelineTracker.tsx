@@ -32,20 +32,21 @@ export function PipelineTracker({ currentStep }: { currentStep: 1 | 2 | 3 | 4 | 
                     style={{
                       width: 32,
                       height: 32,
-                      backgroundColor:
-                        isComplete || isCurrent
+                      backgroundColor: isCurrent
+                        ? "hsl(var(--indigo))"
+                        : isComplete
                           ? "hsl(var(--foreground))"
                           : "hsl(var(--background))",
                       color:
                         isComplete || isCurrent
-                          ? "hsl(var(--background))"
+                          ? "hsl(var(--indigo-foreground))"
                           : "hsl(var(--muted-foreground))",
                       border:
                         isComplete || isCurrent
                           ? "none"
                           : "1.5px solid hsl(var(--border))",
                       boxShadow: isCurrent
-                        ? "0 0 0 3px hsl(var(--background)), 0 0 0 5px hsl(var(--foreground) / 0.3)"
+                        ? "0 0 0 3px hsl(var(--background)), 0 0 0 5px hsl(var(--indigo) / 0.3)"
                         : "none",
                     }}
                   >
