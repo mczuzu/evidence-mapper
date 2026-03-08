@@ -11,6 +11,7 @@ import { AnalysisStatusBanner } from "@/components/analysis/AnalysisStatusBanner
 import { MarkdownText } from "@/components/analysis/MarkdownText";
 import { V3AnalysisContent } from "@/components/analysis/V3AnalysisContent";
 import { LegacyAnalysisContent } from "@/components/analysis/LegacyAnalysisContent";
+import { EvidenceLandscape } from "@/components/analysis/EvidenceLandscape";
 import type { AnalysisV3 } from "@/types/analysis";
 
 /* =========================
