@@ -678,6 +678,7 @@ const DatasetPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
+      {!isUrlIdsMode && <PipelineTracker currentStep={pipelineStep} />}
 
       <main className="flex-1 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -687,10 +688,6 @@ const DatasetPage = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               {isUrlIdsMode ? "Back" : "Back to search"}
             </Button>
-            <div className="flex items-center gap-3">
-              <h1 className="font-serif text-xl font-bold text-foreground">Dataset</h1>
-              <TierBadge tier={tier} />
-            </div>
           </div>
 
           {/* Step panel */}
