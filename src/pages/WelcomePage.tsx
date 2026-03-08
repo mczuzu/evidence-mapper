@@ -32,22 +32,22 @@ const WelcomePage = () => {
         style={{ backgroundColor: "#0a0a0a" }}
       >
         <span className="inline-flex items-center rounded-full border border-white/20 px-4 py-1.5 text-xs text-white/50 mb-10">
-          63,394 completed clinical trials · ClinicalTrials.gov
+          63,394 completed trials · Phase 1–4 · ClinicalTrials.gov
         </span>
 
         <h1
           className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-white leading-tight max-w-2xl"
           style={{ lineHeight: 1.15 }}
         >
-          From clinical question
+          Know if a therapeutic space
           <br />
-          to evidence report
+          is worth entering
         </h1>
 
         <p className="mt-6 text-base md:text-lg leading-relaxed max-w-[520px]" style={{ color: "#888" }}>
-          Evidence Mapper structures your search, filters out irrelevant studies
-          automatically, and synthesizes what the evidence says — in minutes, not
-          weeks.
+          Evidence Mapper scans 63,000+ completed clinical trials, maps
+          intervention clusters, detects evidence gaps, and delivers a go/no-go
+          signal for your pipeline decision — in minutes.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-3">
@@ -55,7 +55,7 @@ const WelcomePage = () => {
             onClick={() => navigate("/search")}
             className="inline-flex items-center gap-2 rounded-lg bg-white text-black px-7 py-3 text-sm font-medium hover:bg-white/90 transition-colors"
           >
-            Start searching
+            Start your analysis
             <ArrowRight className="h-4 w-4" />
           </button>
           <button
