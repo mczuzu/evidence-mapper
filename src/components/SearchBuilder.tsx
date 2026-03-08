@@ -417,7 +417,12 @@ function SearchRowComponent({
       <div className="pt-1.5 shrink-0">
         <TypeSelector value={row.type} onChange={(type) => onUpdate({ ...row, type, terms: [] })} />
       </div>
-      {row.type === "phase" ? (
+      {row.type === "daterange" ? (
+        <DateRangeField
+          terms={row.terms}
+          onChange={(terms) => onUpdate({ ...row, terms })}
+        />
+      ) : row.type === "phase" ? (
         <PhaseField
           terms={row.terms}
           onToggle={(t) => {
@@ -434,7 +439,7 @@ function SearchRowComponent({
         />
       ) : (
         <GuidedField
-          fieldType={row.type}
+          fieldType={row.type as "condition" | "intervention"}
           terms={row.terms}
           onAdd={(t) => onUpdate({ ...row, terms: [...row.terms, t] })}
           onRemove={(i) => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })}
