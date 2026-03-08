@@ -366,7 +366,11 @@ const AnalysisPage = () => {
   });
 
   // optimistic navigation state (optional)
-  const stateRun = (location.state as any)?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
+  const navState = location.state as any;
+  const stateRun = navState?.run as { id: string; nct_ids: string[]; analysis: any } | undefined;
+  const bronzeCount: number = navState?.bronzeCount ?? 0;
+  const goldCount: number = navState?.goldCount ?? 0;
+  const conditionName: string = navState?.conditionName ?? "";
 
   const stateRunMatches = !!analysisId && stateRun?.id === analysisId;
 
