@@ -468,7 +468,7 @@ function SearchRowComponent({
         />
       </div>
       <div className="pt-1.5 shrink-0">
-        <TypeSelector value={row.type} onChange={(type) => onUpdate({ ...row, type, terms: [] })} />
+        <TypeSelector value={row.type} onChange={(type) => onUpdate({ ...row, type, terms: type === "daterange" ? ["2018", "2026"] : [] })} />
       </div>
       {row.type === "daterange" ? (
         <DateRangeField
