@@ -616,7 +616,8 @@ const DatasetPage = () => {
             <div className="space-y-2">
                <div className="flex items-center gap-2">
                  <TierBadge tier="gold" />
-                 <span className="text-sm font-semibold text-foreground">{studies.length} studies scored against your objective</span>
+                 <span className="text-sm font-semibold text-foreground">Studies scored against your objective</span>
+                 <span className="text-xs text-muted-foreground">({studies.length})</span>
                 <Button
                   variant="ghost"
                   size="sm"
