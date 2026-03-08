@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { AILoadingState } from "@/components/AILoadingState";
 import { PipelineTracker } from "@/components/PipelineTracker";
 import {
   ArrowLeft,
