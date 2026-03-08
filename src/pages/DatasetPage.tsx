@@ -67,6 +67,49 @@ function StepPanel({ children }: { children: React.ReactNode }) {
   return <div className="rounded-xl border border-border bg-muted/20 px-6 py-5 space-y-4">{children}</div>;
 }
 
+// ── AI filtering loading state ────────────────────────────────────────────
+const AI_PROGRESS_MESSAGES = [
+  "Analysing study titles...",
+  "Reading abstracts...",
+  "Checking relevance against your objective...",
+  "Filtering noise...",
+];
+
+function AIFilteringLoadingState() {
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setMsgIndex((prev) => (prev + 1) % AI_PROGRESS_MESSAGES.length);
+        setFade(true);
+      }, 200);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 gap-4">
+      <Loader2
+        className="animate-spin text-indigo"
+        style={{ width: 40, height: 40 }}
+      />
+      <p className="text-lg font-semibold text-foreground">Reading abstracts...</p>
+      <p className="text-sm text-muted-foreground">
+        AI is filtering studies that don't address your objective
+      </p>
+      <p
+        className="text-sm text-muted-foreground transition-opacity duration-200"
+        style={{ opacity: fade ? 1 : 0 }}
+      >
+        {AI_PROGRESS_MESSAGES[msgIndex]}
+      </p>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 const DatasetPage = () => {
   const [searchParams] = useSearchParams();
