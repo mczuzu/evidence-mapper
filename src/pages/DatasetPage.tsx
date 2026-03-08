@@ -551,7 +551,7 @@ const DatasetPage = () => {
                 ← Back to Bronze
               </Button>
             </div>
-            <PipelineTracker />
+            {/* pipeline info removed — using top-level tracker */}
           </div>
 
           {filterMethod === "ai" && silverKeywords.length > 0 && (
