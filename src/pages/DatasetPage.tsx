@@ -537,14 +537,14 @@ const DatasetPage = () => {
           {filterMethod === "manual" && (
             <div className="flex items-center gap-3 pt-2 border-t border-border">
               <p className="text-sm text-muted-foreground flex-1">
-                Select the relevant studies in the table.{" "}
+                Select the relevant studies in the table below.{" "}
                 <span className="font-medium text-foreground">{selectedIds.size} / 200</span> selected.
               </p>
               <Button onClick={confirmManualSilver} disabled={selectedIds.size === 0} className="gap-2">
                 <ArrowRight className="h-4 w-4" />
-                Confirm selection → Silver
+                Confirm selection →
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setFilterMethod(null)}>
+              <Button variant="ghost" size="sm" onClick={() => { setFilterMethod(null); setSelectedIds(new Set()); }}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
