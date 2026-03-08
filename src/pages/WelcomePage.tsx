@@ -74,7 +74,7 @@ const WelcomePage = () => {
             Two processes. One answer.
           </h2>
           <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
-            Most tools stop at search. Evidence Mapper goes further.
+            Most tools stop at search. Evidence Mapper delivers pipeline intelligence.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-14">
