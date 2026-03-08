@@ -5,93 +5,37 @@ import { SearchInput, SearchRow, isSearchActive } from "@/types/search";
 
 const PAGE_SIZE = 20;
 
-interface RpcSearchResult {
-  nct_id: string;
-  rank: number;
-}
+// ── Helper: extract terms by row type ─────────────────────────
+function extractTermsByType(rows: SearchRow[]): {
+  conditionTerms: string[];
+  interventionTerms: string[];
+  freetextTerms: string[];
+  phaseTerms: string[];
+} {
+  const conditionTerms: string[] = [];
+  const interventionTerms: string[] = [];
+  const freetextTerms: string[] = [];
+  const phaseTerms: string[] = [];
 
-async function callRpc(q: string, limit = 5000): Promise<RpcSearchResult[]> {
-  const { data, error } = await supabaseExternal.rpc("search_studies_advanced_prefix", {
-    q: q.trim(),
-    limit_n: limit,
-  });
-  if (error) throw error;
-  return (data as RpcSearchResult[]) || [];
-}
-
-function unionSets(...sets: Set<string>[]): Set<string> {
-  const result = new Set<string>();
-  for (const s of sets) for (const v of s) result.add(v);
-  return result;
-}
-
-function intersectSets(a: Set<string>, b: Set<string>): Set<string> {
-  const result = new Set<string>();
-  for (const v of a) if (b.has(v)) result.add(v);
-  return result;
-}
-
-async function executeSearch(rows: SearchRow[]): Promise<{ nctIds: string[]; rankMap: Map<string, number> }> {
-  const activeRows = rows.filter((r) => r.terms.length > 0);
-  if (activeRows.length === 0) return { nctIds: [], rankMap: new Map() };
-
-  const globalRankMap = new Map<string, number>();
-
-  const rowSets = await Promise.all(
-    activeRows.map(async (row) => {
-      let ids: string[] = [];
-
-      if (row.type === "condition") {
-        const results = await Promise.all(
-          row.terms.map(async (t) => {
-            const { data, error } = await supabaseExternal.rpc("search_studies_by_mesh", { mesh_term_input: t });
-            if (error) throw error;
-            return (data || []).map((r: any) => r.nct_id);
-          }),
-        );
-        ids = [...new Set(results.flat())];
-      } else if (row.type === "intervention") {
-        const results = await Promise.all(
-          row.terms.map(async (t) => {
-            const { data, error } = await supabaseExternal
-              .from("intervention")
-              .select("nct_id")
-              .ilike("intervention_name", `%${t}%`);
-            if (error) throw error;
-            return (data || []).map((r) => r.nct_id);
-          }),
-        );
-        ids = [...new Set(results.flat())];
-      } else if (row.type === "phase") {
-        const { data, error } = await supabaseExternal
-          .from("v_ui_study_list_v2")
-          .select("nct_id")
-          .in("phase", row.terms);
-        if (error) throw error;
-        ids = (data || []).map((r) => r.nct_id);
-      } else {
-        // freetext
-        const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));
-        for (const results of termResults) {
-          for (const r of results) {
-            const existing = globalRankMap.get(r.nct_id);
-            if (existing === undefined || r.rank > existing) globalRankMap.set(r.nct_id, r.rank);
-          }
-        }
-        ids = [...new Set(termResults.flat().map((r) => r.nct_id))];
-      }
-
-      return new Set(ids);
-    }),
-  );
-
-  let finalSet = rowSets[0];
-  for (let i = 1; i < activeRows.length; i++) {
-    finalSet = activeRows[i].operator === "AND" ? intersectSets(finalSet, rowSets[i]) : unionSets(finalSet, rowSets[i]);
+  for (const row of rows) {
+    if (row.terms.length === 0) continue;
+    switch (row.type) {
+      case "condition":
+        conditionTerms.push(...row.terms);
+        break;
+      case "intervention":
+        interventionTerms.push(...row.terms);
+        break;
+      case "freetext":
+        freetextTerms.push(...row.terms);
+        break;
+      case "phase":
+        phaseTerms.push(...row.terms);
+        break;
+    }
   }
 
-  const nctIds = [...finalSet].sort((a, b) => (globalRankMap.get(b) ?? 0) - (globalRankMap.get(a) ?? 0));
-  return { nctIds, rankMap: globalRankMap };
+  return { conditionTerms, interventionTerms, freetextTerms, phaseTerms };
 }
 
 // ── Main hook ──────────────────────────────────────────────────
@@ -128,32 +72,52 @@ export function useStudies({
       const searchActive = isSearchActive(search);
 
       if (searchActive) {
-        const { nctIds, rankMap } = await executeSearch(search.rows);
+        const { conditionTerms, interventionTerms, freetextTerms, phaseTerms } =
+          extractTermsByType(search.rows);
 
-        if (nctIds.length === 0) {
-          return { studies: [], totalCount: 0, pageSize: PAGE_SIZE, currentPage: page, totalPages: 0 };
-        }
+        const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
+          p_condition_terms: conditionTerms.length > 0 ? conditionTerms : null,
+          p_intervention_terms: interventionTerms.length > 0 ? interventionTerms : null,
+          p_freetext_terms: freetextTerms.length > 0 ? freetextTerms : null,
+          p_phases: phaseTerms.length > 0 ? phaseTerms : null,
+          p_only_analyzable: onlyAnalyzable,
+          p_only_comparable: onlyComparable,
+          p_page: page,
+          p_page_size: PAGE_SIZE,
+        });
 
-        let query = supabaseExternal.from("v_ui_study_list_v2").select("*").in("nct_id", nctIds);
-
-        if (onlyAnalyzable) query = query.eq("has_numeric_results", true);
-        if (onlyComparable) query = query.eq("has_group_comparison", true);
-
-        const { data, error } = await query;
         if (error) throw error;
 
-        const rankIndex = new Map(nctIds.map((id, i) => [id, i]));
-        const studies = ((data as StudyListItem[]) || []).sort(
-          (a, b) => (rankIndex.get(a.nct_id) ?? 999) - (rankIndex.get(b.nct_id) ?? 999),
-        );
+        const rows = (data as any[]) || [];
+        const totalCount = rows.length > 0 ? Number(rows[0].total_count) : 0;
 
-        const from = page * PAGE_SIZE;
+        // Map RPC results to StudyListItem shape
+        const studies: StudyListItem[] = rows.map((r) => ({
+          nct_id: r.nct_id,
+          brief_title: r.brief_title,
+          official_title: r.official_title,
+          phase: r.phase,
+          updated_at: r.updated_at,
+          n_result_rows: r.n_result_rows,
+          n_unique_outcomes: r.n_unique_outcomes,
+          n_unique_measurements: r.n_unique_measurements,
+          n_unique_units: r.n_unique_units,
+          param_type_set: r.param_type_set,
+          total_n_reported: r.total_n_reported,
+          max_n_reported: r.max_n_reported,
+          has_placebo_or_control_label: r.has_placebo_or_control_label,
+          n_design_groups: r.n_design_groups,
+          structural_comparative_candidate: r.structural_comparative_candidate,
+          structural_comparative_success: r.structural_comparative_success,
+          primary_non_comparability_reason: r.primary_non_comparability_reason,
+        }));
+
         return {
-          studies: studies.slice(from, from + PAGE_SIZE),
-          totalCount: studies.length,
+          studies,
+          totalCount,
           pageSize: PAGE_SIZE,
           currentPage: page,
-          totalPages: Math.ceil(studies.length / PAGE_SIZE),
+          totalPages: Math.ceil(totalCount / PAGE_SIZE),
         };
       }
 
