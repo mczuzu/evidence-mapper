@@ -6,40 +6,120 @@ import { SearchBuilder } from "@/components/SearchBuilder";
 import { useSearchCounts } from "@/hooks/useSearchCounts";
 import { SearchInput, emptySearch, paramsToSearch, searchToParams, isSearchActive } from "@/types/search";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles } from "lucide-react";
 import { EXAMPLE_OBJECTIVE, EXAMPLE_SEARCH } from "@/lib/example-search";
 
 type Step = 1 | 2 | 3;
 
-function truncate(text: string, max: number) {
-  return text.length > max ? text.slice(0, max) + "…" : text;
+const PIPELINE_STEPS = [
+  { num: 1, label: "Objective" },
+  { num: 2, label: "Filters" },
+  { num: 3, label: "Bronze" },
+  { num: 4, label: "Silver" },
+  { num: 5, label: "Gold" },
+  { num: 6, label: "Report" },
+];
+
+function PipelineTracker({ currentStep }: { currentStep: Step }) {
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div className="sticky top-0 z-30 w-full bg-background border-b border-border">
+        <div className="max-w-[700px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between relative">
+            {/* Connecting line */}
+            <div
+              className="absolute top-4 left-4 right-4 h-px"
+              style={{ backgroundColor: "hsl(var(--border))" }}
+            />
+            {PIPELINE_STEPS.map((s) => {
+              const isComplete = s.num < currentStep;
+              const isCurrent = s.num === currentStep;
+              const isFuture = s.num > currentStep && s.num > 3;
+              const isReachable = s.num <= 3 && s.num > currentStep;
+
+              const circle = (
+                <div className="relative flex flex-col items-center gap-1.5 z-10">
+                  <div
+                    className="flex items-center justify-center rounded-full text-xs font-semibold transition-all"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      backgroundColor:
+                        isComplete || isCurrent
+                          ? "hsl(var(--foreground))"
+                          : "hsl(var(--background))",
+                      color:
+                        isComplete || isCurrent
+                          ? "hsl(var(--background))"
+                          : "hsl(var(--muted-foreground))",
+                      border:
+                        isComplete || isCurrent
+                          ? "none"
+                          : "1.5px solid hsl(var(--border))",
+                      boxShadow: isCurrent
+                        ? "0 0 0 3px hsl(var(--background)), 0 0 0 5px hsl(var(--foreground) / 0.3)"
+                        : "none",
+                    }}
+                  >
+                    {isComplete ? <Check className="h-3.5 w-3.5" /> : s.num}
+                  </div>
+                  <span
+                    className="text-[10px] font-medium leading-none"
+                    style={{
+                      color:
+                        isComplete || isCurrent
+                          ? "hsl(var(--foreground))"
+                          : "hsl(var(--muted-foreground))",
+                      fontWeight: isComplete || isCurrent ? 600 : 400,
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              );
+
+              if (isFuture) {
+                return (
+                  <Tooltip key={s.num}>
+                    <TooltipTrigger asChild>{circle}</TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      Available after completing this step
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return <div key={s.num}>{circle}</div>;
+            })}
+          </div>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
 }
 
 function CompletedBar({
-  stepNum,
+  label,
   summary,
   onEdit,
 }: {
-  stepNum: number;
+  label: string;
   summary: string;
   onEdit: () => void;
 }) {
   return (
-    <div
-      className="w-full flex items-center gap-3 px-5 py-2.5"
-      style={{ backgroundColor: "#f5f5f5", minHeight: 40 }}
-    >
-      <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: "#888" }}>
+    <div className="w-full flex items-center gap-3 px-5 py-2.5 bg-muted" style={{ minHeight: 40 }}>
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Check className="h-3.5 w-3.5" />
-        Step {stepNum}
+        {label}
       </span>
-      <span className="text-xs truncate flex-1" style={{ color: "#555" }}>
+      <span className="text-xs truncate flex-1" style={{ color: "hsl(var(--foreground) / 0.65)" }}>
         {summary}
       </span>
       <button
         onClick={onEdit}
-        className="inline-flex items-center gap-1 text-xs hover:underline"
-        style={{ color: "#888" }}
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
       >
         <Pencil className="h-3 w-3" />
         Edit
@@ -48,14 +128,8 @@ function CompletedBar({
   );
 }
 
-function buildQueryPreview(search: SearchInput): string {
-  const parts = search.rows
-    .filter((r) => r.terms.length > 0)
-    .map((r) => {
-      const label = r.type === "daterange" ? "date" : r.type;
-      return `${label}: ${r.terms.join(", ")}`;
-    });
-  return parts.join(" · ") || "No filters";
+function truncate(text: string, max: number) {
+  return text.length > max ? text.slice(0, max) + "…" : text;
 }
 
 const Index = () => {
@@ -73,6 +147,8 @@ const Index = () => {
   const hasSearch = isSearchActive(search);
   const totalCount = counts?.intersectionTotal ?? 0;
 
+  const activeFilterCount = search.rows.filter((r) => r.terms.length > 0).length;
+
   const handleTryExample = () => {
     setObjective(EXAMPLE_OBJECTIVE);
     setSearch(EXAMPLE_SEARCH);
@@ -85,43 +161,36 @@ const Index = () => {
     navigate(`/dataset?${params.toString()}`);
   };
 
-  const queryPreview = useMemo(() => buildQueryPreview(search), [search]);
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
+      <PipelineTracker currentStep={step} />
 
       {/* Completed step bars */}
       {step >= 2 && (
         <CompletedBar
-          stepNum={1}
-          summary={truncate(objective, 60)}
+          label="Objective defined"
+          summary={truncate(objective, 55)}
           onEdit={() => setStep(1)}
         />
       )}
       {step >= 3 && (
         <CompletedBar
-          stepNum={2}
-          summary={truncate(queryPreview, 60)}
+          label={`${activeFilterCount} filters active · ${isLoading ? "…" : totalCount.toLocaleString()} studies found`}
+          summary=""
           onEdit={() => setStep(2)}
         />
       )}
 
-      {/* ══════════════════════════════════════════════════════════
-          STEP 1 — DEFINE YOUR OBJECTIVE
-          ══════════════════════════════════════════════════════════ */}
+      {/* STEP 1 — DEFINE YOUR OBJECTIVE */}
       {step === 1 && (
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="w-full max-w-[680px] space-y-8">
-            <span className="text-xs" style={{ color: "#999" }}>
-              Step 1 of 3
-            </span>
-
             <div className="space-y-3">
               <h1 className="font-serif text-3xl md:text-4xl font-semibold text-foreground leading-tight">
                 What do you want to investigate?
               </h1>
-              <p className="text-sm leading-relaxed" style={{ color: "#888" }}>
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 Your objective guides AI filtering and the final evidence report. Be specific about the condition, intervention, and what you want to know.
               </p>
             </div>
@@ -134,18 +203,11 @@ const Index = () => {
               className="resize-none text-sm"
             />
 
-            {/* Try an example */}
             <div className="space-y-2">
-              <p className="text-xs" style={{ color: "#999" }}>
-                Not sure where to start?
-              </p>
+              <p className="text-xs text-muted-foreground">Not sure where to start?</p>
               <button
                 onClick={handleTryExample}
-                className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-medium transition-colors hover:bg-amber-50"
-                style={{
-                  borderColor: "rgb(180 83 9 / 0.4)",
-                  color: "rgb(180 83 9)",
-                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-700/40 text-amber-700 px-4 py-2 text-xs font-medium transition-colors hover:bg-amber-50"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Try: Diabetes Type 2 · Metformin · Phase 3
@@ -155,11 +217,7 @@ const Index = () => {
             <button
               onClick={() => setStep(2)}
               disabled={!objective.trim()}
-              className="w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                backgroundColor: objective.trim() ? "#0a0a0a" : "#0a0a0a",
-                color: "#fff",
-              }}
+              className="w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 rounded-lg bg-foreground text-background px-6 py-3.5 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Continue to search
               <ArrowRight className="h-4 w-4" />
@@ -168,37 +226,29 @@ const Index = () => {
         </main>
       )}
 
-      {/* ══════════════════════════════════════════════════════════
-          STEP 2 — BUILD YOUR SEARCH STRATEGY
-          ══════════════════════════════════════════════════════════ */}
+      {/* STEP 2 — BUILD YOUR SEARCH STRATEGY */}
       {step === 2 && (
         <main className="flex-1 flex flex-col px-6 py-10">
           <div className="w-full max-w-[800px] mx-auto flex-1 space-y-6">
             <button
               onClick={() => setStep(1)}
-              className="inline-flex items-center gap-1 text-xs hover:underline"
-              style={{ color: "#888" }}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to objective
             </button>
 
-            <span className="block text-xs" style={{ color: "#999" }}>
-              Step 2 of 3
-            </span>
-
             <div className="space-y-2">
               <h1 className="font-serif text-2xl md:text-3xl font-semibold text-foreground">
                 Build your search strategy
               </h1>
-              <p className="text-sm" style={{ color: "#888" }}>
+              <p className="text-sm text-muted-foreground">
                 Filter by condition, intervention, phase and date range. This creates your Bronze dataset — the starting point.
               </p>
             </div>
 
             <SearchBuilder value={search} onChange={setSearch} objective={objective} />
 
-            {/* Count preview */}
             {hasSearch && (
               <div className="flex items-center gap-3 rounded-lg border border-border p-4">
                 <div className="flex-1">
@@ -219,8 +269,7 @@ const Index = () => {
             <button
               onClick={() => setStep(3)}
               disabled={!hasSearch || totalCount === 0}
-              className="w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "#0a0a0a", color: "#fff" }}
+              className="w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 rounded-lg bg-foreground text-background px-6 py-3.5 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {hasSearch && !isLoading && totalCount > 0
                 ? `View ${totalCount.toLocaleString()} matching studies`
@@ -231,30 +280,23 @@ const Index = () => {
         </main>
       )}
 
-      {/* ══════════════════════════════════════════════════════════
-          STEP 3 — DATASET BRONZE
-          ══════════════════════════════════════════════════════════ */}
+      {/* STEP 3 — DATASET BRONZE */}
       {step === 3 && (
         <main className="flex-1 flex flex-col px-6 py-10">
           <div className="w-full max-w-[900px] mx-auto flex-1 space-y-6">
             <button
               onClick={() => setStep(2)}
-              className="inline-flex items-center gap-1 text-xs hover:underline"
-              style={{ color: "#888" }}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to filters
             </button>
 
-            <span className="block text-xs" style={{ color: "#999" }}>
-              Step 3 of 3
-            </span>
-
             <div className="space-y-2">
               <h1 className="font-serif text-2xl md:text-3xl font-semibold text-foreground">
                 Your Bronze dataset
               </h1>
-              <p className="text-sm" style={{ color: "#888" }}>
+              <p className="text-sm text-muted-foreground">
                 {isLoading
                   ? "Counting studies…"
                   : `${totalCount.toLocaleString()} studies match your search criteria`}
@@ -269,11 +311,14 @@ const Index = () => {
                 </p>
               </div>
 
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Clicking 'Remove noise with AI' starts Process 2: AI will read each abstract and keep only the studies that actually answer your objective.
+              </p>
+
               <div className="flex items-center gap-3 flex-wrap">
                 <button
                   onClick={handleViewDataset}
-                  className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors"
-                  style={{ backgroundColor: "#0a0a0a", color: "#fff" }}
+                  className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium transition-colors"
                 >
                   <Sparkles className="h-4 w-4" />
                   Remove noise with AI →
@@ -287,22 +332,11 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Existing SearchSummary for the detailed per-row counts */}
             {error ? (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                 <p className="text-sm text-destructive">Error loading studies: {error.message}</p>
               </div>
-            ) : (
-              <SearchSummary
-                counts={counts}
-                isLoading={isLoading}
-                search={search}
-                selectedMeshConditions={[]}
-                selectedLabels={[]}
-                selectedParamTypes={[]}
-                objective={objective}
-              />
-            )}
+            ) : null}
           </div>
         </main>
       )}
