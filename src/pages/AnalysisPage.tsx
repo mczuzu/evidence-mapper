@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Header } from "@/components/Header";
+import { PipelineTracker } from "@/components/PipelineTracker";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
