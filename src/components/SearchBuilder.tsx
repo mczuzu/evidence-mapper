@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, Plus, X, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Search, Plus, X, ChevronDown, ChevronUp } from "lucide-react";
 import { SearchInput, SearchRow, emptySearch } from "@/types/search";
 import { supabaseExternal } from "@/lib/supabase-external";
 
@@ -560,48 +560,15 @@ export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps
 
   return (
     <div className="space-y-4">
-      {/* Header + AI button */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-          {Object.entries(FIELD_TYPES).map(([k, fc]) => (
-            <span key={k} className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${fc.dotClass}`} />
-              {fc.label}
-            </span>
-          ))}
-        </div>
-        <button
-          onClick={handleGenerate}
-          disabled={!objective?.trim() || isGenerating}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all shrink-0 ${
-            !objective?.trim() || isGenerating
-              ? "border-border text-muted-foreground cursor-not-allowed bg-background"
-              : aiApplied
-                ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
-                : "border-foreground bg-foreground text-background hover:bg-foreground/90"
-          }`}
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          {isGenerating ? "Generating…" : aiApplied ? "Regenerate" : "Generate from objective"}
-        </button>
+      {/* Header legend */}
+      <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+        {Object.entries(FIELD_TYPES).map(([k, fc]) => (
+          <span key={k} className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${fc.dotClass}`} />
+            {fc.label}
+          </span>
+        ))}
       </div>
-
-      {/* AI notice */}
-      {aiApplied && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50 border border-green-200 text-xs text-green-700">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>AI-generated strategy · all fields are editable</span>
-          <button
-            onClick={() => {
-              setAiApplied(false);
-              onChange(emptySearch());
-            }}
-            className="ml-auto opacity-50 hover:opacity-100"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
 
       {/* Rows */}
       <div className="space-y-4">

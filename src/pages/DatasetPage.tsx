@@ -537,14 +537,14 @@ const DatasetPage = () => {
           {filterMethod === "manual" && (
             <div className="flex items-center gap-3 pt-2 border-t border-border">
               <p className="text-sm text-muted-foreground flex-1">
-                Select the relevant studies in the table.{" "}
+                Select the relevant studies in the table below.{" "}
                 <span className="font-medium text-foreground">{selectedIds.size} / 200</span> selected.
               </p>
               <Button onClick={confirmManualSilver} disabled={selectedIds.size === 0} className="gap-2">
                 <ArrowRight className="h-4 w-4" />
-                Confirm selection → Silver
+                Confirm selection →
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setFilterMethod(null)}>
+              <Button variant="ghost" size="sm" onClick={() => { setFilterMethod(null); setSelectedIds(new Set()); }}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -580,13 +580,15 @@ const DatasetPage = () => {
           </div>
 
           {filterMethod === "ai" && silverKeywords.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs text-muted-foreground">Inferred keywords:</span>
-              {silverKeywords.map((kw) => (
-                <Badge key={kw} variant="secondary" className="text-xs">
-                  {kw}
-                </Badge>
-              ))}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Keywords inferred by AI from your objective</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {silverKeywords.map((kw) => (
+                  <span key={kw} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground select-none">
+                    {kw}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
           {filterMethod === "manual" && <p className="text-xs text-muted-foreground">Manually selected.</p>}
@@ -650,6 +652,9 @@ const DatasetPage = () => {
               </div>
               {/* pipeline info removed — using top-level tracker */}
 
+              <p className="text-xs text-muted-foreground">
+                AI has scored all studies 0–10 against your objective. Studies are ranked by score.
+              </p>
               {goldResults && (
                 <p className="text-xs text-muted-foreground flex items-center gap-3">
                   <span>
@@ -692,7 +697,7 @@ const DatasetPage = () => {
 
            <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
              <p>
-               Each study has been scored 0–10 based on how well it answers your specific objective. Deselect any you want to exclude before generating the report.
+               Each study has been scored 0–10 based on how well it answers your specific objective. Review the scores and generate the evidence report when ready.
              </p>
            </div>
         </StepPanel>
@@ -815,21 +820,23 @@ const DatasetPage = () => {
             </div>
           )}
 
-          {/* Table */}
-          {!isLoading && !error && studies.length > 0 && (
+          {/* Table — hidden in bronze until user picks a method */}
+          {!isLoading && !error && studies.length > 0 && !(tier === "bronze" && filterMethod === null) && (
             <>
               <div className="border border-border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={allVisibleSelected}
-                          onCheckedChange={toggleSelectAll}
-                          aria-label="Select all"
-                          className={someVisibleSelected && !allVisibleSelected ? "opacity-50" : ""}
-                        />
-                      </TableHead>
+                      {tier !== "gold" && (
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={allVisibleSelected}
+                            onCheckedChange={toggleSelectAll}
+                            aria-label="Select all"
+                            className={someVisibleSelected && !allVisibleSelected ? "opacity-50" : ""}
+                          />
+                        </TableHead>
+                      )}
                       <TableHead className="w-28">NCT ID</TableHead>
                       <TableHead className="min-w-[200px]">Title</TableHead>
                       <TableHead className="w-40">Conditions</TableHead>
@@ -856,13 +863,15 @@ const DatasetPage = () => {
                           className={selectedIds.has(study.nct_id) ? "bg-primary/5" : ""}
                           title={ranked ? `Relevancia: ${ranked.reason}` : undefined}
                         >
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedIds.has(study.nct_id)}
-                              onCheckedChange={() => toggleSelection(study.nct_id)}
-                              aria-label={`Select ${study.nct_id}`}
-                            />
-                          </TableCell>
+                          {tier !== "gold" && (
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedIds.has(study.nct_id)}
+                                onCheckedChange={() => toggleSelection(study.nct_id)}
+                                aria-label={`Select ${study.nct_id}`}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="font-mono text-xs">
                             <HighlightText text={study.nct_id} terms={highlightTerms} />
                           </TableCell>
@@ -927,14 +936,19 @@ const DatasetPage = () => {
                             </TableCell>
                           )}
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewStudy(study.nct_id)}
-                              className="gap-1"
+                            <a
+                              href={`https://clinicaltrials.gov/study/${study.nct_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 text-xs text-muted-foreground h-7 px-2"
+                              >
+                                View ↗
+                              </Button>
+                            </a>
                           </TableCell>
                         </TableRow>
                       );
