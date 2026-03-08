@@ -6,18 +6,18 @@ const EXAMPLE_URL = "/search?tryExample=1";
 const comparisons = [
   {
     icon: Search,
-    bold: "PubMed finds papers.",
-    rest: "Evidence Mapper tells you what they mean for your objective.",
+    bold: "PubMed returns papers.",
+    rest: "Evidence Mapper returns pipeline intelligence.",
   },
   {
     icon: Sparkles,
-    bold: "PubMed returns thousands of results.",
-    rest: "Evidence Mapper returns a focused, scored dataset.",
+    bold: "PubMed doesn't score trials against your R&D objective.",
+    rest: "Evidence Mapper does.",
   },
   {
     icon: FlaskConical,
-    bold: "PubMed stops at search.",
-    rest: "Evidence Mapper generates a gap analysis with recommendations.",
+    bold: "PubMed has no gap analysis.",
+    rest: "Evidence Mapper identifies white space in the evidence.",
   },
 ];
 
@@ -32,22 +32,22 @@ const WelcomePage = () => {
         style={{ backgroundColor: "#0a0a0a" }}
       >
         <span className="inline-flex items-center rounded-full border border-white/20 px-4 py-1.5 text-xs text-white/50 mb-10">
-          63,394 completed clinical trials · ClinicalTrials.gov
+          63,394 completed trials · Phase 1–4 · ClinicalTrials.gov
         </span>
 
         <h1
           className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-white leading-tight max-w-2xl"
           style={{ lineHeight: 1.15 }}
         >
-          From clinical question
+          Know if a therapeutic space
           <br />
-          to evidence report
+          is worth entering
         </h1>
 
         <p className="mt-6 text-base md:text-lg leading-relaxed max-w-[520px]" style={{ color: "#888" }}>
-          Evidence Mapper structures your search, filters out irrelevant studies
-          automatically, and synthesizes what the evidence says — in minutes, not
-          weeks.
+          Evidence Mapper scans 63,000+ completed clinical trials, maps
+          intervention clusters, detects evidence gaps, and delivers a go/no-go
+          signal for your pipeline decision — in minutes.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-3">
@@ -55,7 +55,7 @@ const WelcomePage = () => {
             onClick={() => navigate("/search")}
             className="inline-flex items-center gap-2 rounded-lg bg-white text-black px-7 py-3 text-sm font-medium hover:bg-white/90 transition-colors"
           >
-            Start searching
+            Start your analysis
             <ArrowRight className="h-4 w-4" />
           </button>
           <button
@@ -74,7 +74,7 @@ const WelcomePage = () => {
             Two processes. One answer.
           </h2>
           <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
-            Most tools stop at search. Evidence Mapper goes further.
+            Most tools stop at search. Evidence Mapper delivers pipeline intelligence.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-14">
@@ -84,21 +84,21 @@ const WelcomePage = () => {
                 01
               </span>
               <h3 className="mt-4 font-serif text-xl font-bold" style={{ color: "#0a0a0a" }}>
-                Find the studies
+                Map the competitive landscape
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#555" }}>
-                Structured search across 63,000+ trials
+                Search 63,000+ completed trials by indication and intervention
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#ddd" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#666" }}>
-                Define your clinical question using conditions, interventions,
-                trial phase and date range. Evidence Mapper searches MeSH-indexed
-                ClinicalTrials.gov data and returns every study that matches.
+                Filter by condition, intervention, trial phase and date range.
+                Evidence Mapper searches MeSH-indexed ClinicalTrials.gov data and
+                returns every completed trial that matches your pipeline question.
               </p>
               <span className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
                 style={{ borderColor: "rgb(180 83 9 / 0.3)", backgroundColor: "rgb(180 83 9 / 0.1)", color: "rgb(180 83 9)" }}
               >
-                Bronze dataset
+                Competitive landscape
               </span>
             </div>
 
@@ -108,20 +108,20 @@ const WelcomePage = () => {
                 02
               </span>
               <h3 className="mt-4 font-serif text-xl font-bold text-white">
-                Focus on what matters
+                Get the signal, not the noise
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#888" }}>
-                AI removes noise. You get signal.
+                AI scores each trial against your R&D objective.
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#333" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#aaa" }}>
-                Most results include studies that mention your terms but don't
+                Most searches return trials that mention your terms but don't
                 answer your question. Evidence Mapper reads every abstract, scores
-                each study against your objective, and keeps only what's genuinely
-                relevant.
+                each trial against your specific objective, and surfaces only what's
+                relevant to your pipeline decision.
               </p>
               <span className="mt-6 inline-flex self-start items-center rounded-full px-3 py-1 text-xs font-semibold bg-indigo text-indigo-foreground">
-                Silver → Gold → Report
+                Evidence signal → Gap analysis
               </span>
             </div>
           </div>
@@ -154,7 +154,7 @@ const WelcomePage = () => {
 
       {/* ── FOOTER ───────────────────────────────────────────── */}
       <footer className="px-6 py-8 text-center text-xs" style={{ backgroundColor: "#0a0a0a", color: "#555" }}>
-        Evidence Mapper · Built on ClinicalTrials.gov data
+        Evidence Mapper · Pipeline intelligence powered by ClinicalTrials.gov · 63,394 completed trials indexed
       </footer>
     </div>
   );
