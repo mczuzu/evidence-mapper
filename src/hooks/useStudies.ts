@@ -62,6 +62,13 @@ async function executeSearch(rows: SearchRow[]): Promise<{ nctIds: string[]; ran
           }),
         );
         ids = [...new Set(results.flat())];
+      } else if (row.type === "phase") {
+        const { data, error } = await supabaseExternal
+          .from("v_ui_study_list_v2")
+          .select("nct_id")
+          .in("phase", row.terms);
+        if (error) throw error;
+        ids = (data || []).map((r) => r.nct_id);
       } else {
         // freetext
         const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));

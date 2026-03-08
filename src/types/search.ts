@@ -1,7 +1,7 @@
 // ── Row-based search model ─────────────────────────────────────
 export interface SearchRow {
   id: number;
-  type: "condition" | "intervention" | "freetext";
+  type: "condition" | "intervention" | "freetext" | "phase";
   terms: string[];
   operator: "AND" | "OR";
 }
@@ -29,7 +29,7 @@ export function searchToParams(input: SearchInput): URLSearchParams {
       "rows",
       JSON.stringify(
         active.map((r) => ({
-          t: r.type[0], // c/i/f
+          t: r.type === "phase" ? "p" : r.type[0], // c/i/f/p
           terms: r.terms,
           op: r.operator,
         })),
@@ -48,6 +48,7 @@ export function paramsToSearch(params: URLSearchParams): SearchInput {
       c: "condition",
       i: "intervention",
       f: "freetext",
+      p: "phase",
     };
     const rows: SearchRow[] = parsed.map((r: any, i: number) => ({
       id: i + 1,
