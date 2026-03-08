@@ -540,7 +540,7 @@ const DatasetPage = () => {
                onClick={() => setFilterMethod("manual")}
                variant="outline"
                className="gap-2"
-               disabled={totalCount === 0}
+               disabled={totalCount === 0 || isLoading}
              >
                <CheckSquare className="h-4 w-4" />
                I'll select manually
