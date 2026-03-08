@@ -55,10 +55,16 @@ export function useStudies({
           .flatMap((r) => r.terms)
           .filter(Boolean);
 
+        const dateRow = search.rows.find((r) => r.type === "daterange" && r.terms.length >= 2);
+        const yearFrom = dateRow ? parseInt(dateRow.terms[0]) : null;
+        const yearTo = dateRow ? parseInt(dateRow.terms[1]) : null;
+
         const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
           p_condition_terms: conditionTerms.length > 0 ? conditionTerms : null,
           p_intervention_terms: interventionTerms.length > 0 ? interventionTerms : null,
           p_phases: phaseTerms.length > 0 ? phaseTerms : null,
+          p_year_from: yearFrom,
+          p_year_to: yearTo,
           p_only_analyzable: onlyAnalyzable ?? false,
           p_only_comparable: onlyComparable ?? false,
           p_page: page ?? 0,
