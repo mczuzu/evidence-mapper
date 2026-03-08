@@ -897,6 +897,36 @@ const DatasetPage = () => {
                               className="text-sm font-medium text-foreground line-clamp-2"
                             />
                           </TruncatedCell>
+                          <TableCell className="text-right">
+                            <a
+                              href={`https://clinicaltrials.gov/study/${study.nct_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 text-xs text-muted-foreground h-7 px-2"
+                              >
+                                View ↗
+                              </Button>
+                            </a>
+                          </TableCell>
+                          {tier === "gold" && goldResults && (
+                            <TableCell className="text-center">
+                              {ranked ? (
+                                <Badge
+                                  variant={ranked.score >= 8 ? "default" : ranked.score >= 6 ? "secondary" : "outline"}
+                                  className="text-xs font-mono"
+                                  title={ranked.reason}
+                                >
+                                  {ranked.score}/10
+                                </Badge>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                          )}
                           <TruncatedCell fullText={enriched?.conditions || undefined} highlightTerms={highlightTerms}>
                             <HighlightText
                               text={enriched?.conditions || "—"}
@@ -931,36 +961,6 @@ const DatasetPage = () => {
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                             {enriched?.results_first_posted_date || "—"}
-                          </TableCell>
-                          {tier === "gold" && goldResults && (
-                            <TableCell className="text-center">
-                              {ranked ? (
-                                <Badge
-                                  variant={ranked.score >= 8 ? "default" : ranked.score >= 6 ? "secondary" : "outline"}
-                                  className="text-xs font-mono"
-                                  title={ranked.reason}
-                                >
-                                  {ranked.score}/10
-                                </Badge>
-                              ) : (
-                                "—"
-                              )}
-                            </TableCell>
-                          )}
-                          <TableCell className="text-right">
-                            <a
-                              href={`https://clinicaltrials.gov/study/${study.nct_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="gap-1 text-xs text-muted-foreground h-7 px-2"
-                              >
-                                View ↗
-                              </Button>
-                            </a>
                           </TableCell>
                         </TableRow>
                       );
