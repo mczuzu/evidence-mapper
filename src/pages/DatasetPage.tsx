@@ -572,7 +572,11 @@ const DatasetPage = () => {
       if (isFilteringAI) {
         return (
           <StepPanel>
-            <AIFilteringLoadingState />
+            <FullPanelLoadingState
+              title="Reading abstracts..."
+              subtitle="AI is filtering studies that don't address your objective"
+              messages={AI_FILTER_MESSAGES}
+            />
           </StepPanel>
         );
       }
