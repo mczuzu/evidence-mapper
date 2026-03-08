@@ -517,7 +517,7 @@ const DatasetPage = () => {
           },
           bronzeCount: totalCount,
           goldCount: goldResults?.length ?? 0,
-          conditionName: parsedSearch?.rows?.find((r: any) => r.t === "c")?.terms?.[0] ?? "",
+          conditionName: search?.rows?.find((r: any) => r.t === "c")?.terms?.[0] ?? "",
         },
       });
     } catch (err) {
