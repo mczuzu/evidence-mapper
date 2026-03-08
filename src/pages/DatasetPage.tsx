@@ -347,7 +347,17 @@ const DatasetPage = () => {
       setGoldResults(result.ranked);
       setSelectedIds(new Set(result.ranked.map((r: RankedStudy) => r.nct_id)));
       setTier("gold");
-      toast.success(`Gold dataset: ${result.ranked.length} studies validated out of ${nctIds.length} evaluated.`);
+      const avgScore = result.ranked.length > 0
+        ? (result.ranked.reduce((sum: number, r: RankedStudy) => sum + r.score, 0) / result.ranked.length).toFixed(1)
+        : "0";
+      setMilestoneToast({
+        type: "gold",
+        title: "Gold dataset ready",
+        subtitle: `${result.ranked.length} studies scored against your objective`,
+        detail: `${nctIds.length} studies scored · average score ${avgScore}/10`,
+        actionLabel: "Generate report →",
+        onAction: () => runAnalysis(),
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error validating with AI");
     } finally {
