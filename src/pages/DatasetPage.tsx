@@ -518,15 +518,15 @@ const DatasetPage = () => {
                  </>
                )}
             </Button>
-            <Button
-              onClick={() => setFilterMethod("manual")}
-              variant="outline"
-              className="gap-2"
-              disabled={totalCount === 0}
-            >
-              <CheckSquare className="h-4 w-4" />
-              Manually select
-            </Button>
+             <Button
+               onClick={() => setFilterMethod("manual")}
+               variant="outline"
+               className="gap-2"
+               disabled={totalCount === 0}
+             >
+               <CheckSquare className="h-4 w-4" />
+               I'll select manually
+             </Button>
           </div>
           {filterMethod === "manual" && (
             <div className="flex items-center gap-3 pt-2 border-t border-border">
