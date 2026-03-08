@@ -1,134 +1,164 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Search, Brain } from "lucide-react";
-import { exampleSearchUrl } from "@/lib/example-search";
+import { ArrowRight, Search, Sparkles, FlaskConical } from "lucide-react";
 
-const comparisonItems = [
-  "PubMed finds papers. Evidence Mapper tells you what they mean for your objective.",
-  "PubMed returns thousands of results. Evidence Mapper returns a focused, scored dataset.",
-  "PubMed stops at search. Evidence Mapper generates a gap analysis with recommendations.",
-];
+const EXAMPLE_URL =
+  "/search?objective=Identify+pharmacological+interventions+that+improve+glycemic+control+in+Type+2+Diabetes+patients%2C+focusing+on+recent+trials+with+measurable+outcomes&rows=%5B%7B%22id%22%3A1%2C%22type%22%3A%22condition%22%2C%22terms%22%3A%5B%22Diabetes+Mellitus%2C+Type+2%22%5D%2C%22operator%22%3A%22AND%22%7D%2C%7B%22id%22%3A2%2C%22type%22%3A%22intervention%22%2C%22terms%22%3A%5B%22metformin%22%5D%2C%22operator%22%3A%22AND%22%7D%2C%7B%22id%22%3A3%2C%22type%22%3A%22phase%22%2C%22terms%22%3A%5B%22PHASE3%22%5D%2C%22operator%22%3A%22AND%22%7D%2C%7B%22id%22%3A4%2C%22type%22%3A%22daterange%22%2C%22terms%22%3A%5B%222018%22%2C%222026%22%5D%2C%22operator%22%3A%22AND%22%7D%5D";
 
-const steps = [
-  { emoji: "🟤", label: "Define your objective & search" },
-  { emoji: "⬜", label: "Filter & validate with AI" },
-  { emoji: "🟡", label: "Generate evidence report" },
+const comparisons = [
+  {
+    icon: Search,
+    bold: "PubMed finds papers.",
+    rest: "Evidence Mapper tells you what they mean for your objective.",
+  },
+  {
+    icon: Sparkles,
+    bold: "PubMed returns thousands of results.",
+    rest: "Evidence Mapper returns a focused, scored dataset.",
+  },
+  {
+    icon: FlaskConical,
+    bold: "PubMed stops at search.",
+    rest: "Evidence Mapper generates a gap analysis with recommendations.",
+  },
 ];
 
 const WelcomePage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* HERO */}
-      <section className="flex flex-col items-center justify-center px-4 pt-24 pb-20 text-center"
-        style={{ backgroundColor: "#0f0f0f" }}
+    <div className="min-h-screen flex flex-col">
+      {/* ── HERO ─────────────────────────────────────────────── */}
+      <section
+        className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
+        style={{ backgroundColor: "#0a0a0a" }}
       >
-        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-medium text-white/70 mb-8">
+        <span className="inline-flex items-center rounded-full border border-white/20 px-4 py-1.5 text-xs text-white/50 mb-10">
           63,394 completed clinical trials · ClinicalTrials.gov
         </span>
 
-        <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white max-w-3xl leading-tight">
-          From clinical question to evidence report
+        <h1
+          className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-white leading-tight max-w-2xl"
+          style={{ lineHeight: 1.15 }}
+        >
+          From clinical question
+          <br />
+          to evidence report
         </h1>
 
-        <p className="mt-5 text-base md:text-lg text-white/60 max-w-2xl leading-relaxed">
-          Evidence Mapper structures your search, removes irrelevant studies automatically, and synthesizes what the evidence says — so you don't have to do it manually.
+        <p className="mt-6 text-base md:text-lg leading-relaxed max-w-[520px]" style={{ color: "#888" }}>
+          Evidence Mapper structures your search, filters out irrelevant studies
+          automatically, and synthesizes what the evidence says — in minutes, not
+          weeks.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-3">
-          <Button
-            size="lg"
+          <button
             onClick={() => navigate("/search")}
-            className="gap-2 text-base px-8 bg-white text-black hover:bg-white/90"
+            className="inline-flex items-center gap-2 rounded-lg bg-white text-black px-7 py-3 text-sm font-medium hover:bg-white/90 transition-colors"
           >
             Start searching
             <ArrowRight className="h-4 w-4" />
-          </Button>
-          <Button
-            size="lg"
-            variant="ghost"
-            onClick={() => navigate(exampleSearchUrl())}
-            className="gap-2 text-base px-8 text-white/80 hover:text-white hover:bg-white/10"
+          </button>
+          <button
+            onClick={() => navigate(EXAMPLE_URL)}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/30 text-white px-7 py-3 text-sm font-medium hover:bg-white/10 transition-colors"
           >
             See a live example
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </section>
 
-      {/* TWO PROCESSES */}
-      <section className="px-4 py-20 max-w-5xl mx-auto">
-        <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center text-foreground mb-12">
-          Two processes. One answer.
-        </h2>
+      {/* ── TWO PROCESSES ────────────────────────────────────── */}
+      <section className="bg-white px-6" style={{ paddingTop: 80, paddingBottom: 80 }}>
+        <div className="max-w-[900px] mx-auto">
+          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-center" style={{ color: "#0a0a0a" }}>
+            Two processes. One answer.
+          </h2>
+          <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
+            Most tools stop at search. Evidence Mapper goes further.
+          </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Process 1 */}
-          <div className="rounded-xl border border-border bg-muted/40 p-8 space-y-4">
-            <span className="text-xs font-mono text-muted-foreground">01</span>
-            <div className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-foreground" />
-              <h3 className="font-serif text-xl font-semibold text-foreground">Find the studies</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-14">
+            {/* Card 1 */}
+            <div className="rounded-xl p-10 flex flex-col" style={{ backgroundColor: "#f5f5f5" }}>
+              <span className="text-xs font-mono tracking-widest uppercase" style={{ color: "#999" }}>
+                01
+              </span>
+              <h3 className="mt-4 font-serif text-xl font-bold" style={{ color: "#0a0a0a" }}>
+                Find the studies
+              </h3>
+              <p className="mt-1 text-sm font-medium" style={{ color: "#555" }}>
+                Structured search across 63,000+ trials
+              </p>
+              <div className="my-5 border-t" style={{ borderColor: "#ddd" }} />
+              <p className="text-sm leading-relaxed flex-1" style={{ color: "#666" }}>
+                Define your clinical question using conditions, interventions,
+                trial phase and date range. Evidence Mapper searches MeSH-indexed
+                ClinicalTrials.gov data and returns every study that matches.
+              </p>
+              <span className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
+                style={{ borderColor: "rgb(180 83 9 / 0.3)", backgroundColor: "rgb(180 83 9 / 0.1)", color: "rgb(180 83 9)" }}
+              >
+                Bronze dataset
+              </span>
             </div>
-            <p className="text-sm font-medium text-foreground/80">
-              Structured search across 63,000+ trials
-            </p>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Define your clinical question using conditions, interventions, trial phase and date range. Evidence Mapper searches MeSH-indexed ClinicalTrials.gov data and returns every study that matches your criteria.
-            </p>
-            <span className="inline-flex items-center rounded-full border border-amber-700/30 bg-amber-700/10 px-3 py-1 text-xs font-semibold text-amber-700">
-              Bronze dataset
-            </span>
-          </div>
 
-          {/* Process 2 */}
-          <div className="rounded-xl p-8 space-y-4 text-white" style={{ backgroundColor: "#0f0f0f" }}>
-            <span className="text-xs font-mono text-white/50">02</span>
-            <div className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-white" />
-              <h3 className="font-serif text-xl font-semibold text-white">Focus on what matters</h3>
+            {/* Card 2 */}
+            <div className="rounded-xl p-10 flex flex-col" style={{ backgroundColor: "#0a0a0a" }}>
+              <span className="text-xs font-mono tracking-widest uppercase" style={{ color: "#666" }}>
+                02
+              </span>
+              <h3 className="mt-4 font-serif text-xl font-bold text-white">
+                Focus on what matters
+              </h3>
+              <p className="mt-1 text-sm font-medium" style={{ color: "#888" }}>
+                AI removes noise. You get signal.
+              </p>
+              <div className="my-5 border-t" style={{ borderColor: "#333" }} />
+              <p className="text-sm leading-relaxed flex-1" style={{ color: "#aaa" }}>
+                Most results include studies that mention your terms but don't
+                answer your question. Evidence Mapper reads every abstract, scores
+                each study against your objective, and keeps only what's genuinely
+                relevant.
+              </p>
+              <span className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
+                style={{ borderColor: "rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.7)" }}
+              >
+                Silver → Gold → Report
+              </span>
             </div>
-            <p className="text-sm font-medium text-white/70">
-              AI removes noise. You get signal.
-            </p>
-            <p className="text-sm text-white/50 leading-relaxed">
-              Most search results include studies that mention your terms but don't actually answer your question. Evidence Mapper reads every abstract, scores each study against your specific objective, and keeps only what's genuinely relevant.
-            </p>
-            <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
-              Silver → Gold → Report
-            </span>
           </div>
         </div>
       </section>
 
-      {/* VS PUBMED */}
-      <section className="px-4 py-16 bg-muted/30">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="font-serif text-2xl font-semibold text-center text-foreground mb-10">
+      {/* ── VS PUBMED ────────────────────────────────────────── */}
+      <section className="px-6" style={{ backgroundColor: "#f9f9f9", paddingTop: 60, paddingBottom: 60 }}>
+        <div className="max-w-[800px] mx-auto">
+          <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center" style={{ color: "#0a0a0a" }}>
             Why not just use PubMed Advanced Search?
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {comparisonItems.map((item, i) => (
-              <div key={i} className="rounded-lg border border-border bg-background p-6">
-                <p className="text-sm text-muted-foreground leading-relaxed">{item}</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            {comparisons.map((item, i) => (
+              <div key={i} className="flex flex-col items-center text-center gap-4">
+                <item.icon className="h-6 w-6" style={{ color: "#666" }} />
+                <p className="text-sm leading-relaxed" style={{ color: "#555" }}>
+                  <span className="font-semibold" style={{ color: "#0a0a0a" }}>
+                    {item.bold}
+                  </span>
+                  <br />
+                  {item.rest}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* PIPELINE STEPS */}
-      <section className="px-4 py-12 pb-20">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
-          {steps.map((step, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="text-lg">{step.emoji}</span>
-              <span>{step.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ── FOOTER ───────────────────────────────────────────── */}
+      <footer className="px-6 py-8 text-center text-xs" style={{ backgroundColor: "#0a0a0a", color: "#555" }}>
+        Evidence Mapper · Built on ClinicalTrials.gov data
+      </footer>
     </div>
   );
 };
