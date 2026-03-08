@@ -750,8 +750,8 @@ const DatasetPage = () => {
             </div>
           )}
 
-          {/* Column filters */}
-          <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
+          {/* Column filters — hidden in bronze until user picks a method */}
+          {!(tier === "bronze" && filterMethod === null) && <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
             <div className="flex items-center gap-6">
               <span className="text-sm font-medium text-muted-foreground">Filter by:</span>
               <div className="flex items-center gap-2">
@@ -802,7 +802,7 @@ const DatasetPage = () => {
                 </Button>
               )}
             </div>
-          </div>
+          </div>}
 
           {/* Error */}
           {error && (
@@ -851,6 +851,10 @@ const DatasetPage = () => {
                       )}
                       <TableHead className="w-28">NCT ID</TableHead>
                       <TableHead className="min-w-[200px]">Title</TableHead>
+                      <TableHead className="w-16 text-right">Action</TableHead>
+                      {tier === "gold" && goldResults && (
+                        <TableHead className="w-28 min-w-[7rem] text-center">Score IA</TableHead>
+                      )}
                       <TableHead className="w-40">Conditions</TableHead>
                       <TableHead className="w-40">Interventions</TableHead>
                       <TableHead className="w-28">Study Type</TableHead>
@@ -859,10 +863,6 @@ const DatasetPage = () => {
                       <TableHead className="w-24">Start</TableHead>
                       <TableHead className="w-24">Completion</TableHead>
                       <TableHead className="w-24">Results Posted</TableHead>
-                      {tier === "gold" && goldResults && (
-                        <TableHead className="w-28 min-w-[7rem] text-center">Score IA</TableHead>
-                      )}
-                      <TableHead className="w-16 text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -897,6 +897,36 @@ const DatasetPage = () => {
                               className="text-sm font-medium text-foreground line-clamp-2"
                             />
                           </TruncatedCell>
+                          <TableCell className="text-right">
+                            <a
+                              href={`https://clinicaltrials.gov/study/${study.nct_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 text-xs text-muted-foreground h-7 px-2"
+                              >
+                                View ↗
+                              </Button>
+                            </a>
+                          </TableCell>
+                          {tier === "gold" && goldResults && (
+                            <TableCell className="text-center">
+                              {ranked ? (
+                                <Badge
+                                  variant={ranked.score >= 8 ? "default" : ranked.score >= 6 ? "secondary" : "outline"}
+                                  className="text-xs font-mono"
+                                  title={ranked.reason}
+                                >
+                                  {ranked.score}/10
+                                </Badge>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                          )}
                           <TruncatedCell fullText={enriched?.conditions || undefined} highlightTerms={highlightTerms}>
                             <HighlightText
                               text={enriched?.conditions || "—"}
@@ -931,36 +961,6 @@ const DatasetPage = () => {
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                             {enriched?.results_first_posted_date || "—"}
-                          </TableCell>
-                          {tier === "gold" && goldResults && (
-                            <TableCell className="text-center">
-                              {ranked ? (
-                                <Badge
-                                  variant={ranked.score >= 8 ? "default" : ranked.score >= 6 ? "secondary" : "outline"}
-                                  className="text-xs font-mono"
-                                  title={ranked.reason}
-                                >
-                                  {ranked.score}/10
-                                </Badge>
-                              ) : (
-                                "—"
-                              )}
-                            </TableCell>
-                          )}
-                          <TableCell className="text-right">
-                            <a
-                              href={`https://clinicaltrials.gov/study/${study.nct_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="gap-1 text-xs text-muted-foreground h-7 px-2"
-                              >
-                                View ↗
-                              </Button>
-                            </a>
                           </TableCell>
                         </TableRow>
                       );
