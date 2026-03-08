@@ -512,11 +512,11 @@ const DatasetPage = () => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Filtering with AI...
                 </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" /> Filter with AI → Silver
-                </>
-              )}
+               ) : (
+                 <>
+                   <Sparkles className="h-4 w-4" /> Focus on my question with AI →
+                 </>
+               )}
             </Button>
             <Button
               onClick={() => setFilterMethod("manual")}
