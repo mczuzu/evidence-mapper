@@ -1,13 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { SearchSummary } from "@/components/SearchSummary";
 import { SearchBuilder } from "@/components/SearchBuilder";
 import { useSearchCounts } from "@/hooks/useSearchCounts";
 import { SearchInput, emptySearch, paramsToSearch, searchToParams, isSearchActive } from "@/types/search";
 import { Textarea } from "@/components/ui/textarea";
 import { PipelineTracker } from "@/components/PipelineTracker";
-import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2, X } from "lucide-react";
 import { EXAMPLE_OBJECTIVE, EXAMPLE_SEARCH } from "@/lib/example-search";
 
 type Step = 1 | 2 | 3;
@@ -45,6 +44,45 @@ function truncate(text: string, max: number) {
   return text.length > max ? text.slice(0, max) + "…" : text;
 }
 
+// ── Example filter animation banner ────────────────────────────
+function ExampleBanner({
+  phase,
+  onDismiss,
+}: {
+  phase: "loading" | "done";
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 space-y-3 relative">
+      <button
+        onClick={onDismiss}
+        className="absolute top-3 right-3 text-amber-400 hover:text-amber-600 transition-colors"
+      >
+        <X className="h-4 w-4" />
+      </button>
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-amber-600 shrink-0" />
+        <span className="text-sm font-medium text-amber-900">
+          {phase === "loading"
+            ? "Building your search strategy from the objective..."
+            : "✓ Search strategy built from your objective. Feel free to edit any filter."}
+        </span>
+      </div>
+      {/* Animated loading bar */}
+      <div className="h-1 w-full rounded-full bg-amber-200/60 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ease-linear ${
+            phase === "loading"
+              ? "bg-amber-500 animate-[example-bar_2.8s_ease-in-out_forwards]"
+              : "bg-amber-500 w-full"
+          }`}
+          style={phase === "done" ? { width: "100%" } : undefined}
+        />
+      </div>
+    </div>
+  );
+}
+
 const Index = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -55,6 +93,13 @@ const Index = () => {
     initObjective && isSearchActive(paramsToSearch(searchParams)) ? 2 : 1
   );
   const [isTyping, setIsTyping] = useState(false);
+  const [cameFromExample, setCameFromExample] = useState(false);
+
+  // Example filter animation state
+  const [exampleAnimating, setExampleAnimating] = useState(false);
+  const [visibleExampleRows, setVisibleExampleRows] = useState(0);
+  const [exampleBannerPhase, setExampleBannerPhase] = useState<"loading" | "done" | null>(null);
+  const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const { data: counts, isLoading, error } = useSearchCounts({ search });
 
@@ -66,7 +111,7 @@ const Index = () => {
   const handleTryExample = () => {
     if (isTyping) return;
     setIsTyping(true);
-    setSearch(EXAMPLE_SEARCH);
+    setCameFromExample(true);
 
     let i = 0;
     const text = EXAMPLE_OBJECTIVE;
@@ -81,10 +126,62 @@ const Index = () => {
     }, 18);
   };
 
+  // Clean up animation timers
+  useEffect(() => {
+    return () => animTimers.current.forEach(clearTimeout);
+  }, []);
+
+  const startExampleAnimation = useCallback(() => {
+    // Start with empty search
+    setSearch(emptySearch());
+    setExampleAnimating(true);
+    setVisibleExampleRows(0);
+    setExampleBannerPhase("loading");
+
+    const exampleRows = EXAMPLE_SEARCH.rows;
+
+    // Animate each row in sequence
+    const delays = [600, 1200, 1800, 2400];
+    delays.forEach((delay, idx) => {
+      const t = setTimeout(() => {
+        setSearch((prev) => {
+          const newRows = idx === 0
+            ? [exampleRows[0]]
+            : [...prev.rows.filter(r => r.terms.length > 0), exampleRows[idx]];
+          // Also keep any empty rows needed
+          return { rows: newRows };
+        });
+        setVisibleExampleRows(idx + 1);
+      }, delay);
+      animTimers.current.push(t);
+    });
+
+    // Complete animation
+    const doneTimer = setTimeout(() => {
+      setExampleBannerPhase("done");
+      setExampleAnimating(false);
+    }, 2800);
+    animTimers.current.push(doneTimer);
+  }, []);
+
+  const handleContinueToSearch = () => {
+    if (cameFromExample) {
+      setStep(2);
+      // Start the filter animation after step transition
+      setTimeout(() => startExampleAnimation(), 50);
+    } else {
+      setStep(2);
+    }
+  };
+
   const handleViewDataset = () => {
     const params = searchToParams(search);
     params.set("objective", objective.trim());
     navigate(`/dataset?${params.toString()}`);
+  };
+
+  const handleDismissBanner = () => {
+    setExampleBannerPhase(null);
   };
 
   return (
@@ -97,7 +194,12 @@ const Index = () => {
         <CompletedBar
           label="Objective defined"
           summary={truncate(objective, 55)}
-          onEdit={() => setStep(1)}
+          onEdit={() => {
+            setStep(1);
+            setExampleBannerPhase(null);
+            setExampleAnimating(false);
+            animTimers.current.forEach(clearTimeout);
+          }}
         />
       )}
       {step >= 3 && (
@@ -146,7 +248,7 @@ const Index = () => {
             </div>
 
             <button
-              onClick={() => setStep(2)}
+              onClick={handleContinueToSearch}
               disabled={!objective.trim()}
               className="w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 rounded-lg bg-foreground text-background px-6 py-3.5 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -162,7 +264,12 @@ const Index = () => {
         <main className="flex-1 flex flex-col px-6 py-10">
           <div className="w-full max-w-[800px] mx-auto flex-1 space-y-6">
             <button
-              onClick={() => setStep(1)}
+              onClick={() => {
+                setStep(1);
+                setExampleBannerPhase(null);
+                setExampleAnimating(false);
+                animTimers.current.forEach(clearTimeout);
+              }}
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -178,7 +285,19 @@ const Index = () => {
               </p>
             </div>
 
-            <SearchBuilder value={search} onChange={setSearch} objective={objective} />
+            {/* Example animation banner */}
+            {exampleBannerPhase && (
+              <ExampleBanner phase={exampleBannerPhase} onDismiss={handleDismissBanner} />
+            )}
+
+            <SearchBuilder value={search} onChange={(s) => {
+              setSearch(s);
+              // If user edits, dismiss the banner
+              if (exampleBannerPhase === "done") {
+                setExampleBannerPhase(null);
+                setCameFromExample(false);
+              }
+            }} objective={objective} />
 
             {hasSearch && (
               <div className="flex items-center gap-3 rounded-lg border border-border p-4">
@@ -199,7 +318,7 @@ const Index = () => {
 
             <button
               onClick={() => setStep(3)}
-              disabled={!hasSearch || totalCount === 0}
+              disabled={!hasSearch || totalCount === 0 || exampleAnimating}
               className="w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 rounded-lg bg-foreground text-background px-6 py-3.5 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {hasSearch && !isLoading && totalCount > 0
@@ -271,6 +390,17 @@ const Index = () => {
           </div>
         </main>
       )}
+
+      {/* Keyframe for example loading bar */}
+      <style>{`
+        @keyframes example-bar {
+          0% { width: 0%; }
+          25% { width: 22%; }
+          50% { width: 48%; }
+          75% { width: 75%; }
+          100% { width: 95%; }
+        }
+      `}</style>
     </div>
   );
 };
