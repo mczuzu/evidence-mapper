@@ -124,8 +124,22 @@ export function useAllStudyIds({
     queryKey: ["all-study-ids", search.rows, selectedLabels],
     queryFn: async (): Promise<string[]> => {
       if (isSearchActive(search)) {
-        const { conditionTerms, interventionTerms, freetextTerms, phaseTerms } =
-          extractTermsByType(search.rows);
+        const conditionTerms = search.rows
+          .filter((r) => r.type === "condition")
+          .flatMap((r) => r.terms);
+
+        const interventionTerms = search.rows
+          .filter((r) => r.type === "intervention")
+          .flatMap((r) => r.terms);
+
+        const freetextTerms = search.rows
+          .filter((r) => r.type === "freetext")
+          .flatMap((r) => r.terms);
+
+        const phaseTerms = search.rows
+          .filter((r) => r.type === "phase")
+          .flatMap((r) => r.terms);
+
         // Use a large page to get all IDs
         const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
           p_condition_terms: conditionTerms.length > 0 ? conditionTerms : null,
