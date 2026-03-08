@@ -697,7 +697,7 @@ const DatasetPage = () => {
 
            <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
              <p>
-               Each study has been scored 0–10 based on how well it answers your specific objective. Deselect any you want to exclude before generating the report.
+               Each study has been scored 0–10 based on how well it answers your specific objective. Review the scores and generate the evidence report when ready.
              </p>
            </div>
         </StepPanel>
