@@ -97,6 +97,7 @@ const DatasetPage = () => {
   // Modals
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisError, setAnalysisError] = useState<{ message: string; details?: string } | null>(null);
+  const [milestoneToast, setMilestoneToast] = useState<MilestoneToastData | null>(null);
 
   // Pagination
   const [page, setPage] = useState(0);
