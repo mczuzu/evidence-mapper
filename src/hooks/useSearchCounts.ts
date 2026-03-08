@@ -85,6 +85,14 @@ export function useSearchCounts({ search }: { search: SearchInput }) {
         search.rows
           .filter((r) => r.terms.length > 0)
           .map(async (row) => {
+            if (row.type === "phase") {
+              const { data, error } = await supabaseExternal
+                .from("v_ui_study_list_v2")
+                .select("nct_id")
+                .in("phase", row.terms);
+              if (error) throw error;
+              return { type: row.type, terms: row.terms, count: (data || []).length };
+            }
             const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));
             const rowSet = unionSets(...termResults.map((res) => new Set(res.map((r) => r.nct_id))));
             return { type: row.type, terms: row.terms, count: rowSet.size };
