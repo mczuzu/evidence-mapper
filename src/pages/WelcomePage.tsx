@@ -154,7 +154,7 @@ const WelcomePage = () => {
 
       {/* ── FOOTER ───────────────────────────────────────────── */}
       <footer className="px-6 py-8 text-center text-xs" style={{ backgroundColor: "#0a0a0a", color: "#555" }}>
-        Evidence Mapper · Built on ClinicalTrials.gov data
+        Evidence Mapper · Pipeline intelligence powered by ClinicalTrials.gov · 63,394 completed trials indexed
       </footer>
     </div>
   );
