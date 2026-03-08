@@ -584,10 +584,10 @@ const DatasetPage = () => {
           )}
           {filterMethod === "manual" && <p className="text-xs text-muted-foreground">Manually selected.</p>}
 
-          <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
-            <p>
-              AI extracted these keywords from your objective and filtered studies containing them in title or abstract.
-            </p>
+           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
+             <p>
+               AI read the titles and abstracts and kept only the studies that directly address your objective.
+             </p>
             <div>
               <p className="font-medium text-foreground mb-1">What to do now?</p>
               <ul className="list-disc list-inside space-y-1">
