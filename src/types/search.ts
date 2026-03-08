@@ -29,7 +29,7 @@ export function searchToParams(input: SearchInput): URLSearchParams {
       "rows",
       JSON.stringify(
         active.map((r) => ({
-          t: r.type[0], // c/i/f
+          t: r.type === "phase" ? "p" : r.type[0], // c/i/f/p
           terms: r.terms,
           op: r.operator,
         })),
