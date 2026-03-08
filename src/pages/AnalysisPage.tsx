@@ -487,6 +487,14 @@ const AnalysisPage = () => {
                 </Card>
               ) : (
                 <div ref={printRef} className="space-y-6 print:p-0">
+                  {/* Evidence Landscape panel */}
+                  {(bronzeCount > 0 || goldCount > 0 || conditionName) && (
+                    <EvidenceLandscape
+                      conditionName={conditionName}
+                      bronzeCount={bronzeCount}
+                      goldCount={goldCount}
+                    />
+                  )}
                   {/* Print header (only visible when printing) */}
                   <div className="hidden print:block print:mb-6">
                     <h1 className="text-2xl font-bold text-foreground">Direction Analysis Report</h1>
