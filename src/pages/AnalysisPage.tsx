@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Header } from "@/components/Header";
+import { PipelineTracker } from "@/components/PipelineTracker";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -418,6 +419,7 @@ const AnalysisPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
+      <PipelineTracker currentStep={6} />
 
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
