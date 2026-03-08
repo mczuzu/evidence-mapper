@@ -3,7 +3,7 @@ import { StudyListItem } from '@/types/database';
 import { StudyCard } from './StudyCard';
 import { FileSearch, Loader2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { UnifiedSearchInput, searchToParams } from '@/types/search';
+import { SearchInput, searchToParams } from '@/types/search';
 
 interface StudyListProps {
   studies: StudyListItem[];
