@@ -198,7 +198,7 @@ const DatasetPage = () => {
 
   useEffect(() => {
     setPage(0);
-  }, [filterAnalyzable, filterComparable, search.baseQuery, labels.join(",")]);
+  }, [filterAnalyzable, filterComparable, search.rows, labels.join(",")]);
 
   useEffect(() => {
     if (selectAllRequested && allIdsQuery.data && allIdsQuery.data.length > 0) {
@@ -348,11 +348,9 @@ const DatasetPage = () => {
     setAnalysisError(null);
 
     try {
-      const activeKeywords = [
-        ...search.groupA,
-        ...search.groupB,
-        ...(search.baseQuery.trim() ? [search.baseQuery.trim()] : []),
-      ].filter(Boolean);
+      const activeKeywords = search.rows
+        .flatMap((r) => r.terms)
+        .filter(Boolean);
 
       const searchMeta = { mesh_terms: meshConditions, keywords: activeKeywords };
       const requestBody: {

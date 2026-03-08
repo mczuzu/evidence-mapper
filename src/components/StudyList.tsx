@@ -3,7 +3,7 @@ import { StudyListItem } from '@/types/database';
 import { StudyCard } from './StudyCard';
 import { FileSearch, Loader2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { UnifiedSearchInput, searchToParams } from '@/types/search';
+import { SearchInput, searchToParams } from '@/types/search';
 
 interface StudyListProps {
   studies: StudyListItem[];
@@ -12,7 +12,7 @@ interface StudyListProps {
   totalPages: number;
   isLoading: boolean;
   onPageChange: (page: number) => void;
-  search?: UnifiedSearchInput;
+  search?: SearchInput;
   selectedLabels?: string[];
   selectedParamTypes?: string[];
   selectedMeshConditions?: string[];
@@ -33,7 +33,7 @@ export function StudyList({
   const navigate = useNavigate();
 
   const handleViewDataset = () => {
-    const params = search ? searchToParams(search, selectedMeshConditions) : new URLSearchParams();
+    const params = search ? searchToParams(search) : new URLSearchParams();
     if (selectedLabels.length > 0) params.set('labels', selectedLabels.join(','));
     if (selectedParamTypes.length > 0) params.set('paramTypes', selectedParamTypes.join(','));
     
