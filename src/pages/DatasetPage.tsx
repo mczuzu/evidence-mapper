@@ -33,6 +33,7 @@ import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_K
 import { toast } from "sonner";
 import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
 import { RankingModal } from "@/components/ranking/RankingModal";
+import { MilestoneToast, type MilestoneToastData } from "@/components/MilestoneToast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type DatasetTier = "bronze" | "silver" | "gold";
