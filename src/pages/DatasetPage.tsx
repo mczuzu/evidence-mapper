@@ -532,7 +532,7 @@ const DatasetPage = () => {
                 </>
                ) : (
                  <>
-                   <Sparkles className="h-4 w-4" /> Remove noise with AI →
+                   <Sparkles className="h-4 w-4 text-indigo" /> Remove noise with AI →
                  </>
                )}
             </Button>
