@@ -819,7 +819,7 @@ const DatasetPage = () => {
           )}
 
           {/* Column filters — hidden in bronze until user picks a method */}
-          {!(tier === "bronze" && (filterMethod === null || isFilteringAI)) && !isRanking && <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
+          {!(tier === "bronze" && (filterMethod === null || isFilteringAI)) && !isRanking && !isAnalyzing && <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
             <div className="flex items-center gap-6">
               <span className="text-sm font-medium text-muted-foreground">Filter by:</span>
               <div className="flex items-center gap-2">
