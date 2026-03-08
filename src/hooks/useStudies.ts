@@ -152,8 +152,21 @@ export function useAllStudyIds({
     queryKey: ["all-study-ids", search.rows, selectedLabels],
     queryFn: async (): Promise<string[]> => {
       if (isSearchActive(search)) {
-        const { nctIds } = await executeSearch(search.rows);
-        return nctIds;
+        const { conditionTerms, interventionTerms, freetextTerms, phaseTerms } =
+          extractTermsByType(search.rows);
+        // Use a large page to get all IDs
+        const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
+          p_condition_terms: conditionTerms.length > 0 ? conditionTerms : null,
+          p_intervention_terms: interventionTerms.length > 0 ? interventionTerms : null,
+          p_freetext_terms: freetextTerms.length > 0 ? freetextTerms : null,
+          p_phases: phaseTerms.length > 0 ? phaseTerms : null,
+          p_only_analyzable: false,
+          p_only_comparable: false,
+          p_page: 0,
+          p_page_size: 10000,
+        });
+        if (error) throw error;
+        return ((data as any[]) || []).map((r) => r.nct_id);
       }
       const { data, error } = await supabaseExternal
         .from("v_ui_study_list_v2")
