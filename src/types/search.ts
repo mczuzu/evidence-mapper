@@ -48,6 +48,7 @@ export function paramsToSearch(params: URLSearchParams): SearchInput {
       c: "condition",
       i: "intervention",
       f: "freetext",
+      p: "phase",
     };
     const rows: SearchRow[] = parsed.map((r: any, i: number) => ({
       id: i + 1,
