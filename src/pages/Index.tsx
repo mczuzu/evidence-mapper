@@ -54,6 +54,7 @@ const Index = () => {
   const [step, setStep] = useState<Step>(
     initObjective && isSearchActive(paramsToSearch(searchParams)) ? 2 : 1
   );
+  const [isTyping, setIsTyping] = useState(false);
 
   const { data: counts, isLoading, error } = useSearchCounts({ search });
 
@@ -63,9 +64,21 @@ const Index = () => {
   const activeFilterCount = search.rows.filter((r) => r.terms.length > 0).length;
 
   const handleTryExample = () => {
-    setObjective(EXAMPLE_OBJECTIVE);
+    if (isTyping) return;
+    setIsTyping(true);
     setSearch(EXAMPLE_SEARCH);
-    setStep(2);
+
+    let i = 0;
+    const text = EXAMPLE_OBJECTIVE;
+    setObjective("");
+    const interval = setInterval(() => {
+      i++;
+      setObjective(text.slice(0, i));
+      if (i >= text.length) {
+        clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 18);
   };
 
   const handleViewDataset = () => {
