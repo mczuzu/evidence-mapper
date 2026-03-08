@@ -9,10 +9,13 @@ export interface SearchCounts {
 }
 
 function termsByType(rows: SearchRow[]) {
+  const dateRow = rows.find((r) => r.type === "daterange" && r.terms.length >= 2);
   return {
     conditionTerms: rows.filter((r) => r.type === "condition").flatMap((r) => r.terms).filter(Boolean),
     interventionTerms: rows.filter((r) => r.type === "intervention").flatMap((r) => r.terms).filter(Boolean),
     phaseTerms: rows.filter((r) => r.type === "phase").flatMap((r) => r.terms).filter(Boolean),
+    yearFrom: dateRow ? parseInt(dateRow.terms[0]) : null,
+    yearTo: dateRow ? parseInt(dateRow.terms[1]) : null,
   };
 }
 
@@ -20,11 +23,15 @@ async function fetchTotalCount(params: {
   conditionTerms: string[];
   interventionTerms: string[];
   phaseTerms: string[];
+  yearFrom: number | null;
+  yearTo: number | null;
 }): Promise<number> {
   const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
     p_condition_terms: params.conditionTerms.length > 0 ? params.conditionTerms : null,
     p_intervention_terms: params.interventionTerms.length > 0 ? params.interventionTerms : null,
     p_phases: params.phaseTerms.length > 0 ? params.phaseTerms : null,
+    p_year_from: params.yearFrom,
+    p_year_to: params.yearTo,
     p_only_analyzable: false,
     p_only_comparable: false,
     p_page: 0,
