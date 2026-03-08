@@ -1,7 +1,7 @@
 // ── Row-based search model ─────────────────────────────────────
 export interface SearchRow {
   id: number;
-  type: "condition" | "intervention" | "freetext" | "phase";
+  type: "condition" | "intervention" | "freetext" | "phase" | "daterange";
   terms: string[];
   operator: "AND" | "OR";
 }
