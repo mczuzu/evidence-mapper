@@ -615,18 +615,18 @@ const DatasetPage = () => {
                  </>
                )}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSelectedIds(new Set(silverIds ?? []));
-                setGoldResults(null);
-                setTier("gold");
-              }}
-              className="gap-2"
-            >
-              <ArrowRight className="h-4 w-4" />
-              Skip validation → Gold
-            </Button>
+             <Button
+               variant="outline"
+               onClick={() => {
+                 setSelectedIds(new Set(silverIds ?? []));
+                 setGoldResults(null);
+                 setTier("gold");
+               }}
+               className="gap-2"
+             >
+               <ArrowRight className="h-4 w-4" />
+               Skip scoring → use these studies
+             </Button>
           </div>
         </StepPanel>
       );
