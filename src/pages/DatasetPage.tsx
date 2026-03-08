@@ -198,7 +198,7 @@ const DatasetPage = () => {
 
   useEffect(() => {
     setPage(0);
-  }, [filterAnalyzable, filterComparable, search.baseQuery, labels.join(",")]);
+  }, [filterAnalyzable, filterComparable, search.rows, labels.join(",")]);
 
   useEffect(() => {
     if (selectAllRequested && allIdsQuery.data && allIdsQuery.data.length > 0) {
