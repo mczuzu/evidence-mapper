@@ -522,7 +522,7 @@ const DatasetPage = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <Button
               onClick={runAIFilter}
-              disabled={isFilteringAI || !objective || totalCount === 0}
+              disabled={isFilteringAI || !objective || totalCount === 0 || isLoading}
               variant="default"
               className="gap-2"
             >
