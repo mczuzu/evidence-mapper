@@ -596,11 +596,11 @@ const DatasetPage = () => {
             <div className="space-y-1.5">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Keywords inferred by AI from your objective</span>
               <div className="flex items-center gap-1.5 flex-wrap">
-                {silverKeywords.map((kw) => (
-                  <span key={kw} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground select-none">
-                    {kw}
-                  </span>
-                ))}
+                 {silverKeywords.map((kw) => (
+                   <span key={kw} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-light text-indigo-dark select-none">
+                     {kw}
+                   </span>
+                 ))}
               </div>
             </div>
           )}
