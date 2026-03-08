@@ -820,8 +820,8 @@ const DatasetPage = () => {
             </div>
           )}
 
-          {/* Table */}
-          {!isLoading && !error && studies.length > 0 && (
+          {/* Table — hidden in bronze until user picks a method */}
+          {!isLoading && !error && studies.length > 0 && !(tier === "bronze" && filterMethod === null) && (
             <>
               <div className="border border-border rounded-lg overflow-hidden">
                 <Table>
