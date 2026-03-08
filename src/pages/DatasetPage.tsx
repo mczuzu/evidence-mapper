@@ -695,13 +695,11 @@ const DatasetPage = () => {
             </Button>
           </div>
 
-          <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
-            <p>
-              AI read the abstracts and scored each study from 0 to 10 based on relevance to your objective. Only those
-              scoring above 4/10 pass.
-            </p>
-            <p>You can deselect studies in the table before running the analysis.</p>
-          </div>
+           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
+             <p>
+               Each study has been scored 0-10 based on how well it answers your specific objective. Deselect any you want to exclude.
+             </p>
+           </div>
         </StepPanel>
       );
     }
