@@ -67,15 +67,16 @@ function StepPanel({ children }: { children: React.ReactNode }) {
   return <div className="rounded-xl border border-border bg-muted/20 px-6 py-5 space-y-4">{children}</div>;
 }
 
-// ── AI filtering loading state ────────────────────────────────────────────
-const AI_PROGRESS_MESSAGES = [
-  "Analysing study titles...",
-  "Reading abstracts...",
-  "Checking relevance against your objective...",
-  "Filtering noise...",
-];
-
-function AIFilteringLoadingState() {
+// ── Full-panel loading state ────────────────────────────────────────────
+function FullPanelLoadingState({
+  title,
+  subtitle,
+  messages,
+}: {
+  title: string;
+  subtitle: string;
+  messages: string[];
+}) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [fade, setFade] = useState(true);
 
@@ -83,12 +84,12 @@ function AIFilteringLoadingState() {
     const interval = setInterval(() => {
       setFade(false);
       setTimeout(() => {
-        setMsgIndex((prev) => (prev + 1) % AI_PROGRESS_MESSAGES.length);
+        setMsgIndex((prev) => (prev + 1) % messages.length);
         setFade(true);
       }, 200);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
 
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -96,19 +97,29 @@ function AIFilteringLoadingState() {
         className="animate-spin text-indigo"
         style={{ width: 40, height: 40 }}
       />
-      <p className="text-lg font-semibold text-foreground">Reading abstracts...</p>
-      <p className="text-sm text-muted-foreground">
-        AI is filtering studies that don't address your objective
-      </p>
+      <p className="text-lg font-semibold text-foreground">{title}</p>
+      <p className="text-sm text-muted-foreground">{subtitle}</p>
       <p
         className="text-sm text-muted-foreground transition-opacity duration-200"
         style={{ opacity: fade ? 1 : 0 }}
       >
-        {AI_PROGRESS_MESSAGES[msgIndex]}
+        {messages[msgIndex]}
       </p>
     </div>
   );
 }
+
+const AI_FILTER_MESSAGES = [
+  "Analysing study titles...",
+  "Reading abstracts...",
+  "Checking relevance against your objective...",
+  "Filtering noise...",
+];
+
+const AI_RANKING_MESSAGES = [
+  "Reading study abstracts...",
+  "Scoring against your objective...",
+];
 
 // ── Main component ────────────────────────────────────────────────────────────
 const DatasetPage = () => {
@@ -561,7 +572,11 @@ const DatasetPage = () => {
       if (isFilteringAI) {
         return (
           <StepPanel>
-            <AIFilteringLoadingState />
+            <FullPanelLoadingState
+              title="Reading abstracts..."
+              subtitle="AI is filtering studies that don't address your objective"
+              messages={AI_FILTER_MESSAGES}
+            />
           </StepPanel>
         );
       }
@@ -628,6 +643,18 @@ const DatasetPage = () => {
 
     // SILVER — filtered, ready for gold validation
     if (tier === "silver") {
+      if (isRanking) {
+        return (
+          <StepPanel>
+            <FullPanelLoadingState
+              title="Scoring studies..."
+              subtitle="AI is reading each study and scoring it against your objective"
+              messages={AI_RANKING_MESSAGES}
+            />
+          </StepPanel>
+        );
+      }
+
       return (
         <StepPanel>
           <div className="space-y-1">
@@ -812,7 +839,7 @@ const DatasetPage = () => {
           )}
 
           {/* Column filters — hidden in bronze until user picks a method */}
-          {!(tier === "bronze" && (filterMethod === null || isFilteringAI)) && <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
+          {!(tier === "bronze" && (filterMethod === null || isFilteringAI)) && !isRanking && <div className="flex items-center justify-between bg-muted/30 border border-border rounded-lg px-4 py-3">
             <div className="flex items-center gap-6">
               <span className="text-sm font-medium text-muted-foreground">Filter by:</span>
               <div className="flex items-center gap-2">
@@ -894,7 +921,7 @@ const DatasetPage = () => {
           )}
 
           {/* Table — hidden in bronze until user picks a method */}
-          {!isLoading && !error && studies.length > 0 && !(tier === "bronze" && (filterMethod === null || isFilteringAI)) && (
+          {!isLoading && !error && studies.length > 0 && !(tier === "bronze" && (filterMethod === null || isFilteringAI)) && !isRanking && (
             <>
               <div className="border border-border rounded-lg overflow-hidden">
                 <Table>
