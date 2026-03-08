@@ -40,8 +40,21 @@ export function useStudies({
       const searchActive = isSearchActive(search);
 
       if (searchActive) {
-        const { conditionTerms, interventionTerms, freetextTerms, phaseTerms } =
-          extractTermsByType(search.rows);
+        const conditionTerms = search.rows
+          .filter((r) => r.type === "condition")
+          .flatMap((r) => r.terms);
+
+        const interventionTerms = search.rows
+          .filter((r) => r.type === "intervention")
+          .flatMap((r) => r.terms);
+
+        const freetextTerms = search.rows
+          .filter((r) => r.type === "freetext")
+          .flatMap((r) => r.terms);
+
+        const phaseTerms = search.rows
+          .filter((r) => r.type === "phase")
+          .flatMap((r) => r.terms);
 
         const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
           p_condition_terms: conditionTerms.length > 0 ? conditionTerms : null,
@@ -51,16 +64,13 @@ export function useStudies({
           p_only_analyzable: onlyAnalyzable,
           p_only_comparable: onlyComparable,
           p_page: page,
-          p_page_size: PAGE_SIZE,
+          p_page_size: 20,
         });
 
         if (error) throw error;
 
-        const rows = (data as any[]) || [];
-        const totalCount = rows.length > 0 ? Number(rows[0].total_count) : 0;
-
-        // Map RPC results to StudyListItem shape
-        const studies = (rows as StudyListItem[]);
+        const studies = ((data as StudyListItem[]) || []);
+        const totalCount = Number((data as any[])?.[0]?.total_count ?? 0);
 
         return {
           studies,

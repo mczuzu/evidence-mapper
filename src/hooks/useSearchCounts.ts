@@ -2,67 +2,40 @@ import { useQuery } from "@tanstack/react-query";
 import { supabaseExternal } from "@/lib/supabase-external";
 import { SearchInput, SearchRow, isSearchActive } from "@/types/search";
 
-interface RpcSearchResult {
-  nct_id: string;
-  rank: number;
-}
-
-async function callRpc(q: string, limit = 5000): Promise<RpcSearchResult[]> {
-  const { data, error } = await supabaseExternal.rpc("search_studies_advanced_prefix", {
-    q: q.trim(),
-    limit_n: limit,
-  });
-  if (error) throw error;
-  return (data as RpcSearchResult[]) || [];
-}
-
-function unionSets(...sets: Set<string>[]): Set<string> {
-  const result = new Set<string>();
-  for (const s of sets) for (const v of s) result.add(v);
-  return result;
-}
-
-function intersectSets(a: Set<string>, b: Set<string>): Set<string> {
-  const result = new Set<string>();
-  for (const v of a) if (b.has(v)) result.add(v);
-  return result;
-}
-
-// Each row = one set of results (OR within terms, operator between rows)
-async function executeSearch(rows: SearchRow[]): Promise<{ nctIds: string[] }> {
-  const activeRows = rows.filter((r) => r.terms.length > 0);
-  if (activeRows.length === 0) return { nctIds: [] };
-
-  // For each row: fetch each term in parallel, union results within row
-  const rowSets = await Promise.all(
-    activeRows.map(async (row) => {
-      if (row.type === "phase") {
-        const { data, error } = await supabaseExternal
-          .from("v_ui_study_list_v2")
-          .select("nct_id")
-          .in("phase", row.terms);
-        if (error) throw error;
-        return new Set((data || []).map((r) => r.nct_id));
-      }
-      const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));
-      return unionSets(...termResults.map((res) => new Set(res.map((r) => r.nct_id))));
-    }),
-  );
-
-  // Combine rows using their operators
-  let finalSet = rowSets[0];
-  for (let i = 1; i < activeRows.length; i++) {
-    const op = activeRows[i].operator;
-    finalSet = op === "AND" ? intersectSets(finalSet, rowSets[i]) : unionSets(finalSet, rowSets[i]);
-  }
-
-  return { nctIds: [...finalSet] };
-}
-
 export interface SearchCounts {
   intersectionTotal: number;
   finalNctIds: string[];
   rowCounts: { type: string; terms: string[]; count: number }[];
+}
+
+function termsByType(rows: SearchRow[]) {
+  return {
+    conditionTerms: rows.filter((r) => r.type === "condition").flatMap((r) => r.terms),
+    interventionTerms: rows.filter((r) => r.type === "intervention").flatMap((r) => r.terms),
+    freetextTerms: rows.filter((r) => r.type === "freetext").flatMap((r) => r.terms),
+    phaseTerms: rows.filter((r) => r.type === "phase").flatMap((r) => r.terms),
+  };
+}
+
+async function fetchTotalCount(params: {
+  conditionTerms: string[];
+  interventionTerms: string[];
+  freetextTerms: string[];
+  phaseTerms: string[];
+}): Promise<number> {
+  const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
+    p_condition_terms: params.conditionTerms.length > 0 ? params.conditionTerms : null,
+    p_intervention_terms: params.interventionTerms.length > 0 ? params.interventionTerms : null,
+    p_freetext_terms: params.freetextTerms.length > 0 ? params.freetextTerms : null,
+    p_phases: params.phaseTerms.length > 0 ? params.phaseTerms : null,
+    p_only_analyzable: false,
+    p_only_comparable: false,
+    p_page: 0,
+    p_page_size: 1,
+  });
+
+  if (error) throw error;
+  return Number((data as any[])?.[0]?.total_count ?? 0);
 }
 
 export function useSearchCounts({ search }: { search: SearchInput }) {
@@ -73,33 +46,26 @@ export function useSearchCounts({ search }: { search: SearchInput }) {
         return { intersectionTotal: 0, finalNctIds: [], rowCounts: [] };
       }
 
-      const { nctIds } = await executeSearch(search.rows);
+      const allTerms = termsByType(search.rows);
+      const intersectionTotal = await fetchTotalCount(allTerms);
 
-      // Row-level counts for display
       const rowCounts = await Promise.all(
         search.rows
           .filter((r) => r.terms.length > 0)
           .map(async (row) => {
-            if (row.type === "phase") {
-              const { data, error } = await supabaseExternal
-                .from("v_ui_study_list_v2")
-                .select("nct_id")
-                .in("phase", row.terms);
-              if (error) throw error;
-              return { type: row.type, terms: row.terms, count: (data || []).length };
-            }
-            const termResults = await Promise.all(row.terms.map((t) => callRpc(t)));
-            const rowSet = unionSets(...termResults.map((res) => new Set(res.map((r) => r.nct_id))));
-            return { type: row.type, terms: row.terms, count: rowSet.size };
+            const singleRowTerms = termsByType([row]);
+            const count = await fetchTotalCount(singleRowTerms);
+            return { type: row.type, terms: row.terms, count };
           }),
       );
 
       return {
-        intersectionTotal: nctIds.length,
-        finalNctIds: nctIds,
+        intersectionTotal,
+        finalNctIds: [],
         rowCounts,
       };
     },
     staleTime: 5 * 60 * 1000,
   });
 }
+
