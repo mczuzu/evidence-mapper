@@ -391,6 +391,59 @@ function PhaseField({
   );
 }
 
+// ── Date range field ───────────────────────────────────────────
+const YEAR_OPTIONS = Array.from({ length: 15 }, (_, i) => 2012 + i); // 2012–2026
+
+function DateRangeField({
+  terms,
+  onChange,
+}: {
+  terms: string[];
+  onChange: (terms: string[]) => void;
+}) {
+  const fromYear = terms[0] ? parseInt(terms[0]) : 2018;
+  const toYear = terms[1] ? parseInt(terms[1]) : 2026;
+  const cfg = FIELD_TYPES.daterange;
+
+  const update = (from: number, to: number) => {
+    onChange([from.toString(), to.toString()]);
+  };
+
+  return (
+    <div className="flex-1">
+      <div className="flex items-center gap-3 min-h-[2.5rem] rounded-xl border border-border bg-background px-3 py-1.5 transition-all">
+        <span className="text-xs text-muted-foreground shrink-0">From</span>
+        <select
+          value={fromYear}
+          onChange={(e) => {
+            const v = parseInt(e.target.value);
+            update(v, Math.max(v, toYear));
+          }}
+          className="bg-transparent text-sm text-foreground border border-border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-foreground/10"
+        >
+          {YEAR_OPTIONS.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+        <span className="text-xs text-muted-foreground shrink-0">To</span>
+        <select
+          value={toYear}
+          onChange={(e) => {
+            const v = parseInt(e.target.value);
+            update(Math.min(fromYear, v), v);
+          }}
+          className="bg-transparent text-sm text-foreground border border-border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-foreground/10"
+        >
+          {YEAR_OPTIONS.filter((y) => y >= fromYear).map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-1 pl-1">{cfg.hint}</p>
+    </div>
+  );
+}
+
 // ── Search row ─────────────────────────────────────────────────
 function SearchRowComponent({
   row,
