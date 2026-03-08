@@ -306,7 +306,14 @@ const DatasetPage = () => {
     setSilverIds(Array.from(selectedIds));
     setTier("silver");
     setFilterMethod("manual");
-    toast.success(`Silver dataset: ${selectedIds.size} studies selected manually.`);
+    setMilestoneToast({
+      type: "silver",
+      title: "Silver dataset ready",
+      subtitle: `${selectedIds.size} studies selected manually`,
+      detail: `You selected ${selectedIds.size} studies from the Bronze dataset`,
+      actionLabel: "Score with AI →",
+      onAction: () => runGoldValidation(),
+    });
   };
 
   // ── Validate to Gold with AI (ia-ranking) ─────────────────────────────────
