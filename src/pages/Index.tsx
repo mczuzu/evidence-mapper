@@ -84,9 +84,10 @@ function ExampleBanner({
 }
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const initObjective = searchParams.get("objective") || "";
+  const tryExampleParam = searchParams.get("tryExample") === "1";
   const [search, setSearch] = useState<SearchInput>(paramsToSearch(searchParams));
   const [objective, setObjective] = useState<string>(initObjective);
   const [step, setStep] = useState<Step>(
@@ -108,7 +109,7 @@ const Index = () => {
 
   const activeFilterCount = search.rows.filter((r) => r.terms.length > 0).length;
 
-  const handleTryExample = () => {
+  const handleTryExample = useCallback(() => {
     if (isTyping) return;
     setIsTyping(true);
     setCameFromExample(true);
@@ -124,7 +125,15 @@ const Index = () => {
         setIsTyping(false);
       }
     }, 18);
-  };
+  }, [isTyping]);
+
+  // Auto-trigger example when arriving from WelcomePage with ?tryExample=1
+  useEffect(() => {
+    if (tryExampleParam && !objective) {
+      setSearchParams({}, { replace: true });
+      handleTryExample();
+    }
+  }, [tryExampleParam, handleTryExample]);
 
   // Clean up animation timers
   useEffect(() => {
