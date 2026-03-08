@@ -601,7 +601,7 @@ const DatasetPage = () => {
                className="gap-2"
              >
                <ArrowRight className="h-4 w-4" />
-               Skip scoring → use these studies
+               Skip scoring
              </Button>
           </div>
         </StepPanel>
