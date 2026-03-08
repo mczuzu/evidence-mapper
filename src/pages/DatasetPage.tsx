@@ -936,14 +936,19 @@ const DatasetPage = () => {
                             </TableCell>
                           )}
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewStudy(study.nct_id)}
-                              className="gap-1"
+                            <a
+                              href={`https://clinicaltrials.gov/study/${study.nct_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 text-xs text-muted-foreground h-7 px-2"
+                              >
+                                View ↗
+                              </Button>
+                            </a>
                           </TableCell>
                         </TableRow>
                       );
