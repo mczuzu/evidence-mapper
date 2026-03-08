@@ -473,7 +473,8 @@ const DatasetPage = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <TierBadge tier="bronze" />
-              <span className="text-sm font-semibold text-foreground">{totalCount.toLocaleString()} studies found</span>
+              <span className="text-sm font-semibold text-foreground">All studies matching your search</span>
+              <span className="text-xs text-muted-foreground">({totalCount.toLocaleString()})</span>
             </div>
             {objective && (
               <p className="text-xs text-muted-foreground">
@@ -484,21 +485,8 @@ const DatasetPage = () => {
 
           <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
             <p>
-              These are all studies that match your search criteria. They may include noise — studies that mention your
-              terms but don't actually address your question.
+              This is your raw dataset. These studies match your search criteria but may include noise — studies that mention your terms without actually addressing your question.
             </p>
-            <div>
-              <p className="font-medium text-foreground mb-1">How do you want to filter?</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>
-                  <strong>With AI:</strong> extracts keywords from your objective and filters studies containing them in
-                  title or abstract. Fast, ~10 seconds.
-                </li>
-                <li>
-                  <strong>Manual:</strong> select the relevant studies yourself using the table checkboxes.
-                </li>
-              </ul>
-            </div>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
@@ -514,7 +502,7 @@ const DatasetPage = () => {
                 </>
                ) : (
                  <>
-                   <Sparkles className="h-4 w-4" /> Focus on my question with AI →
+                   <Sparkles className="h-4 w-4" /> Remove noise with AI →
                  </>
                )}
             </Button>
@@ -554,7 +542,8 @@ const DatasetPage = () => {
           <div className="space-y-1">
              <div className="flex items-center gap-2">
                <TierBadge tier="silver" />
-               <span className="text-sm font-semibold text-foreground">{studies.length} studies focused on your question</span>
+               <span className="text-sm font-semibold text-foreground">Studies focused on your question</span>
+               <span className="text-xs text-muted-foreground">({studies.length})</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -586,22 +575,9 @@ const DatasetPage = () => {
 
            <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3 text-sm text-muted-foreground">
              <p>
-               AI read the titles and abstracts and kept only the studies that directly address your objective.
+               AI read every title and abstract and kept only the studies that directly address your objective. Review the inferred keywords below.
              </p>
-            <div>
-              <p className="font-medium text-foreground mb-1">What to do now?</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>
-                  <strong>Validate with AI (recommended):</strong> AI reads full abstracts and discards those that only
-                  match superficially. Minimum score to pass: 4/10.
-                </li>
-                <li>
-                  <strong>Skip validation:</strong> proceed directly to analysis with these {studies.length} studies.
-                  The dataset may contain noise.
-                </li>
-              </ul>
-            </div>
-          </div>
+           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
             <Button onClick={runGoldValidation} disabled={isRanking || studies.length === 0} className="gap-2">
@@ -625,7 +601,7 @@ const DatasetPage = () => {
                className="gap-2"
              >
                <ArrowRight className="h-4 w-4" />
-               Skip scoring → use these studies
+               Skip scoring
              </Button>
           </div>
         </StepPanel>
@@ -640,7 +616,8 @@ const DatasetPage = () => {
             <div className="space-y-2">
                <div className="flex items-center gap-2">
                  <TierBadge tier="gold" />
-                 <span className="text-sm font-semibold text-foreground">{studies.length} studies scored against your objective</span>
+                 <span className="text-sm font-semibold text-foreground">Studies scored against your objective</span>
+                 <span className="text-xs text-muted-foreground">({studies.length})</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -697,7 +674,7 @@ const DatasetPage = () => {
 
            <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2 text-sm text-muted-foreground">
              <p>
-               Each study has been scored 0-10 based on how well it answers your specific objective. Deselect any you want to exclude.
+               Each study has been scored 0–10 based on how well it answers your specific objective. Deselect any you want to exclude before generating the report.
              </p>
            </div>
         </StepPanel>
