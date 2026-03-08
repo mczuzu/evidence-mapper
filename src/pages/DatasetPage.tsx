@@ -682,11 +682,11 @@ const DatasetPage = () => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Analyzing...
                 </>
-              ) : (
-                <>
-                  <FlaskConical className="h-4 w-4" /> Analyze evidence
-                </>
-              )}
+               ) : (
+                 <>
+                   <FlaskConical className="h-4 w-4" /> Generate evidence report
+                 </>
+               )}
               {selectedIds.size > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs">
                   {selectedIds.size}
