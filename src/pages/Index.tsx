@@ -6,12 +6,14 @@ import { SearchBuilder } from "@/components/SearchBuilder";
 import { useSearchCounts } from "@/hooks/useSearchCounts";
 import { SearchInput, emptySearch, paramsToSearch, searchToParams } from "@/types/search";
 import { Textarea } from "@/components/ui/textarea";
-import { Target } from "lucide-react";
+import { Target, Lightbulb } from "lucide-react";
+import { EXAMPLE_OBJECTIVE, EXAMPLE_SEARCH } from "@/lib/example-search";
 
 const Index = () => {
   const [searchParams] = useSearchParams();
+  const initObjective = searchParams.get("objective") || "";
   const [search, setSearch] = useState<SearchInput>(paramsToSearch(searchParams));
-  const [objective, setObjective] = useState<string>("");
+  const [objective, setObjective] = useState<string>(initObjective);
 
   const { data: counts, isLoading, error } = useSearchCounts({ search });
 
