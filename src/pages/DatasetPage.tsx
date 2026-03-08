@@ -704,6 +704,7 @@ const DatasetPage = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       {!isUrlIdsMode && <PipelineTracker currentStep={pipelineStep} />}
+      <MilestoneToast data={milestoneToast} onDismiss={() => setMilestoneToast(null)} />
 
       <main className="flex-1 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
