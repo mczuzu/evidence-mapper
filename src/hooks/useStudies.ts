@@ -42,35 +42,33 @@ export function useStudies({
       if (searchActive) {
         const conditionTerms = search.rows
           .filter((r) => r.type === "condition")
-          .flatMap((r) => r.terms);
+          .flatMap((r) => r.terms)
+          .filter(Boolean);
 
         const interventionTerms = search.rows
           .filter((r) => r.type === "intervention")
-          .flatMap((r) => r.terms);
-
-        const freetextTerms = search.rows
-          .filter((r) => r.type === "freetext")
-          .flatMap((r) => r.terms);
+          .flatMap((r) => r.terms)
+          .filter(Boolean);
 
         const phaseTerms = search.rows
           .filter((r) => r.type === "phase")
-          .flatMap((r) => r.terms);
+          .flatMap((r) => r.terms)
+          .filter(Boolean);
 
         const { data, error } = await supabaseExternal.rpc("search_studies_paged", {
           p_condition_terms: conditionTerms.length > 0 ? conditionTerms : null,
           p_intervention_terms: interventionTerms.length > 0 ? interventionTerms : null,
-          p_freetext_terms: freetextTerms.length > 0 ? freetextTerms : null,
           p_phases: phaseTerms.length > 0 ? phaseTerms : null,
-          p_only_analyzable: onlyAnalyzable,
-          p_only_comparable: onlyComparable,
-          p_page: page,
+          p_only_analyzable: onlyAnalyzable ?? false,
+          p_only_comparable: onlyComparable ?? false,
+          p_page: page ?? 0,
           p_page_size: 20,
         });
 
         if (error) throw error;
 
-        const studies = ((data as StudyListItem[]) || []);
-        const totalCount = Number((data as any[])?.[0]?.total_count ?? 0);
+        const studies = (data ?? []) as StudyListItem[];
+        const totalCount = Number((studies as any[])[0]?.total_count ?? 0);
 
         return {
           studies,

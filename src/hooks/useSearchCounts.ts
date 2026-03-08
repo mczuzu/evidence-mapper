@@ -10,10 +10,9 @@ export interface SearchCounts {
 
 function termsByType(rows: SearchRow[]) {
   return {
-    conditionTerms: rows.filter((r) => r.type === "condition").flatMap((r) => r.terms),
-    interventionTerms: rows.filter((r) => r.type === "intervention").flatMap((r) => r.terms),
-    freetextTerms: rows.filter((r) => r.type === "freetext").flatMap((r) => r.terms),
-    phaseTerms: rows.filter((r) => r.type === "phase").flatMap((r) => r.terms),
+    conditionTerms: rows.filter((r) => r.type === "condition").flatMap((r) => r.terms).filter(Boolean),
+    interventionTerms: rows.filter((r) => r.type === "intervention").flatMap((r) => r.terms).filter(Boolean),
+    phaseTerms: rows.filter((r) => r.type === "phase").flatMap((r) => r.terms).filter(Boolean),
   };
 }
 
