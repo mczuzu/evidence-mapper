@@ -452,19 +452,11 @@ const DatasetPage = () => {
     }
   };
 
+  // ── Pipeline step mapping ───────────────────────────────────────────────
+  const pipelineStep: 1 | 2 | 3 | 4 | 5 | 6 = tier === "gold" ? 5 : tier === "silver" ? 4 : 3;
+
   // ── Render step panel ─────────────────────────────────────────────────────
   const renderStepPanel = () => {
-    // Pipeline tracker inline
-    const PipelineTracker = () => {
-      if (tier === "bronze") return null;
-      return (
-        <p className="text-xs text-muted-foreground font-mono">
-          📍 Pipeline: Bronze {totalCount.toLocaleString()}
-          {(tier === "silver" || tier === "gold") && <> → Silver {silverIds?.length ?? "—"}</>}
-          {tier === "gold" && <> → Gold {goldResults?.length ?? "—"}</>}
-        </p>
-      );
-    };
 
     // BRONZE — choose filter method
     if (tier === "bronze") {
