@@ -256,7 +256,19 @@ const DatasetPage = () => {
     }
   }, [selectAllRequested, allIdsQuery.data]);
 
-  const handleBackToSearch = () => {
+  // Auto-start AI filtering or manual mode from URL flags
+  const [autoStartTriggered, setAutoStartTriggered] = useState(false);
+  useEffect(() => {
+    if (autoStartTriggered || isLoading || totalCount === 0) return;
+    if (autoStartAI && objective && bronzeStudies.length > 0) {
+      setAutoStartTriggered(true);
+      runAIFilter();
+    } else if (autoStartManual) {
+      setAutoStartTriggered(true);
+    }
+  }, [autoStartAI, autoStartManual, isLoading, totalCount, bronzeStudies.length, autoStartTriggered]);
+
+
     const params = searchToParams(search);
     if (labels.length > 0) params.set("labels", labels.join(","));
     if (paramTypes.length > 0) params.set("paramTypes", paramTypes.join(","));
