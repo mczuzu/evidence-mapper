@@ -482,20 +482,22 @@ function SearchRowComponent({
           }}
           onRemove={(i) => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })}
         />
-      ) : row.type === "freetext" ? (
-        <FreeTextField
+      ) : row.type === "freetext" || row.type === "intervention" ? (
+        <KeywordField
+          fieldType={row.type}
           terms={row.terms}
+          maxTerms={row.type === "intervention" ? 5 : undefined}
           onAdd={(t) => onUpdate({ ...row, terms: [...row.terms, t] })}
           onRemove={(i) => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })}
         />
       ) : (
         <GuidedField
-          fieldType={row.type as "condition" | "intervention"}
+          fieldType={row.type as "condition"}
           terms={row.terms}
           onAdd={(t) => onUpdate({ ...row, terms: [...row.terms, t] })}
           onRemove={(i) => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })}
         />
-      )}
+      )
       {!isOnly && (
         <button
           onClick={onRemove}
