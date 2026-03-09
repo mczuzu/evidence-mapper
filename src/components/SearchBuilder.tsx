@@ -14,10 +14,10 @@ const FIELD_TYPES = {
   },
   intervention: {
     label: "Intervention",
-    placeholder: "Search or browse interventions…",
+    placeholder: "Type a keyword and press Enter...",
     badgeClass: "bg-violet-50 text-violet-700 border border-violet-200",
     dotClass: "bg-violet-500",
-    hint: "Interventions in the database",
+    hint: "Search by intervention keyword · press Enter to add",
   },
   freetext: {
     label: "Free text",
