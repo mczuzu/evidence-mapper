@@ -286,22 +286,28 @@ function GuidedField({
   );
 }
 
-// ── Free text field ────────────────────────────────────────────
-function FreeTextField({
+// ── Keyword field (free text + intervention) ──────────────────
+function KeywordField({
+  fieldType,
   terms,
+  maxTerms,
   onAdd,
   onRemove,
 }: {
+  fieldType: "freetext" | "intervention";
   terms: string[];
+  maxTerms?: number;
   onAdd: (t: string) => void;
   onRemove: (i: number) => void;
 }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const cfg = FIELD_TYPES.freetext;
+  const cfg = FIELD_TYPES[fieldType];
+  const atLimit = maxTerms != null && terms.length >= maxTerms;
 
   const addTerm = (term: string) => {
     const t = term.trim();
+    if (atLimit) return;
     if (t && !terms.map((x) => x.toLowerCase()).includes(t.toLowerCase())) onAdd(t);
     setQuery("");
     inputRef.current?.focus();
@@ -316,35 +322,37 @@ function FreeTextField({
         {terms.map((t, i) => (
           <Chip key={i} label={t} badgeClass={cfg.badgeClass} onRemove={() => onRemove(i)} />
         ))}
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if ((e.key === "Enter" || e.key === ",") && query.trim()) {
-              e.preventDefault();
-              addTerm(query);
-            }
-            if (e.key === "Backspace" && !query && terms.length > 0) onRemove(terms.length - 1);
-          }}
-          onPaste={(e) => {
-            const text = e.clipboardData.getData("text");
-            if (/[,;\n]/.test(text)) {
-              e.preventDefault();
-              text
-                .split(/[,;\n]/)
-                .map((t) => t.trim())
-                .filter(Boolean)
-                .forEach(addTerm);
-            }
-          }}
-          onBlur={() => query.trim() && addTerm(query)}
-          placeholder={terms.length === 0 ? cfg.placeholder : "Add more…"}
-          className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-        />
+        {!atLimit && (
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.key === ",") && query.trim()) {
+                e.preventDefault();
+                addTerm(query);
+              }
+              if (e.key === "Backspace" && !query && terms.length > 0) onRemove(terms.length - 1);
+            }}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData("text");
+              if (/[,;\n]/.test(text)) {
+                e.preventDefault();
+                text
+                  .split(/[,;\n]/)
+                  .map((t) => t.trim())
+                  .filter(Boolean)
+                  .forEach(addTerm);
+              }
+            }}
+            onBlur={() => query.trim() && addTerm(query)}
+            placeholder={terms.length === 0 ? cfg.placeholder : "Add more…"}
+            className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          />
+        )}
       </div>
       <p className="text-[10px] text-muted-foreground mt-1 pl-1">
-        {cfg.hint} · press Enter or , to add · paste comma-separated lists
+        {cfg.hint} · press Enter or , to add{maxTerms ? ` · max ${maxTerms}` : ""}
       </p>
     </div>
   );
