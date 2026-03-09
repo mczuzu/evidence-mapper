@@ -1,7 +1,7 @@
 import { SearchInput, searchToParams } from "@/types/search";
 
 export const EXAMPLE_OBJECTIVE =
-  "Identify pharmacological interventions that improve glycemic control in Type 2 Diabetes patients, focusing on recent trials with measurable outcomes.";
+  "Assess the evidence base for metformin and combination therapies in Type 2 Diabetes to determine if there is white space for a new Phase 3 entrant or if the space is saturated";
 
 export const EXAMPLE_SEARCH: SearchInput = {
   rows: [

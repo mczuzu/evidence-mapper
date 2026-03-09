@@ -252,7 +252,7 @@ const Index = () => {
                 ) : (
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
-                Try: Diabetes Type 2 · Metformin · Phase 3
+                Try: Type 2 Diabetes · Metformin · Phase 3 · White space analysis
               </button>
             </div>
 
