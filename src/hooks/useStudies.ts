@@ -67,7 +67,7 @@ export function useStudies({
           p_year_to: yearTo,
           p_only_analyzable: onlyAnalyzable ?? false,
           p_only_comparable: onlyComparable ?? false,
-          p_page: page ?? 0,
+          p_page: (page ?? 0) + 1,
           p_page_size: 20,
         });
 
