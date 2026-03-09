@@ -158,7 +158,7 @@ export function useAllStudyIds({
           p_year_to: yearTo,
           p_only_analyzable: false,
           p_only_comparable: false,
-          p_page: 0,
+          p_page: 1,
           p_page_size: 10000,
         });
         if (error) throw error;
