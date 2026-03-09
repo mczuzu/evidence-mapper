@@ -505,7 +505,7 @@ function SearchRowComponent({
           onAdd={(t) => onUpdate({ ...row, terms: [...row.terms, t] })}
           onRemove={(i) => onUpdate({ ...row, terms: row.terms.filter((_, idx) => idx !== i) })}
         />
-      )
+      )}
       {!isOnly && (
         <button
           onClick={onRemove}
