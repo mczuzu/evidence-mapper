@@ -560,9 +560,15 @@ export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps
   const queryPreview = rows
     .filter((r) => r.terms.length > 0)
     .map((r, i) => {
-      const terms = r.terms.length > 1 ? `(${r.terms.join(" OR ")})` : r.terms[0];
       const type = r.type === "freetext" ? "TEXT" : r.type.slice(0, 4).toUpperCase();
-      return `${i > 0 ? ` ${r.operator} ` : ""}[${type}] ${terms}`;
+      let termsStr: string;
+      if (r.type === "intervention") {
+        termsStr = r.terms.map((t) => `contains "${t}"`).join(" OR ");
+        if (r.terms.length > 1) termsStr = `(${termsStr})`;
+      } else {
+        termsStr = r.terms.length > 1 ? `(${r.terms.join(" OR ")})` : r.terms[0];
+      }
+      return `${i > 0 ? ` ${r.operator} ` : ""}[${type}] ${termsStr}`;
     })
     .join("");
 
