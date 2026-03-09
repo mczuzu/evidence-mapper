@@ -233,7 +233,7 @@ const Index = () => {
             </div>
 
             <Textarea
-              placeholder="E.g.: Evaluate the efficacy of nutritional interventions to improve muscle mass in elderly patients with sarcopenia..."
+              placeholder="E.g.: Assess the evidence base for metformin and combination therapies in Type 2 Diabetes to determine if there is white space for a new Phase 3 entrant..."
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
               rows={4}
