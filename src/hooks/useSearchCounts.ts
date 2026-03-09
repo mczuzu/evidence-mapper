@@ -34,7 +34,7 @@ async function fetchTotalCount(params: {
     p_year_to: params.yearTo,
     p_only_analyzable: false,
     p_only_comparable: false,
-    p_page: 0,
+    p_page: 1,
     p_page_size: 1,
   });
 
