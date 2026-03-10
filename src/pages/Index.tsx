@@ -107,7 +107,7 @@ const Index = () => {
   const hasSearch = isSearchActive(search);
   const totalCount = counts?.intersectionTotal ?? 0;
 
-  const activeFilterCount = search.rows.filter((r) => r.terms.length > 0).length;
+  const activeFilterCount = search.rows.filter((r) => r && r.terms.length > 0).length;
 
   const handleTryExample = useCallback(() => {
     if (isTyping) return;
