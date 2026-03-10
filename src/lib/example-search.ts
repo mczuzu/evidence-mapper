@@ -1,14 +1,13 @@
 import { SearchInput, searchToParams } from "@/types/search";
 
 export const EXAMPLE_OBJECTIVE =
-  "Assess the evidence base for metformin and combination therapies in Type 2 Diabetes to determine if there is white space for a new Phase 3 entrant or if the space is saturated";
+  "What does the evidence say about SGLT2 inhibitors for cardiovascular outcomes in heart failure patients?";
 
 export const EXAMPLE_SEARCH: SearchInput = {
   rows: [
-    { id: 1, type: "condition", terms: ["Diabetes Mellitus, Type 2"], operator: "AND" },
-    { id: 2, type: "intervention", terms: ["metformin"], operator: "AND" },
-    { id: 3, type: "phase", terms: ["PHASE3"], operator: "AND" },
-    { id: 4, type: "daterange", terms: ["2018", "2026"], operator: "AND" },
+    { id: 1, type: "condition", terms: ["Heart Failure"], operator: "AND" },
+    { id: 2, type: "intervention", terms: ["SGLT2 inhibitors"], operator: "AND" },
+    { id: 3, type: "daterange", terms: ["2018", "2026"], operator: "AND" },
   ],
 };
 
