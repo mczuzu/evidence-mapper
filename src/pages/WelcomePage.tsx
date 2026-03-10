@@ -267,6 +267,28 @@ const WelcomePage = () => {
             → See the strategy case study
           </a>
 
+          <h3 className="mt-8 text-sm font-semibold" style={{ color: "#0a0a0a" }}>
+            Known limitations
+          </h3>
+          <ul className="mt-3 space-y-3 text-sm leading-relaxed" style={{ color: "#555" }}>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              <span><strong style={{ color: "#0a0a0a" }}>Intervention clustering is approximate.</strong> The AI classifies trials into clusters (pharmacological, behavioral, digital) based on abstract text. Some trials get miscategorised — for example, trials with digital monitoring as a secondary arm may appear in a "digital interventions" cluster even when the primary intervention is pharmacological. A production version would need a structured intervention ontology (e.g. MeSH pharmacological actions) to do this reliably.</span>
+            </li>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              <span><strong style={{ color: "#0a0a0a" }}>Evidence base is ClinicalTrials.gov only.</strong> The tool searches completed trials, not the full published literature. A proper systematic review would also require Embase, Cochrane, and grey literature sources.</span>
+            </li>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              <span><strong style={{ color: "#0a0a0a" }}>No quality assessment.</strong> Trials are scored for relevance to the objective, not for methodological quality. There is no risk-of-bias scoring, GRADE assessment, or sample size weighting.</span>
+            </li>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              <span><strong style={{ color: "#0a0a0a" }}>Intervention search is molecule-level, not class-level.</strong> Searching "SGLT2 inhibitors" returns 0 results — you need to search by molecule name (e.g. "empagliflozin"). A production version would map drug classes to their constituent molecules automatically.</span>
+            </li>
+          </ul>
+
           <div className="mt-8 pt-6" style={{ borderTop: "1px solid #ddd" }}>
             <p className="text-xs" style={{ color: "#999" }}>
               Stack: React + TypeScript · Supabase (PostgreSQL) · OpenAI GPT-4 · ClinicalTrials.gov AACT · PubMed API · Lovable
