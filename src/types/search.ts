@@ -23,7 +23,7 @@ export function emptySearch(): SearchInput {
 // ── URL serialization ──────────────────────────────────────────
 export function searchToParams(input: SearchInput): URLSearchParams {
   const params = new URLSearchParams();
-      const active = input.rows.filter((r) => r.terms.length > 0);
+      const active = input.rows.filter((r) => r && r.terms.length > 0);
   if (active.length > 0) {
     params.set(
       "rows",
