@@ -233,7 +233,7 @@ const Index = () => {
             </div>
 
             <Textarea
-              placeholder="E.g.: What does the evidence say about SGLT2 inhibitors for cardiovascular outcomes in heart failure patients?"
+              placeholder="E.g.: What does the evidence say about empagliflozin for cardiovascular outcomes in heart failure patients?"
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
               rows={4}
@@ -252,7 +252,7 @@ const Index = () => {
                 ) : (
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
-                Try: Heart failure · SGLT2 inhibitors · Cardiovascular outcomes
+                Try: Heart Failure · Empagliflozin · Cardiovascular outcomes
               </button>
             </div>
 
