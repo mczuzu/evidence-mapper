@@ -11,7 +11,7 @@ export interface SearchInput {
 }
 
 export function isSearchActive(input: SearchInput): boolean {
-  return input.rows.some((r) => r.terms.length > 0);
+  return input.rows.some((r) => r && r.terms.length > 0);
 }
 
 export function emptySearch(): SearchInput {
