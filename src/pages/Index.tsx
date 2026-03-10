@@ -150,7 +150,7 @@ const Index = () => {
     const exampleRows = EXAMPLE_SEARCH.rows;
 
     // Animate each row in sequence
-    const delays = [600, 1200, 1800, 2400];
+    const delays = [600, 1200, 1800];
     delays.forEach((delay, idx) => {
       const t = setTimeout(() => {
         setSearch((prev) => {
