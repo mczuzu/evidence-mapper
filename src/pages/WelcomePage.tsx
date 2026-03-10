@@ -92,7 +92,8 @@ const WelcomePage = () => {
                 across all ClinicalTrials.gov completed data. Get the full picture
                 of what's been tried, by whom, and when.
               </p>
-              <span className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
+              <span
+                className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
                 style={{ borderColor: "rgb(180 83 9 / 0.3)", backgroundColor: "rgb(180 83 9 / 0.1)", color: "rgb(180 83 9)" }}
               >
                 Competitive landscape
@@ -272,13 +273,17 @@ const WelcomePage = () => {
             </p>
             <div className="flex gap-4 mt-3">
               <a
-                href="#"
+                href="https://github.com/mczuzu/evidence-mapper"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-xs font-medium text-indigo hover:underline"
               >
                 GitHub →
               </a>
               <a
-                href="#"
+                href="https://www.linkedin.com/in/mcz/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-xs font-medium text-indigo hover:underline"
               >
                 LinkedIn →
