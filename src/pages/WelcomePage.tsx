@@ -6,18 +6,18 @@ const EXAMPLE_URL = "/search?tryExample=1";
 const valueProps = [
   {
     icon: Clock,
-    title: "Minutes, not weeks",
-    body: "Get a full evidence landscape and gap analysis in under 10 minutes. No analyst, no briefing, no waiting for a report.",
+    title: "Minutes, not hours",
+    body: "Get a full evidence landscape and gap analysis in under 10 minutes. No manual abstract screening required.",
   },
   {
     icon: Target,
-    title: "Objective-specific, not generic",
-    body: "Unlike off-the-shelf landscape reports, every Evidence Mapper analysis is scored against your exact pipeline question. The output is yours, not a template.",
+    title: "Question-specific, not generic",
+    body: "Every Evidence Mapper analysis is scored against your exact research question. The output is yours, not a template.",
   },
   {
     icon: Zap,
-    title: "Self-serve pipeline intelligence",
-    body: "Run as many analyses as you need, on any indication, any intervention, any phase. No enterprise contract required.",
+    title: "Self-serve evidence synthesis",
+    body: "Run as many analyses as you need, on any condition, any intervention, any phase. No setup required.",
   },
 ];
 
@@ -36,18 +36,15 @@ const WelcomePage = () => {
         </span>
 
         <h1
-          className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-white leading-tight max-w-2xl"
+          className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-white leading-tight max-w-3xl"
           style={{ lineHeight: 1.15 }}
         >
-          Know if a therapeutic space
-          <br />
-          is worth entering
+          Explore the clinical evidence base for any condition and intervention
         </h1>
 
         <p className="mt-6 text-base md:text-lg leading-relaxed max-w-[520px]" style={{ color: "#888" }}>
-          Evidence Mapper scans 63,000+ completed clinical trials, maps
-          intervention clusters, detects evidence gaps, and delivers a go/no-go
-          signal for your pipeline decision — in minutes, not weeks.
+          Search, filter and AI-score 63,000+ completed clinical trials against
+          your specific research question — in minutes.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-3">
@@ -74,7 +71,7 @@ const WelcomePage = () => {
             Two processes. One answer.
           </h2>
           <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
-            AI-native pipeline intelligence. No analysts. No waiting.
+            Structured PICO search + AI relevance scoring. No setup required.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-14">
@@ -95,7 +92,8 @@ const WelcomePage = () => {
                 across all ClinicalTrials.gov completed data. Get the full picture
                 of what's been tried, by whom, and when.
               </p>
-              <span className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
+              <span
+                className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
                 style={{ borderColor: "rgb(180 83 9 / 0.3)", backgroundColor: "rgb(180 83 9 / 0.1)", color: "rgb(180 83 9)" }}
               >
                 Competitive landscape
@@ -111,12 +109,12 @@ const WelcomePage = () => {
                 Get the signal, not the noise
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#888" }}>
-                AI scores every trial against your specific R&D objective
+                AI scores every trial against your specific research question
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#333" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#aaa" }}>
                 Most searches return irrelevant results. Evidence Mapper reads
-                every abstract, scores each trial 0–10 against your pipeline question,
+                every abstract, scores each trial 0–10 against your research question,
                 and identifies intervention clusters, evidence gaps, and white space
                 opportunities.
               </p>
@@ -128,14 +126,14 @@ const WelcomePage = () => {
         </div>
       </section>
 
-      {/* ── VALUE PROPS (replaces VS PubMed) ─────────────────── */}
+      {/* ── VALUE PROPS ──────────────────────────────────────── */}
       <section className="px-6" style={{ backgroundColor: "#f9f9f9", paddingTop: 60, paddingBottom: 60 }}>
         <div className="max-w-[800px] mx-auto">
           <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center" style={{ color: "#0a0a0a" }}>
-            What used to take weeks, now takes minutes
+            What used to take hours, now takes minutes
           </h2>
           <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
-            No consultants. No generic reports. No waiting.
+            No manual screening. No generic reports. No waiting.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
@@ -158,7 +156,7 @@ const WelcomePage = () => {
       <section className="px-6" style={{ backgroundColor: "#0a0a0a", paddingTop: 60, paddingBottom: 60 }}>
         <div className="max-w-[800px] mx-auto">
           <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center text-white">
-            What used to take weeks, now takes minutes
+            What used to take hours, now takes minutes
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 mt-12 rounded-xl overflow-hidden border" style={{ borderColor: "#222" }}>
@@ -181,9 +179,9 @@ const WelcomePage = () => {
                 </div>
                 <div style={{ borderTop: "1px solid #222" }} />
                 <div>
-                  <p className="text-sm font-medium text-white/70">Expensive & stale</p>
+                  <p className="text-sm font-medium text-white/70">Time-consuming</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
-                    $50,000 IQVIA report with last year's data
+                    Hours manually reviewing abstracts one by one
                   </p>
                 </div>
               </div>
@@ -201,16 +199,16 @@ const WelcomePage = () => {
                 </div>
                 <div style={{ borderTop: "1px solid #222" }} />
                 <div>
-                  <p className="text-sm font-medium text-white">Scored against YOUR objective</p>
+                  <p className="text-sm font-medium text-white">Scored against YOUR question</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
                     You get a report in under 10 minutes
                   </p>
                 </div>
                 <div style={{ borderTop: "1px solid #222" }} />
                 <div>
-                  <p className="text-sm font-medium text-white">Self-serve, on-demand</p>
+                  <p className="text-sm font-medium text-white">AI pre-screens every abstract automatically</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
-                    Updated monthly from ClinicalTrials.gov
+                    Results in minutes
                   </p>
                 </div>
               </div>
@@ -219,9 +217,85 @@ const WelcomePage = () => {
         </div>
       </section>
 
+      {/* ── ABOUT THIS PROJECT ───────────────────────────────── */}
+      <section className="px-6" style={{ backgroundColor: "#f9f9f9", paddingTop: 60, paddingBottom: 60 }}>
+        <div className="max-w-[700px] mx-auto">
+          <h2 className="font-serif text-2xl md:text-3xl font-semibold" style={{ color: "#0a0a0a" }}>
+            About this project
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed" style={{ color: "#555" }}>
+            Evidence Mapper is a hands-on learning project, not a production product.
+            I built it to develop practical skills I wanted to understand deeply as a
+            digital health PM: ETL pipelines from public health datasets, AI-powered
+            relevance scoring, and product design for clinical workflows.
+          </p>
+
+          <h3 className="mt-8 text-sm font-semibold" style={{ color: "#0a0a0a" }}>
+            What I built
+          </h3>
+          <ul className="mt-3 space-y-2 text-sm leading-relaxed" style={{ color: "#555" }}>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              ETL pipeline ingesting 63,394 completed trials from ClinicalTrials.gov via AACT, normalized and indexed in PostgreSQL/Supabase
+            </li>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              MeSH-indexed PICO search with condition autocomplete and server-side pagination
+            </li>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              GPT-4 scoring pipeline that reads every abstract and scores it against a free-text research objective
+            </li>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              6-step guided UX wizard with persistent state, live PubMed enrichment, and PDF export
+            </li>
+          </ul>
+
+          <h3 className="mt-8 text-sm font-semibold" style={{ color: "#0a0a0a" }}>
+            What I learned
+          </h3>
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: "#555" }}>
+            Building this led me to map the competitive landscape in clinical evidence
+            AI — and identify where the real unaddressed gap is. That analysis lives
+            separately as a product strategy case study.
+          </p>
+          <a
+            href="#"
+            className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-indigo hover:underline"
+          >
+            → See the strategy case study
+          </a>
+
+          <div className="mt-8 pt-6" style={{ borderTop: "1px solid #ddd" }}>
+            <p className="text-xs" style={{ color: "#999" }}>
+              Stack: React + TypeScript · Supabase (PostgreSQL) · OpenAI GPT-4 · ClinicalTrials.gov AACT · PubMed API · Lovable
+            </p>
+            <div className="flex gap-4 mt-3">
+              <a
+                href="https://github.com/mczuzu/evidence-mapper"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-indigo hover:underline"
+              >
+                GitHub →
+              </a>
+              <a
+                href="https://www.linkedin.com/in/mcz/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-indigo hover:underline"
+              >
+                LinkedIn →
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FOOTER ───────────────────────────────────────────── */}
       <footer className="px-6 py-8 text-center text-xs" style={{ backgroundColor: "#0a0a0a", color: "#555" }}>
-        Evidence Mapper · Pipeline intelligence for R&D teams · 63,394 completed trials indexed · Updated monthly
+        Clinical evidence synthesis · Powered by ClinicalTrials.gov · 63,394 trials indexed
       </footer>
     </div>
   );
