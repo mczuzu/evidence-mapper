@@ -252,7 +252,7 @@ const Index = () => {
                 ) : (
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
-                Try: Heart failure · SGLT2 inhibitors · Cardiovascular outcomes
+                Try: Heart Failure · Empagliflozin · Cardiovascular outcomes
               </button>
             </div>
 
