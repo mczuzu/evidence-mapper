@@ -531,7 +531,7 @@ export function SearchBuilder({ value, onChange, objective }: SearchBuilderProps
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiApplied, setAiApplied] = useState(false);
 
-  const rows = value.rows;
+  const rows = (value.rows ?? []).filter((r): r is SearchRow => Boolean(r));
   const setRows = (rows: SearchRow[]) => onChange({ rows });
 
   const addRow = () => setRows([...rows, { id: ++rowId, type: "freetext", terms: [], operator: "AND" }]);
