@@ -44,7 +44,7 @@ async function fetchTotalCount(params: {
 
 export function useSearchCounts({ search }: { search: SearchInput }) {
   return useQuery({
-    queryKey: ["search-counts", search.rows.map((r) => `${r.type}:${r.terms.join(",")}:${r.operator}`)],
+    queryKey: ["search-counts", search.rows.filter(Boolean).map((r) => `${r.type}:${r.terms.join(",")}:${r.operator}`)],
     queryFn: async (): Promise<SearchCounts> => {
       if (!isSearchActive(search)) {
         return { intersectionTotal: 0, finalNctIds: [], rowCounts: [] };
