@@ -44,17 +44,18 @@ async function fetchTotalCount(params: {
 
 export function useSearchCounts({ search }: { search: SearchInput }) {
   return useQuery({
-    queryKey: ["search-counts", search.rows.map((r) => `${r.type}:${r.terms.join(",")}:${r.operator}`)],
+    queryKey: ["search-counts", search.rows.filter(Boolean).map((r) => `${r.type}:${r.terms.join(",")}:${r.operator}`)],
     queryFn: async (): Promise<SearchCounts> => {
-      if (!isSearchActive(search)) {
+      const activeRows = search.rows.filter(Boolean);
+      if (!isSearchActive({ rows: activeRows })) {
         return { intersectionTotal: 0, finalNctIds: [], rowCounts: [] };
       }
 
-      const allTerms = termsByType(search.rows);
+      const allTerms = termsByType(activeRows);
       const intersectionTotal = await fetchTotalCount(allTerms);
 
       const rowCounts = await Promise.all(
-        search.rows
+        activeRows
           .filter((r) => r.terms.length > 0)
           .map(async (row) => {
             const singleRowTerms = termsByType([row]);
