@@ -21,7 +21,7 @@ export function Header() {
             Evidence Mapper
           </button>
           <p className="text-sm text-muted-foreground">
-            Pipeline intelligence for R&D teams
+            Clinical evidence synthesis tool
           </p>
         </div>
       </div>
