@@ -643,28 +643,6 @@ STRICT FORMATTING RULES
 `.trim()
 }
 
-function buildUserPrompt(
-  payload: PayloadStudy[],
-  objective: string,
-  searchMeta: SearchMeta | null,
-  evidenceWeight: ReturnType<typeof buildEvidenceWeight>,
-  profiling: PayloadProfiling,
-  gapProxies: GapProxy[],
-) {
-  return {
-    prompt_version: PROMPT_VERSION,
-    schema_version: SCHEMA_VERSION,
-    generated_at: new Date().toISOString(),
-    objective,
-    task: `Analyze what the evidence says about this objective: "${objective}". Use profiling and gap_proxies to enrich your analysis with quantitative context. Follow the exact output structure from the system prompt.`,
-    search_meta: searchMeta ?? undefined,
-    evidence_weight: evidenceWeight,
-    profiling,
-    gap_proxies: gapProxies,
-    payload,
-  }
-}
-
 /* =========================
    OpenAI
 ========================= */
@@ -809,7 +787,18 @@ Deno.serve(async (req) => {
 
     // 6) Call OpenAI
     const systemPrompt = buildSystemPrompt(lang)
-    const userPrompt = buildUserPrompt(payload, objective, searchMeta, evidenceWeight, profiling, gapProxies)
+    const userPrompt = {
+      prompt_version: PROMPT_VERSION,
+      schema_version: SCHEMA_VERSION,
+      generated_at: new Date().toISOString(),
+      objective,
+      task: `Analyze what the evidence says about this objective: "${objective}". Use profiling and gap_proxies to enrich your analysis with quantitative context. Follow the exact output structure from the system prompt.`,
+      search_meta: searchMeta ?? undefined,
+      evidence_weight: evidenceWeight,
+      profiling,
+      gap_proxies: gapProxies,
+      payload,
+    }
     const openai = await callOpenAI(openaiApiKey, systemPrompt, userPrompt)
 
     if (!openai.ok) return json({ error: "OpenAI call failed", status: openai.status, details: openai.details }, 502)
