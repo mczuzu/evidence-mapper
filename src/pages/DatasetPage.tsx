@@ -30,8 +30,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useStudies, useAllStudyIds } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
 import { paramsToSearch, searchToParams } from "@/types/search";
-import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_KEY } from "@/lib/supabase-external";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  supabaseExternalPublic,
+  supabaseExternalFunctions,
+  EXTERNAL_SUPABASE_URL,
+  EXTERNAL_SUPABASE_ANON_KEY,
+} from "@/lib/supabase-external";
 import { toast } from "sonner";
 import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
 import { RankingModal } from "@/components/ranking/RankingModal";
@@ -446,7 +450,7 @@ const DatasetPage = () => {
         requestBody.context = context;
       }
 
-      const { data: result, error } = await supabase.functions.invoke("analyze-direction", {
+      const { data: result, error } = await supabaseExternalFunctions.functions.invoke("analyze-direction", {
         body: requestBody,
       });
 
