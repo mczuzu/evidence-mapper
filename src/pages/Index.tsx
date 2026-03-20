@@ -252,7 +252,7 @@ const Index = () => {
                 ) : (
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
-                Try: Heart Failure · Empagliflozin · Cardiovascular outcomes
+                Try: Anxiety Disorders · Mindfulness · Mental health
               </button>
             </div>
 
