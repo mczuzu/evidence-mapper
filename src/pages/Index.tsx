@@ -345,7 +345,7 @@ const Index = () => {
                     className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-foreground text-background px-5 py-3 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Sparkles className="h-4 w-4" />
-                    Remove noise with AI →
+                    Filter by relevance to my objective →
                   </button>
                   <button
                     onClick={() => {
@@ -408,7 +408,7 @@ const Index = () => {
               </div>
 
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Clicking 'Remove noise with AI' starts Process 2: AI will read each abstract and keep only the studies that actually answer your objective.
+                Clicking 'Filter by relevance to my objective' starts Process 2: AI will read each abstract and keep only the studies that actually answer your objective.
               </p>
 
               <div className="flex items-center gap-3 flex-wrap">
@@ -417,7 +417,7 @@ const Index = () => {
                   className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium transition-colors"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Remove noise with AI →
+                  Filter by relevance to my objective →
                 </button>
                 <button
                   onClick={handleViewDataset}
