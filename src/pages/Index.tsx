@@ -408,7 +408,7 @@ const Index = () => {
               </div>
 
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Clicking 'Remove noise with AI' starts Process 2: AI will read each abstract and keep only the studies that actually answer your objective.
+                Clicking 'Filter by relevance to my objective' starts Process 2: AI will read each abstract and keep only the studies that actually answer your objective.
               </p>
 
               <div className="flex items-center gap-3 flex-wrap">
