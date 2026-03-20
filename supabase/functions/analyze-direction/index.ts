@@ -512,21 +512,21 @@ function toPayloadFromRich(s: RichStudy): PayloadStudy {
 /* =========================
    Prompt
 ========================= */
-const PROMPT_VERSION = "direction-v5-entrepreneur"
+const PROMPT_VERSION = "direction-v4-profiled"
 const SCHEMA_VERSION = "S3"
 
 function buildSystemPrompt(lang: "es" | "en") {
   const isEs = lang === "es"
 
   const labels = {
-    science: isEs ? "¿Qué dice la ciencia?" : "What does the science say?",
-    confidence: isEs ? "¿Qué sabemos con confianza vs. qué falta?" : "What do we know with confidence vs. what's missing?",
-    verdict: isEs ? "¿Tiene sentido construir aquí?" : "Does it make sense to build here?",
-    solid: isEs ? "Con confianza" : "With confidence",
-    unclear: isEs ? "Menos claro" : "Less clear",
-    yes: isEs ? "Sí" : "Yes",
-    conditions: isEs ? "Con condiciones" : "With conditions",
-    notyet: isEs ? "No todavía" : "Not yet",
+    science:    isEs ? "¿Qué dice la ciencia?"                        : "What does the science say?",
+    confidence: isEs ? "¿Qué sabemos con confianza vs. qué falta?"    : "What do we know with confidence vs. what's missing?",
+    verdict:    isEs ? "¿Tiene sentido construir aquí?"                : "Does it make sense to build here?",
+    solid:      isEs ? "Con confianza"                                 : "With confidence",
+    unclear:    isEs ? "Menos claro"                                   : "Less clear",
+    yes:        isEs ? "Sí"                                            : "Yes",
+    conditions: isEs ? "Con condiciones"                               : "With conditions",
+    notyet:     isEs ? "No todavía"                                    : "Not yet",
   }
 
   return `
@@ -540,7 +540,7 @@ Return VALID JSON only. No markdown fences, no backticks, no extra keys.
 Exact output shape:
 {
   "direction_text": "<string>",
-  "next_steps_text": "",
+  "next_steps_text": "<string>",
   "confidence": "low" | "medium"
 }
 
@@ -555,7 +555,7 @@ DIRECTION_TEXT — 3 sections
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 **${labels.science}**
-- ${isEs ? "Empieza con" : "Open with"}: "${isEs ? "Basado en" : "Based on"} [N] ${isEs ? "estudios analizados" : "studies analyzed"} ([${isEs ? "distribución de fases" : "phase distribution"}: ${isEs ? "ej. mayoría Fase II-III" : "e.g. mostly Phase II-III"}]), ${isEs ? "los ensayos exploran..." : "trials explore..."}"
+- ${isEs ? "Empieza con" : "Open with"}: "${isEs ? "Basado en" : "Based on"} [N] ${isEs ? "estudios analizados" : "studies analyzed"} ([${isEs ? "distribución de fases" : "phase distribution"}: ${isEs ? "ej. mayoría Fase II-III" : "e.g. mostly Phase II-III"}])${isEs ? ", los ensayos exploran..." : ", trials explore..."}"
 - [${isEs ? "Qué intervenciones aparecen con más frecuencia" : "Which interventions appear most often"}]
 - [${isEs ? "Qué outcomes miden y qué resultados encuentran" : "What outcomes are measured and what results are found"}]
 - [${isEs ? "Si hay señal consistente o los resultados son dispersos" : "Whether there is a consistent signal or results are scattered"}]
@@ -606,12 +606,13 @@ async function callOpenAI(openaiApiKey: string, systemPrompt: string, userPrompt
   const controller = new AbortController()
   const t = setTimeout(() => controller.abort("timeout"), 90_000)
   try {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       signal: controller.signal,
       headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: "gpt-4.1-mini",
+        temperature: 0.2,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt },
@@ -627,19 +628,18 @@ async function callOpenAI(openaiApiKey: string, systemPrompt: string, userPrompt
     const content = out?.choices?.[0]?.message?.content
     if (!content) return { ok: false as const, status: 502, details: "Empty OpenAI response" }
 
-    const parsed = JSON.parse(content) as Partial<SimpleAnalysis>
+    const parsed = JSON.parse(content) as SimpleAnalysis
 
-    if (typeof parsed?.direction_text !== "string") {
+    // Permissive validation — only require the two text fields
+    if (typeof parsed?.direction_text !== "string" || typeof parsed?.next_steps_text !== "string") {
       return { ok: false as const, status: 502, details: "Invalid JSON shape from model" }
     }
-
-    const normalized: SimpleAnalysis = {
-      direction_text: parsed.direction_text,
-      next_steps_text: "",
-      confidence: parsed.confidence === "medium" ? "medium" : "low",
+    // Normalize confidence — model sometimes returns "high" or other values
+    if (!["low", "medium"].includes(parsed.confidence)) {
+      parsed.confidence = "medium"
     }
 
-    return { ok: true as const, parsed: normalized }
+    return { ok: true as const, parsed }
   } catch (e) {
     return { ok: false as const, status: 502, details: String(e) }
   } finally {
@@ -665,15 +665,15 @@ Deno.serve(async (req) => {
     if (!objective) return json({ error: "Missing objective" }, 400)
     if (nctIds.length > 200) return json({ error: "Too many nct_ids (max 200)" }, 400)
 
-    const dataSupabaseUrl = Deno.env.get("VITE_EXTERNAL_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL")
-    const dataSupabaseKey = Deno.env.get("VITE_EXTERNAL_SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")
-    const openaiApiKey = Deno.env.get("LOVABLE_API_KEY")
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    const openaiApiKey = Deno.env.get("OPENAI_API_KEY")
 
-    if (!dataSupabaseUrl || !dataSupabaseKey) return json({ error: "Missing data source env vars" }, 500)
-    if (!openaiApiKey) return json({ error: "Missing LOVABLE_API_KEY" }, 500)
+    if (!supabaseUrl || !serviceRoleKey) return json({ error: "Missing Supabase env vars" }, 500)
+    if (!openaiApiKey) return json({ error: "Missing OPENAI_API_KEY" }, 500)
 
     const lang = detectLanguage(objective)
-    const supabase = createClient(dataSupabaseUrl, dataSupabaseKey)
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // 1) DB fetch
     const dbRes = await fetchStudiesFromDB(supabase, nctIds)
@@ -743,18 +743,7 @@ Deno.serve(async (req) => {
 
     // 6) Call OpenAI
     const systemPrompt = buildSystemPrompt(lang)
-    const userPrompt = {
-      prompt_version: PROMPT_VERSION,
-      schema_version: SCHEMA_VERSION,
-      generated_at: new Date().toISOString(),
-      objective,
-      task: `Analyze what the evidence says about this objective: "${objective}". Use profiling and gap_proxies to enrich your analysis with quantitative context. Follow the exact output structure from the system prompt.`,
-      search_meta: searchMeta ?? undefined,
-      evidence_weight: evidenceWeight,
-      profiling,
-      gap_proxies: gapProxies,
-      payload,
-    }
+    const userPrompt = buildUserPrompt(payload, objective, searchMeta, evidenceWeight, profiling, gapProxies)
     const openai = await callOpenAI(openaiApiKey, systemPrompt, userPrompt)
 
     if (!openai.ok) return json({ error: "OpenAI call failed", status: openai.status, details: openai.details }, 502)
