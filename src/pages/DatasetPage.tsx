@@ -31,6 +31,7 @@ import { useStudies, useAllStudyIds } from "@/hooks/useStudies";
 import { useDatasetStudiesByIds } from "@/hooks/useDatasetStudies";
 import { paramsToSearch, searchToParams } from "@/types/search";
 import { supabaseExternalPublic, EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON_KEY } from "@/lib/supabase-external";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnalysisModal, AnalysisContext } from "@/components/analysis/AnalysisModal";
 import { RankingModal } from "@/components/ranking/RankingModal";
@@ -445,20 +446,11 @@ const DatasetPage = () => {
         requestBody.context = context;
       }
 
-      const url = `${EXTERNAL_SUPABASE_URL}/functions/v1/analyze-direction`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          apikey: EXTERNAL_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${EXTERNAL_SUPABASE_ANON_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
+      const { data: result, error } = await supabase.functions.invoke("analyze-direction", {
+        body: requestBody,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) throw { message: "Analysis failed", details: result?.error || `HTTP ${response.status}` };
+      if (error) throw { message: "Analysis failed", details: error.message };
       if (!result) throw { message: "No data returned from analysis" };
       if (typeof result.db_error === "string" && result.db_error)
         throw { message: "Database error", details: result.db_error };
