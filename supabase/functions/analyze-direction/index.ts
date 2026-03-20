@@ -643,28 +643,6 @@ STRICT FORMATTING RULES
 `.trim()
 }
 
-function buildUserPrompt(
-  payload: PayloadStudy[],
-  objective: string,
-  searchMeta: SearchMeta | null,
-  evidenceWeight: ReturnType<typeof buildEvidenceWeight>,
-  profiling: PayloadProfiling,
-  gapProxies: GapProxy[],
-) {
-  return {
-    prompt_version: PROMPT_VERSION,
-    schema_version: SCHEMA_VERSION,
-    generated_at: new Date().toISOString(),
-    objective,
-    task: `Analyze what the evidence says about this objective: "${objective}". Use profiling and gap_proxies to enrich your analysis with quantitative context. Follow the exact output structure from the system prompt.`,
-    search_meta: searchMeta ?? undefined,
-    evidence_weight: evidenceWeight,
-    profiling,
-    gap_proxies: gapProxies,
-    payload,
-  }
-}
-
 /* =========================
    OpenAI
 ========================= */
@@ -672,13 +650,12 @@ async function callOpenAI(openaiApiKey: string, systemPrompt: string, userPrompt
   const controller = new AbortController()
   const t = setTimeout(() => controller.abort("timeout"), 90_000)
   try {
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       signal: controller.signal,
       headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        temperature: 0.2,
+        model: "openai/gpt-5-mini",
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt },
@@ -731,15 +708,15 @@ Deno.serve(async (req) => {
     if (!objective) return json({ error: "Missing objective" }, 400)
     if (nctIds.length > 200) return json({ error: "Too many nct_ids (max 200)" }, 400)
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY")
+    const dataSupabaseUrl = Deno.env.get("VITE_EXTERNAL_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL")
+    const dataSupabaseKey = Deno.env.get("VITE_EXTERNAL_SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")
+    const openaiApiKey = Deno.env.get("LOVABLE_API_KEY")
 
-    if (!supabaseUrl || !serviceRoleKey) return json({ error: "Missing Supabase env vars" }, 500)
-    if (!openaiApiKey) return json({ error: "Missing OPENAI_API_KEY" }, 500)
+    if (!dataSupabaseUrl || !dataSupabaseKey) return json({ error: "Missing data source env vars" }, 500)
+    if (!openaiApiKey) return json({ error: "Missing LOVABLE_API_KEY" }, 500)
 
     const lang = detectLanguage(objective)
-    const supabase = createClient(supabaseUrl, serviceRoleKey)
+    const supabase = createClient(dataSupabaseUrl, dataSupabaseKey)
 
     // 1) DB fetch
     const dbRes = await fetchStudiesFromDB(supabase, nctIds)
@@ -809,7 +786,18 @@ Deno.serve(async (req) => {
 
     // 6) Call OpenAI
     const systemPrompt = buildSystemPrompt(lang)
-    const userPrompt = buildUserPrompt(payload, objective, searchMeta, evidenceWeight, profiling, gapProxies)
+    const userPrompt = {
+      prompt_version: PROMPT_VERSION,
+      schema_version: SCHEMA_VERSION,
+      generated_at: new Date().toISOString(),
+      objective,
+      task: `Analyze what the evidence says about this objective: "${objective}". Use profiling and gap_proxies to enrich your analysis with quantitative context. Follow the exact output structure from the system prompt.`,
+      search_meta: searchMeta ?? undefined,
+      evidence_weight: evidenceWeight,
+      profiling,
+      gap_proxies: gapProxies,
+      payload,
+    }
     const openai = await callOpenAI(openaiApiKey, systemPrompt, userPrompt)
 
     if (!openai.ok) return json({ error: "OpenAI call failed", status: openai.status, details: openai.details }, 502)
