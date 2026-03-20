@@ -425,7 +425,7 @@ function buildEvidenceWeight(
 /* =========================
    Storage fallback
 ========================= */
-async function downloadRichJSON(supabase: ReturnType<typeof createClient>, bucket: string, nctId: string) {
+async function downloadRichJSON(supabase: any, bucket: string, nctId: string) {
   const candidates = [`${nctId}.json`, `rich_out/${nctId}.json`]
   for (const path of candidates) {
     const { data, error } = await supabase.storage.from(bucket).download(path)
@@ -440,7 +440,7 @@ async function downloadRichJSON(supabase: ReturnType<typeof createClient>, bucke
 /* =========================
    DB fetch
 ========================= */
-async function fetchStudiesFromDB(supabase: ReturnType<typeof createClient>, nctIds: string[]) {
+async function fetchStudiesFromDB(supabase: any, nctIds: string[]) {
   const db = supabase.schema("em")
 
   const { data: idx, error: idxErr } = await db
@@ -600,8 +600,34 @@ STRICT RULES
 }
 
 /* =========================
-   OpenAI
+   User Prompt Builder
 ========================= */
+function buildUserPrompt(
+  payload: PayloadStudy[],
+  objective: string,
+  searchMeta: SearchMeta | null,
+  evidenceWeight: ReturnType<typeof buildEvidenceWeight>,
+  profiling: PayloadProfiling,
+  gapProxies: GapProxy[],
+) {
+  return {
+    objective,
+    search_meta: searchMeta,
+    evidence_weight: evidenceWeight,
+    profiling,
+    gap_proxies: gapProxies,
+    studies: payload.map((s) => ({
+      nct_id: s.nct_id,
+      brief_title: s.brief_title,
+      official_title: s.official_title,
+      brief_summary: s.brief_summary,
+      conditions: s.conditions,
+      enrollment: s.enrollment,
+      primary_outcomes: s.primary_outcomes,
+    })),
+  }
+}
+
 async function callOpenAI(openaiApiKey: string, systemPrompt: string, userPrompt: unknown) {
   const controller = new AbortController()
   const t = setTimeout(() => controller.abort("timeout"), 90_000)

@@ -30,7 +30,7 @@ async function safeReadJson(req: Request): Promise<any | null> {
   }
 }
 
-async function downloadFromRichBucket(supabase: ReturnType<typeof createClient>, nctId: string) {
+async function downloadFromRichBucket(supabase: any, nctId: string) {
   const bucket = "rich";
   const candidates = [`${nctId}.json`, `rich_out/${nctId}.json`];
 
