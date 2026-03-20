@@ -600,8 +600,34 @@ STRICT RULES
 }
 
 /* =========================
-   OpenAI
+   User Prompt Builder
 ========================= */
+function buildUserPrompt(
+  payload: PayloadStudy[],
+  objective: string,
+  searchMeta: SearchMeta | null,
+  evidenceWeight: ReturnType<typeof buildEvidenceWeight>,
+  profiling: PayloadProfiling,
+  gapProxies: GapProxy[],
+) {
+  return {
+    objective,
+    search_meta: searchMeta,
+    evidence_weight: evidenceWeight,
+    profiling,
+    gap_proxies: gapProxies,
+    studies: payload.map((s) => ({
+      nct_id: s.nct_id,
+      brief_title: s.brief_title,
+      official_title: s.official_title,
+      brief_summary: s.brief_summary,
+      conditions: s.conditions,
+      enrollment: s.enrollment,
+      primary_outcomes: s.primary_outcomes,
+    })),
+  }
+}
+
 async function callOpenAI(openaiApiKey: string, systemPrompt: string, userPrompt: unknown) {
   const controller = new AbortController()
   const t = setTimeout(() => controller.abort("timeout"), 90_000)
