@@ -425,7 +425,7 @@ function buildEvidenceWeight(
 /* =========================
    Storage fallback
 ========================= */
-async function downloadRichJSON(supabase: ReturnType<typeof createClient>, bucket: string, nctId: string) {
+async function downloadRichJSON(supabase: any, bucket: string, nctId: string) {
   const candidates = [`${nctId}.json`, `rich_out/${nctId}.json`]
   for (const path of candidates) {
     const { data, error } = await supabase.storage.from(bucket).download(path)
