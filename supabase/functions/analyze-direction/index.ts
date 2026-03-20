@@ -650,12 +650,12 @@ async function callOpenAI(openaiApiKey: string, systemPrompt: string, userPrompt
   const controller = new AbortController()
   const t = setTimeout(() => controller.abort("timeout"), 90_000)
   try {
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       signal: controller.signal,
       headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4.1-mini",
+        model: "openai/gpt-5-mini",
         temperature: 0.2,
         response_format: { type: "json_object" },
         messages: [
@@ -711,10 +711,10 @@ Deno.serve(async (req) => {
 
     const dataSupabaseUrl = Deno.env.get("VITE_EXTERNAL_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL")
     const dataSupabaseKey = Deno.env.get("VITE_EXTERNAL_SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY")
+    const openaiApiKey = Deno.env.get("LOVABLE_API_KEY")
 
     if (!dataSupabaseUrl || !dataSupabaseKey) return json({ error: "Missing data source env vars" }, 500)
-    if (!openaiApiKey) return json({ error: "Missing OPENAI_API_KEY" }, 500)
+    if (!openaiApiKey) return json({ error: "Missing LOVABLE_API_KEY" }, 500)
 
     const lang = detectLanguage(objective)
     const supabase = createClient(dataSupabaseUrl, dataSupabaseKey)
