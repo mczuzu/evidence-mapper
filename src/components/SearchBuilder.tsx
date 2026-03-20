@@ -197,7 +197,7 @@ function GuidedField({
 
   const addTerm = (name: string) => {
     if (name && !terms.map((t) => t.toLowerCase()).includes(name.toLowerCase())) onAdd(name);
-    // No reseteamos query — la lista se queda donde está
+    setQuery("");
     inputRef.current?.focus();
   };
 
