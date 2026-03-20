@@ -572,7 +572,7 @@ const DatasetPage = () => {
               variant="default"
               className="gap-2"
             >
-              <Sparkles className="h-4 w-4" /> Remove noise with AI →
+              <Sparkles className="h-4 w-4" /> Filter by relevance to my objective →
             </Button>
              <Button
                onClick={() => setFilterMethod("manual")}

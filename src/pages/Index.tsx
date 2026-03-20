@@ -417,7 +417,7 @@ const Index = () => {
                   className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-5 py-2.5 text-sm font-medium transition-colors"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Remove noise with AI →
+                  Filter by relevance to my objective →
                 </button>
                 <button
                   onClick={handleViewDataset}
