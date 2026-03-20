@@ -512,7 +512,7 @@ function toPayloadFromRich(s: RichStudy): PayloadStudy {
 /* =========================
    Prompt
 ========================= */
-const PROMPT_VERSION = "direction-v4-profiled"
+const PROMPT_VERSION = "direction-v5-entrepreneur"
 const SCHEMA_VERSION = "S3"
 
 function buildSystemPrompt(lang: "es" | "en") {
