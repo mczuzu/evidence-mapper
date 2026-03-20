@@ -1,12 +1,12 @@
 import { SearchInput, searchToParams } from "@/types/search";
 
 export const EXAMPLE_OBJECTIVE =
-  "What does the evidence say about empagliflozin for cardiovascular outcomes in heart failure patients?";
+  "Is there enough evidence on mindfulness-based interventions for anxiety to build a digital mental health app?";
 
 export const EXAMPLE_SEARCH: SearchInput = {
   rows: [
-    { id: 1, type: "condition", terms: ["Heart Failure"], operator: "AND" },
-    { id: 2, type: "intervention", terms: ["Empagliflozin"], operator: "AND" },
+    { id: 1, type: "condition", terms: ["Anxiety Disorders", "Generalized Anxiety Disorder", "Anxiety, Separation", "Mental Disorders"], operator: "AND" },
+    { id: 2, type: "intervention", terms: ["Mindfulness"], operator: "AND" },
   ],
 };
 
