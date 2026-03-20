@@ -529,12 +529,14 @@ const AnalysisPage = () => {
                       </Card>
 
                       {/* Next steps */}
-                      <Card>
-                        <CardContent className="pt-6 space-y-3">
-                          <div className="text-base font-semibold text-foreground">Opportunities & next steps</div>
-                          <MarkdownText>{nextStepsText}</MarkdownText>
-                        </CardContent>
-                      </Card>
+                      {nextStepsText ? (
+                        <Card>
+                          <CardContent className="pt-6 space-y-3">
+                            <div className="text-base font-semibold text-foreground">Opportunities & next steps</div>
+                            <MarkdownText>{nextStepsText}</MarkdownText>
+                          </CardContent>
+                        </Card>
+                      ) : null}
                     </>
                   )}
                 </div>
