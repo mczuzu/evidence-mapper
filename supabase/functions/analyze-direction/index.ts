@@ -440,7 +440,7 @@ async function downloadRichJSON(supabase: any, bucket: string, nctId: string) {
 /* =========================
    DB fetch
 ========================= */
-async function fetchStudiesFromDB(supabase: ReturnType<typeof createClient>, nctIds: string[]) {
+async function fetchStudiesFromDB(supabase: any, nctIds: string[]) {
   const db = supabase.schema("em")
 
   const { data: idx, error: idxErr } = await db
