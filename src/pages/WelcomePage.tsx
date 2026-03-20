@@ -6,18 +6,18 @@ const EXAMPLE_URL = "/search?tryExample=1";
 const valueProps = [
   {
     icon: Clock,
-    title: "Minutes, not hours",
-    body: "Get a full evidence landscape and gap analysis in under 10 minutes. No manual abstract screening required.",
+    title: "Minutes, not weeks",
+    body: "Get a full evidence landscape and AI-scored analysis in under 10 minutes. What used to require a consultant now takes a search.",
   },
   {
     icon: Target,
-    title: "Question-specific, not generic",
-    body: "Every Evidence Mapper analysis is scored against your exact research question. The output is yours, not a template.",
+    title: "Scored against your hypothesis",
+    body: "Every analysis is scored against your exact product question. You get a specific answer, not a generic literature review.",
   },
   {
     icon: Zap,
-    title: "Self-serve evidence synthesis",
-    body: "Run as many analyses as you need, on any condition, any intervention, any phase. No setup required.",
+    title: "Know before you build",
+    body: "Understand the evidence base, the gaps, and the phase maturity before committing to a roadmap. Reduce the risk of building on weak science.",
   },
 ];
 
@@ -39,12 +39,12 @@ const WelcomePage = () => {
           className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-white leading-tight max-w-3xl"
           style={{ lineHeight: 1.15 }}
         >
-          Explore the clinical evidence base for any condition and intervention
+          Find out if the science supports your digital health idea
         </h1>
 
         <p className="mt-6 text-base md:text-lg leading-relaxed max-w-[520px]" style={{ color: "#888" }}>
           Search, filter and AI-score 63,000+ completed clinical trials against
-          your specific research question — in minutes.
+          your product hypothesis — in minutes.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-3">
@@ -68,10 +68,10 @@ const WelcomePage = () => {
       <section className="bg-white px-6" style={{ paddingTop: 80, paddingBottom: 80 }}>
         <div className="max-w-[900px] mx-auto">
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-center" style={{ color: "#0a0a0a" }}>
-            Two processes. One answer.
+            Two steps. One answer.
           </h2>
           <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
-            Structured PICO search + AI relevance scoring. No setup required.
+            Structured search + AI relevance scoring. No setup required.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-14">
@@ -81,22 +81,20 @@ const WelcomePage = () => {
                 01
               </span>
               <h3 className="mt-4 font-serif text-xl font-bold" style={{ color: "#0a0a0a" }}>
-                Map the competitive landscape
+                Map what's already been tried
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#555" }}>
-                Search 63,000+ completed trials by indication, intervention and phase
+                Search 63,000+ completed trials by condition, intervention and phase
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#ddd" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#666" }}>
-                Filter by condition, intervention, trial phase and date range
-                across all ClinicalTrials.gov completed data. Get the full picture
-                of what's been tried, by whom, and when.
+                Filter across all ClinicalTrials.gov completed data by condition, intervention, trial phase and date range. Get the full picture of what's been studied, at what scale, and with what results.
               </p>
               <span
                 className="mt-6 inline-flex self-start items-center rounded-full border px-3 py-1 text-xs font-semibold"
                 style={{ borderColor: "rgb(180 83 9 / 0.3)", backgroundColor: "rgb(180 83 9 / 0.1)", color: "rgb(180 83 9)" }}
               >
-                Competitive landscape
+                Evidence landscape
               </span>
             </div>
 
@@ -106,17 +104,14 @@ const WelcomePage = () => {
                 02
               </span>
               <h3 className="mt-4 font-serif text-xl font-bold text-white">
-                Get the signal, not the noise
+                Get the answer to your specific question
               </h3>
               <p className="mt-1 text-sm font-medium" style={{ color: "#888" }}>
-                AI scores every trial against your specific research question
+                AI scores every trial against your product hypothesis
               </p>
               <div className="my-5 border-t" style={{ borderColor: "#333" }} />
               <p className="text-sm leading-relaxed flex-1" style={{ color: "#aaa" }}>
-                Most searches return irrelevant results. Evidence Mapper reads
-                every abstract, scores each trial 0–10 against your research question,
-                and identifies intervention clusters, evidence gaps, and white space
-                opportunities.
+                Most searches return noise. Evidence Mapper reads every abstract, scores each trial against your exact question, and tells you whether the evidence supports building — and where the gaps are.
               </p>
               <span className="mt-6 inline-flex self-start items-center rounded-full px-3 py-1 text-xs font-semibold bg-indigo text-indigo-foreground">
                 Evidence signal · Gap analysis
@@ -130,10 +125,10 @@ const WelcomePage = () => {
       <section className="px-6" style={{ backgroundColor: "#f9f9f9", paddingTop: 60, paddingBottom: 60 }}>
         <div className="max-w-[800px] mx-auto">
           <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center" style={{ color: "#0a0a0a" }}>
-            What used to take hours, now takes minutes
+            Built for product people, not researchers
           </h2>
           <p className="mt-3 text-center text-base" style={{ color: "#888" }}>
-            No manual screening. No generic reports. No waiting.
+            No academic training required. No manual screening. No waiting.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
@@ -156,7 +151,7 @@ const WelcomePage = () => {
       <section className="px-6" style={{ backgroundColor: "#0a0a0a", paddingTop: 60, paddingBottom: 60 }}>
         <div className="max-w-[800px] mx-auto">
           <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center text-white">
-            What used to take hours, now takes minutes
+            From idea to evidence signal in minutes
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 mt-12 rounded-xl overflow-hidden border" style={{ borderColor: "#222" }}>
@@ -165,23 +160,23 @@ const WelcomePage = () => {
               <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#666" }}>Before</span>
               <div className="space-y-5">
                 <div>
-                  <p className="text-sm font-medium text-white/70">Manual review</p>
+                  <p className="text-sm font-medium text-white/70">Manual search</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
-                    Analyst manually reviews hundreds of abstracts
+                    Hours reviewing abstracts one by one across multiple databases
                   </p>
                 </div>
                 <div style={{ borderTop: "1px solid #222" }} />
                 <div>
                   <p className="text-sm font-medium text-white/70">Generic output</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
-                    Consultant delivers generic landscape report in 3 weeks
+                    Consultant delivers a landscape report in 3 weeks that doesn't answer your specific question
                   </p>
                 </div>
                 <div style={{ borderTop: "1px solid #222" }} />
                 <div>
-                  <p className="text-sm font-medium text-white/70">Time-consuming</p>
+                  <p className="text-sm font-medium text-white/70">No signal</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
-                    Hours manually reviewing abstracts one by one
+                    You still don't know if the science supports your idea
                   </p>
                 </div>
               </div>
@@ -194,21 +189,21 @@ const WelcomePage = () => {
                 <div>
                   <p className="text-sm font-medium text-white">AI reads every abstract</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
-                    Automatically, in minutes
+                    Automatically scored against your product hypothesis, in minutes
                   </p>
                 </div>
                 <div style={{ borderTop: "1px solid #222" }} />
                 <div>
-                  <p className="text-sm font-medium text-white">Scored against YOUR question</p>
+                  <p className="text-sm font-medium text-white">Specific to your question</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
-                    You get a report in under 10 minutes
+                    You get a structured report answering exactly what you asked
                   </p>
                 </div>
                 <div style={{ borderTop: "1px solid #222" }} />
                 <div>
-                  <p className="text-sm font-medium text-white">AI pre-screens every abstract automatically</p>
+                  <p className="text-sm font-medium text-white">Clear verdict</p>
                   <p className="text-xs leading-relaxed mt-1" style={{ color: "#888" }}>
-                    Results in minutes
+                    Yes / With conditions / Not yet — with the evidence behind it
                   </p>
                 </div>
               </div>
@@ -227,7 +222,7 @@ const WelcomePage = () => {
             Evidence Mapper is a hands-on learning project, not a production product.
             I built it to develop practical skills I wanted to understand deeply as a
             digital health PM: ETL pipelines from public health datasets, AI-powered
-            relevance scoring, and product design for clinical workflows.
+            relevance scoring, and product design for evidence workflows.
           </p>
 
           <h3 className="mt-8 text-sm font-semibold" style={{ color: "#0a0a0a" }}>
@@ -240,7 +235,7 @@ const WelcomePage = () => {
             </li>
             <li className="flex gap-2">
               <span style={{ color: "#999" }}>•</span>
-              MeSH-indexed PICO search with condition autocomplete and server-side pagination
+              MeSH-indexed PICO search with condition autocomplete, free-text keyword tags, and server-side pagination
             </li>
             <li className="flex gap-2">
               <span style={{ color: "#999" }}>•</span>
@@ -248,7 +243,15 @@ const WelcomePage = () => {
             </li>
             <li className="flex gap-2">
               <span style={{ color: "#999" }}>•</span>
-              6-step guided UX wizard with persistent state, live PubMed enrichment, and PDF export
+              Three-tier filtering pipeline (Bronze → Silver → Gold) to progressively reduce noise before the LLM analysis
+            </li>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              Human-in-the-loop study selection for expert users who want to review studies before generating the report
+            </li>
+            <li className="flex gap-2">
+              <span style={{ color: "#999" }}>•</span>
+              6-step guided UX wizard with persistent state and PDF export
             </li>
           </ul>
 
@@ -256,38 +259,51 @@ const WelcomePage = () => {
             What I learned
           </h3>
           <p className="mt-3 text-sm leading-relaxed" style={{ color: "#555" }}>
-            Building this led me to map the competitive landscape in clinical evidence
-            AI — and identify where the real unaddressed gap is. That analysis lives
-            separately as a product strategy case study.
+            Building this surfaced three categories of learning: technical, product, and the limits of public data.
           </p>
+
+          <p className="mt-6 text-sm font-semibold" style={{ color: "#0a0a0a" }}>
+            Technical
+          </p>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: "#555" }}>
+            LLM scoring is non-deterministic. The same set of studies scores differently across runs. Fix: temperature=0, fixed seed, explicit threshold in the prompt — and treating the output as signal, not ground truth.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: "#555" }}>
+            Integrating external APIs is where the real complexity lives, not in the LLM. AACT schema, ClinicalTrials.gov data heterogeneity, and MeSH indexing required more careful handling than the AI layer.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: "#555" }}>
+            Drug class names return zero results. Searching "SGLT2 inhibitors" finds nothing — you need molecule names like "empagliflozin". A production version would map drug classes to molecules automatically.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: "#555" }}>
+            Mechanism questions don't live in trials. "Is there a relationship between hormonal fluctuation and anxiety?" has no answer in ClinicalTrials.gov — only intervention questions do. This is a structural limit of the data source, not a search problem.
+          </p>
+
+          <p className="mt-6 text-sm font-semibold" style={{ color: "#0a0a0a" }}>
+            Product
+          </p>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: "#555" }}>
+            The user defines the value, not the technology. The same dataset produces a useless report or a useful one depending on how the prompt is framed. Rewriting the analysis for an entrepreneur instead of a pharma R&D team changed the entire output — same data, different framing.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: "#555" }}>
+            The real unresolved problem is the gap between scientific signal and commercial decision. Evidence Mapper can tell you the science is promising. It can't tell you whether the market is ready, whether the regulatory path is feasible, or whether the unit economics work. That gap is where the actual product opportunity lives.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: "#555" }}>
+            Public data is enough for an MVP, not enough for a defensible product. 63,000 trials gives you temperature — a sense of direction. A production tool would need published literature (Cochrane, Embase), quality assessment, and risk-of-bias scoring to support decisions with real consequences.
+          </p>
+
+          <p className="mt-6 text-sm font-semibold" style={{ color: "#0a0a0a" }}>
+            On auditability
+          </p>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: "#555" }}>
+            For an entrepreneur making a product bet, seeing the source studies is enough. For decisions with regulatory or clinical consequences — as in Verum — you'd need full traceability of the LLM's reasoning, not just the source data. Evidence Mapper shows you what it analyzed, not how it weighted it.
+          </p>
+
           <a
             href="#"
-            className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-indigo hover:underline"
+            className="inline-flex items-center gap-1 mt-6 text-sm font-medium text-indigo hover:underline"
           >
             → See the strategy case study
           </a>
-
-          <h3 className="mt-8 text-sm font-semibold" style={{ color: "#0a0a0a" }}>
-            Known limitations
-          </h3>
-          <ul className="mt-3 space-y-3 text-sm leading-relaxed" style={{ color: "#555" }}>
-            <li className="flex gap-2">
-              <span style={{ color: "#999" }}>•</span>
-              <span><strong style={{ color: "#0a0a0a" }}>Intervention clustering is approximate.</strong> The AI classifies trials into clusters (pharmacological, behavioral, digital) based on abstract text. Some trials get miscategorised — for example, trials with digital monitoring as a secondary arm may appear in a "digital interventions" cluster even when the primary intervention is pharmacological. A production version would need a structured intervention ontology (e.g. MeSH pharmacological actions) to do this reliably.</span>
-            </li>
-            <li className="flex gap-2">
-              <span style={{ color: "#999" }}>•</span>
-              <span><strong style={{ color: "#0a0a0a" }}>Evidence base is ClinicalTrials.gov only.</strong> The tool searches completed trials, not the full published literature. A proper systematic review would also require Embase, Cochrane, and grey literature sources.</span>
-            </li>
-            <li className="flex gap-2">
-              <span style={{ color: "#999" }}>•</span>
-              <span><strong style={{ color: "#0a0a0a" }}>No quality assessment.</strong> Trials are scored for relevance to the objective, not for methodological quality. There is no risk-of-bias scoring, GRADE assessment, or sample size weighting.</span>
-            </li>
-            <li className="flex gap-2">
-              <span style={{ color: "#999" }}>•</span>
-              <span><strong style={{ color: "#0a0a0a" }}>Intervention search is molecule-level, not class-level.</strong> Searching "SGLT2 inhibitors" returns 0 results — you need to search by molecule name (e.g. "empagliflozin"). A production version would map drug classes to their constituent molecules automatically.</span>
-            </li>
-          </ul>
 
           <div className="mt-8 pt-6" style={{ borderTop: "1px solid #ddd" }}>
             <p className="text-xs" style={{ color: "#999" }}>
