@@ -656,7 +656,6 @@ async function callOpenAI(openaiApiKey: string, systemPrompt: string, userPrompt
       headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "openai/gpt-5-mini",
-        temperature: 0.2,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt },
