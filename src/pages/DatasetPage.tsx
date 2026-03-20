@@ -450,7 +450,7 @@ const DatasetPage = () => {
         requestBody.context = context;
       }
 
-      const { data: result, error } = await supabase.functions.invoke("analyze-direction", {
+      const { data: result, error } = await supabaseExternalFunctions.functions.invoke("analyze-direction", {
         body: requestBody,
       });
 
