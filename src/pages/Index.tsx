@@ -233,7 +233,7 @@ const Index = () => {
             </div>
 
             <Textarea
-              placeholder="E.g.: What does the evidence say about empagliflozin for cardiovascular outcomes in heart failure patients?"
+              placeholder="E.g.: Is there enough evidence on mindfulness-based interventions for anxiety to build a digital mental health app?"
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
               rows={4}
