@@ -450,8 +450,8 @@ const DatasetPage = () => {
         requestBody.context = context;
       }
 
-      const internalUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/analyze-direction`;
-      const internalKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const internalUrl = `https://wspashsznrfzrcapsdoo.supabase.co/functions/v1/analyze-direction`;
+      const internalKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzcGFzaHN6bnJmenJjYXBzZG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxOTQyNDcsImV4cCI6MjA4NDc3MDI0N30.3hi8oXiuXKPIkS2FOP8aRKMJve9_5zfOhABRBhc8Ubw";
       const resp = await fetch(internalUrl, {
         method: "POST",
         headers: {
