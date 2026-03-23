@@ -691,15 +691,15 @@ Deno.serve(async (req) => {
     if (!objective) return json({ error: "Missing objective" }, 400)
     if (nctIds.length > 200) return json({ error: "Too many nct_ids (max 200)" }, 400)
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    const externalUrl = Deno.env.get("VITE_EXTERNAL_SUPABASE_URL")
+    const externalKey = Deno.env.get("VITE_EXTERNAL_SUPABASE_ANON_KEY")
     const openaiApiKey = Deno.env.get("OPENAI_API_KEY")
 
-    if (!supabaseUrl || !serviceRoleKey) return json({ error: "Missing Supabase env vars" }, 500)
+    if (!externalUrl || !externalKey) return json({ error: "Missing external Supabase env vars" }, 500)
     if (!openaiApiKey) return json({ error: "Missing OPENAI_API_KEY" }, 500)
 
     const lang = detectLanguage(objective)
-    const supabase = createClient(supabaseUrl, serviceRoleKey)
+    const supabase = createClient(externalUrl, externalKey)
 
     // 1) DB fetch
     const dbRes = await fetchStudiesFromDB(supabase, nctIds)
