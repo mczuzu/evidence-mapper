@@ -450,9 +450,19 @@ const DatasetPage = () => {
         requestBody.context = context;
       }
 
-      const { data: result, error } = await supabaseExternalFunctions.functions.invoke("analyze-direction", {
-        body: requestBody,
+      const internalUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/analyze-direction`;
+      const internalKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const resp = await fetch(internalUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: internalKey,
+          Authorization: `Bearer ${internalKey}`,
+        },
+        body: JSON.stringify(requestBody),
       });
+      const result = await resp.json();
+      const error = !resp.ok ? { message: result?.error || `HTTP ${resp.status}` } : null;
 
       if (error) throw { message: "Analysis failed", details: error.message };
       if (!result) throw { message: "No data returned from analysis" };
