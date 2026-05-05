@@ -27,6 +27,7 @@ type AnalysisRunRow = {
   dataset_query?: string | null;
   prompt_version?: string | null;
   schema_version?: string | null;
+  cache_key?: string | null;
 };
 
 type DirectionAnalysis = {
