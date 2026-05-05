@@ -548,6 +548,7 @@ const DatasetPage = () => {
         prompt_version: result.prompt_version ?? "v3",
         schema_version: result.schema_version ?? "V3",
         analysis: analysisPayload,
+        cache_key: computeCacheKey(objective || "", available),
       });
 
       if (insertError) throw { message: "Failed to save analysis results", details: insertError.message };
