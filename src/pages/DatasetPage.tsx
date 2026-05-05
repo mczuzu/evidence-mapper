@@ -1144,7 +1144,7 @@ const DatasetPage = () => {
         open={showAnalysisModal}
         onOpenChange={setShowAnalysisModal}
         selectedCount={selectedIds.size}
-        onConfirm={runAnalysis}
+        onConfirm={(ctx) => runAnalysis(ctx, { forceRegenerate: forceRegenerateParam })}
         isLoading={isAnalyzing}
         error={analysisError}
       />
