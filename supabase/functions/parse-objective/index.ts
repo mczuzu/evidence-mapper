@@ -33,6 +33,7 @@ Rules:
 - conditions: include 1-3 terms maximum
 - phases: only include if the objective implies a specific development stage, otherwise omit
 - If no clear condition is implied, use related indications
+- If the objective mentions a specific medical condition or disease, ALWAYS include it as a condition term, even if it seems niche. Example: "lymphedema" → conditions: ["Lymphedema"]. Never return an empty conditions array if the objective implies a medical condition.
 - confidence: how confident you are in the extraction (0-1)`
 
 async function hashHex(input: string): Promise<string> {
