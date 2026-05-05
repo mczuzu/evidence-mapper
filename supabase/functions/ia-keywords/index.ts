@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const objective = typeof body?.objective === "string" ? body.objective.trim() : ""
     const nctIds = normalizeNctIds(body?.nct_ids)
+    const sessionId = typeof body?.session_id === "string" ? body.session_id.trim() : ""
 
     if (!objective) return json({ error: "Missing objective" }, 400)
     if (nctIds.length === 0) return json({ error: "Missing nct_ids" }, 400)
