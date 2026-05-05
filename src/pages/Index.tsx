@@ -366,6 +366,10 @@ const Index = () => {
                     </p>
                   ) : error ? (
                     <p className="text-sm text-destructive">Error: {error.message}</p>
+                  ) : counts?.skipped ? (
+                    <p className="text-sm text-foreground">
+                      ⚠️ {counts.warning}
+                    </p>
                   ) : (
                     <>
                       <p className="text-sm text-foreground">
