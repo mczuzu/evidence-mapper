@@ -111,7 +111,7 @@ const Index = () => {
     setAutoFilling(true);
     setExampleBannerPhase("loading");
     try {
-      const { data, error: fnErr } = await supabaseExternalFunctions.functions.invoke(
+      const { data, error: fnErr } = await supabase.functions.invoke(
         "parse-objective",
         { body: { objective: objective.trim() } }
       );
