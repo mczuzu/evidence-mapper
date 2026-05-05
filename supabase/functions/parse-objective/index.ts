@@ -154,6 +154,9 @@ Deno.serve(async (req) => {
       validatedConditions.push(...conditionsRaw)
     }
 
+    // Fallback: if validation dropped ALL conditions, keep the raw LLM ones
+    const finalConditions = validatedConditions.length > 0 ? validatedConditions : conditionsRaw
+
     // ── Build SearchInput rows ───────────────────────────────────────────────
     const rows: Array<{ id: number; type: string; terms: string[]; operator: "AND" }> = []
     let id = 1
