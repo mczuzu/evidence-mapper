@@ -460,8 +460,7 @@ const AnalysisPage = () => {
                       size="sm"
                       onClick={() => {
                         const qs = analysisRun.dataset_query!;
-                        const sep = qs.includes("?") ? "&" : "?";
-                        navigate(`/dataset?${qs}${sep}regenerate=1`);
+                        navigate(`/dataset?${qs}&regenerate=1`);
                       }}
                       title="Re-run the LLM and replace the cached report"
                     >
