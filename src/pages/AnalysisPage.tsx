@@ -58,7 +58,7 @@ function useAnalysisRun(analysisId: string | undefined) {
 
       const { data, error } = await supabaseExternalPublic
         .from("analysis_runs")
-        .select("id, created_at, nct_ids, dataset_query, prompt_version, schema_version, analysis")
+        .select("id, created_at, nct_ids, dataset_query, prompt_version, schema_version, analysis, cache_key")
         .eq("id", analysisId)
         .single();
 
