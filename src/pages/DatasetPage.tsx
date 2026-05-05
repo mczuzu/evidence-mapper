@@ -103,6 +103,7 @@ const DatasetPage = () => {
   const objective = searchParams.get("objective") || "";
   const autoStartAI = searchParams.get("autoStartAI") === "1";
   const autoStartManual = searchParams.get("autoStartManual") === "1";
+  const forceRegenerateParam = searchParams.get("regenerate") === "1";
 
   // Dataset tier state
   const [tier, setTier] = useState<DatasetTier>("bronze");
