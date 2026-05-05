@@ -16,18 +16,21 @@ export type Database = {
     Tables: {
       analysis_runs: {
         Row: {
+          cache_key: string | null
           created_at: string
           id: string
           nct_ids: string[]
           result: Json | null
         }
         Insert: {
+          cache_key?: string | null
           created_at?: string
           id?: string
           nct_ids: string[]
           result?: Json | null
         }
         Update: {
+          cache_key?: string | null
           created_at?: string
           id?: string
           nct_ids?: string[]
