@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { supabaseExternal } from '@/lib/supabase-external';
 
 interface EvidenceLandscapeProps {
   conditionName: string;
@@ -37,36 +38,72 @@ function useRctCount(meshTerm: string) {
   return { count, loading };
 }
 
-function getDensitySignal(gold: number, bronze: number) {
-  if (bronze === 0) return null;
-  const ratio = gold / bronze;
-  if (ratio >= 0.5) {
+function useConditionTotal(conditionName: string) {
+  const [count, setCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!conditionName) {
+      setLoading(false);
+      setCount(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const { count: c, error } = await supabaseExternal
+        .from('study_index_complete')
+        .select('nct_id', { count: 'exact', head: true })
+        .ilike('conditions', `%${conditionName}%`);
+      if (cancelled) return;
+      if (error) {
+        setCount(null);
+      } else {
+        setCount(c ?? 0);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [conditionName]);
+
+  return { count, loading };
+}
+
+function getDensitySignal(gold: number, conditionTotal: number | null) {
+  if (!conditionTotal || conditionTotal === 0) return null;
+  const pct = (gold / conditionTotal) * 100;
+  if (pct > 5) {
     return {
       label: '◆ HIGH evidence density',
       color: 'text-amber-400',
+      pct,
       description:
-        'Strong evidence base. This therapeutic space is well-studied. New trials need strong differentiation to add value.',
+        'Strong evidence base relative to all completed trials for this condition. New trials need strong differentiation to add value.',
     };
   }
-  if (ratio >= 0.2) {
+  if (pct >= 1) {
     return {
-      label: '◆ MODERATE evidence density',
+      label: '◆ MEDIUM evidence density',
       color: 'text-yellow-400',
+      pct,
       description:
-        'Selective evidence base. Relevant trials exist but coverage is not saturated. Targeted opportunities may exist.',
+        'Selective evidence base. Relevant scored trials exist but coverage is far from saturated. Targeted opportunities may exist.',
     };
   }
   return {
     label: '◆ LOW evidence density',
     color: 'text-green-400',
+    pct,
     description:
-      'Emerging evidence base. Limited high-quality trials in this space. Significant opportunity for first-mover advantage.',
+      'Emerging evidence base. Very few scored trials relative to the full condition landscape. Significant opportunity for first-mover advantage.',
   };
 }
 
 export function EvidenceLandscape({ conditionName, bronzeCount, goldCount }: EvidenceLandscapeProps) {
   const { count: rctCount, loading: rctLoading } = useRctCount(conditionName);
-  const signal = getDensitySignal(goldCount, bronzeCount);
+  const { count: conditionTotal, loading: conditionLoading } = useConditionTotal(conditionName);
+  const signal = getDensitySignal(goldCount, conditionTotal);
+  const precisionPct = bronzeCount > 0 ? (goldCount / bronzeCount) * 100 : null;
 
   return (
     <div
@@ -98,16 +135,33 @@ export function EvidenceLandscape({ conditionName, bronzeCount, goldCount }: Evi
 
       {/* METRICS ROW */}
       <div className="grid grid-cols-3 gap-6">
+        {/* Total condition trials */}
+        <div>
+          {conditionLoading ? (
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#4F46E5' }} />
+          ) : (
+            <div className="text-white font-bold" style={{ fontSize: '32px' }}>
+              {conditionTotal !== null ? conditionTotal.toLocaleString() : '—'}
+            </div>
+          )}
+          <div style={{ color: '#999', fontSize: '12px' }} className="mt-1">
+            Trials available for condition
+          </div>
+          <div style={{ color: '#666', fontSize: '11px' }} className="mt-0.5">
+            AACT full dataset
+          </div>
+        </div>
+
         {/* Bronze */}
         <div>
           <div className="text-white font-bold" style={{ fontSize: '32px' }}>
             {bronzeCount.toLocaleString()}
           </div>
           <div style={{ color: '#999', fontSize: '12px' }} className="mt-1">
-            Completed trials matched
+            Matched by your filters
           </div>
           <div style={{ color: '#666', fontSize: '11px' }} className="mt-0.5">
-            ClinicalTrials.gov
+            Bronze tier
           </div>
         </div>
 
@@ -117,27 +171,10 @@ export function EvidenceLandscape({ conditionName, bronzeCount, goldCount }: Evi
             {goldCount.toLocaleString()}
           </div>
           <div style={{ color: '#999', fontSize: '12px' }} className="mt-1">
-            Trials scored against objective
+            Scored against objective
           </div>
           <div style={{ color: '#666', fontSize: '11px' }} className="mt-0.5">
-            After AI filtering
-          </div>
-        </div>
-
-        {/* PubMed */}
-        <div>
-          {rctLoading ? (
-            <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#4F46E5' }} />
-          ) : (
-            <div className="text-white font-bold" style={{ fontSize: '32px' }}>
-              {Number(rctCount) ? Number(rctCount).toLocaleString() : rctCount}
-            </div>
-          )}
-          <div style={{ color: '#999', fontSize: '12px' }} className="mt-1">
-            Published RCTs
-          </div>
-          <div style={{ color: '#666', fontSize: '11px' }} className="mt-0.5">
-            PubMed · MeSH indexed
+            Gold tier · After AI filtering
           </div>
         </div>
       </div>
@@ -149,10 +186,19 @@ export function EvidenceLandscape({ conditionName, bronzeCount, goldCount }: Evi
       {signal && (
         <div>
           <div className={`font-semibold ${signal.color}`} style={{ fontSize: '14px' }}>
-            {signal.label}
+            {signal.label} · {signal.pct.toFixed(2)}%
           </div>
           <p style={{ color: '#999', fontSize: '13px' }} className="mt-1">
             {signal.description}
+          </p>
+          <p style={{ color: '#666', fontSize: '12px' }} className="mt-2">
+            Density = scored trials / total completed trials for condition ({goldCount.toLocaleString()} / {conditionTotal?.toLocaleString()}).
+            {precisionPct !== null && (
+              <> Pipeline precision (Gold / Bronze): {precisionPct.toFixed(1)}%.</>
+            )}
+            {!rctLoading && rctCount && (
+              <> PubMed RCTs indexed for "{conditionName}": {Number(rctCount) ? Number(rctCount).toLocaleString() : rctCount}.</>
+            )}
           </p>
         </div>
       )}
