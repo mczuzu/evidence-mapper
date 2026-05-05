@@ -132,18 +132,25 @@ Deno.serve(async (req) => {
     const confidence = typeof parsed.confidence === "number" ? parsed.confidence : 0
     const reasoning = typeof parsed.reasoning === "string" ? parsed.reasoning : ""
 
-    // ── Validate conditions against em.search_mesh_conditions ────────────────
-    const db = supabase.schema("em")
+    // ── Validate conditions against em.search_mesh_conditions (external DB) ──
+    const externalUrl = Deno.env.get("VITE_EXTERNAL_SUPABASE_URL")
+    const externalKey = Deno.env.get("VITE_EXTERNAL_SUPABASE_ANON_KEY")
     const validatedConditions: string[] = []
-    for (const term of conditionsRaw) {
-      try {
-        const { data, error } = await db.rpc("search_mesh_conditions", { q: term, lim: 1 })
-        if (!error && Array.isArray(data) && data.length > 0) {
-          validatedConditions.push(term)
+    if (externalUrl && externalKey) {
+      const externalDb = createClient(externalUrl, externalKey, { db: { schema: "em" } })
+      for (const term of conditionsRaw) {
+        try {
+          const { data, error } = await externalDb.rpc("search_mesh_conditions", { q: term, lim: 1 })
+          if (!error && Array.isArray(data) && data.length > 0) {
+            validatedConditions.push(term)
+          }
+        } catch (e) {
+          console.error("MeSH validation error for", term, e)
         }
-      } catch (e) {
-        console.error("MeSH validation error for", term, e)
       }
+    } else {
+      // Fallback: keep raw conditions if external creds missing
+      validatedConditions.push(...conditionsRaw)
     }
 
     // ── Build SearchInput rows ───────────────────────────────────────────────
