@@ -6,6 +6,8 @@ export interface SearchCounts {
   intersectionTotal: number;
   finalNctIds: string[];
   rowCounts: { type: string; terms: string[]; count: number }[];
+  warning?: string;
+  skipped?: boolean;
 }
 
 function termsByType(rows: SearchRow[]) {
@@ -52,6 +54,18 @@ export function useSearchCounts({ search }: { search: SearchInput }) {
       }
 
       const allTerms = termsByType(activeRows);
+
+      // Guard: interventions without conditions can timeout the count query
+      if (allTerms.interventionTerms.length > 0 && allTerms.conditionTerms.length === 0) {
+        return {
+          intersectionTotal: 0,
+          finalNctIds: [],
+          rowCounts: [],
+          skipped: true,
+          warning: "Add a condition to narrow your search before counting studies.",
+        };
+      }
+
       const intersectionTotal = await fetchTotalCount(allTerms);
 
       const rowCounts = await Promise.all(

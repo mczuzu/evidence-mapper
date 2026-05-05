@@ -33,6 +33,7 @@ Rules:
 - conditions: include 1-3 terms maximum
 - phases: only include if the objective implies a specific development stage, otherwise omit
 - If no clear condition is implied, use related indications
+- If the objective mentions a specific medical condition or disease, ALWAYS include it as a condition term, even if it seems niche. Example: "lymphedema" → conditions: ["Lymphedema"]. Never return an empty conditions array if the objective implies a medical condition.
 - confidence: how confident you are in the extraction (0-1)`
 
 async function hashHex(input: string): Promise<string> {
@@ -153,11 +154,14 @@ Deno.serve(async (req) => {
       validatedConditions.push(...conditionsRaw)
     }
 
+    // Fallback: if validation dropped ALL conditions, keep the raw LLM ones
+    const finalConditions = validatedConditions.length > 0 ? validatedConditions : conditionsRaw
+
     // ── Build SearchInput rows ───────────────────────────────────────────────
     const rows: Array<{ id: number; type: string; terms: string[]; operator: "AND" }> = []
     let id = 1
-    if (validatedConditions.length > 0) {
-      rows.push({ id: id++, type: "condition", terms: validatedConditions, operator: "AND" })
+    if (finalConditions.length > 0) {
+      rows.push({ id: id++, type: "condition", terms: finalConditions, operator: "AND" })
     }
     if (interventions.length > 0) {
       rows.push({ id: id++, type: "intervention", terms: interventions, operator: "AND" })
