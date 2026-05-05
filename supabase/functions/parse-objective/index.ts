@@ -35,9 +35,9 @@ Rules:
 - If no clear condition is implied, use related indications
 - confidence: how confident you are in the extraction (0-1)`
 
-async function md5Hex(input: string): Promise<string> {
+async function hashHex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input)
-  const hash = await crypto.subtle.digest("MD5", data)
+  const hash = await crypto.subtle.digest("SHA-256", data)
   return Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("")
