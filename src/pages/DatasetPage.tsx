@@ -805,7 +805,7 @@ const DatasetPage = () => {
               )}
             </div>
             <Button
-              onClick={() => runAnalysis()}
+              onClick={() => runAnalysis(undefined, { forceRegenerate: forceRegenerateParam })}
               disabled={selectedIds.size === 0 || isAnalyzing}
               size="lg"
               className="gap-2 shrink-0"
