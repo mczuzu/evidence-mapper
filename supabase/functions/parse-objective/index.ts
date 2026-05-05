@@ -54,10 +54,10 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY")
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")
 
     if (!supabaseUrl || !serviceRoleKey) return json({ error: "Missing Supabase env vars" }, 500)
-    if (!openaiApiKey) return json({ error: "Missing OPENAI_API_KEY" }, 500)
+    if (!lovableApiKey) return json({ error: "Missing LOVABLE_API_KEY" }, 500)
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
