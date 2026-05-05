@@ -319,10 +319,15 @@ const Index = () => {
                   ) : error ? (
                     <p className="text-sm text-destructive">Error: {error.message}</p>
                   ) : (
-                    <p className="text-sm text-foreground">
-                      <span className="text-2xl font-bold tabular-nums">{totalCount.toLocaleString()}</span>
-                      <span className="ml-2 text-muted-foreground">studies match your criteria</span>
-                    </p>
+                    <>
+                      <p className="text-sm text-foreground">
+                        <span className="text-2xl font-bold tabular-nums">{totalCount.toLocaleString()}</span>
+                        <span className="ml-2 text-muted-foreground">studies match your criteria</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Searching completed clinical trials from ClinicalTrials.gov (Jan 2026 snapshot). Published literature on PubMed may show additional evidence.
+                      </p>
+                    </>
                   )}
                 </div>
               </div>
