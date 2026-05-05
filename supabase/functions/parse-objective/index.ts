@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // ── Cache check ──────────────────────────────────────────────────────────
-    const cacheKey = "parse:" + (await md5Hex(objective.toLowerCase()))
+    const cacheKey = "parse:" + (await hashHex(objective.toLowerCase()))
     const { data: cached } = await supabase
       .from("analysis_runs")
       .select("result")
