@@ -179,6 +179,10 @@ export function EvidenceLandscape({ conditionName, bronzeCount, goldCount }: Evi
         </div>
       </div>
 
+      <p style={{ color: '#777', fontSize: '11px' }} className="mt-3">
+        Coverage: completed trials only. Does not include published literature, systematic reviews, or post-approval regulatory sources.
+      </p>
+
       {/* DIVIDER */}
       <div className="my-5" style={{ height: '1px', backgroundColor: '#333' }} />
 
