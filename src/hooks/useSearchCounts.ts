@@ -6,6 +6,8 @@ export interface SearchCounts {
   intersectionTotal: number;
   finalNctIds: string[];
   rowCounts: { type: string; terms: string[]; count: number }[];
+  warning?: string;
+  skipped?: boolean;
 }
 
 function termsByType(rows: SearchRow[]) {
