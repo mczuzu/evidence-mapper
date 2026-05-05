@@ -160,8 +160,8 @@ Deno.serve(async (req) => {
     // ── Build SearchInput rows ───────────────────────────────────────────────
     const rows: Array<{ id: number; type: string; terms: string[]; operator: "AND" }> = []
     let id = 1
-    if (validatedConditions.length > 0) {
-      rows.push({ id: id++, type: "condition", terms: validatedConditions, operator: "AND" })
+    if (finalConditions.length > 0) {
+      rows.push({ id: id++, type: "condition", terms: finalConditions, operator: "AND" })
     }
     if (interventions.length > 0) {
       rows.push({ id: id++, type: "intervention", terms: interventions, operator: "AND" })
