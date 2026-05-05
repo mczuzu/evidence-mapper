@@ -75,29 +75,29 @@ Deno.serve(async (req) => {
       return json({ ...(cached.result as Record<string, unknown>), cached: true })
     }
 
-    // ── LLM call ─────────────────────────────────────────────────────────────
-    const llmResp = await fetch("https://api.openai.com/v1/chat/completions", {
+    // ── LLM call (Lovable AI Gateway) ────────────────────────────────────────
+    const llmResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openaiApiKey}`,
+        Authorization: `Bearer ${lovableApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        temperature: 0,
-        max_tokens: 400,
-        response_format: { type: "json_object" },
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: `Research objective: "${objective}"` },
         ],
+        response_format: { type: "json_object" },
       }),
     })
 
     if (!llmResp.ok) {
       const t = await llmResp.text()
-      console.error("OpenAI error:", llmResp.status, t)
-      return json({ error: "OpenAI parse failed" }, 502)
+      console.error("LLM error:", llmResp.status, t)
+      if (llmResp.status === 429) return json({ error: "Rate limit exceeded" }, 429)
+      if (llmResp.status === 402) return json({ error: "AI credits exhausted" }, 402)
+      return json({ error: "LLM parse failed" }, 502)
     }
 
     const llmOut = await llmResp.json()
