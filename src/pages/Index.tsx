@@ -103,6 +103,36 @@ const Index = () => {
   const [visibleExampleRows, setVisibleExampleRows] = useState(0);
   const [exampleBannerPhase, setExampleBannerPhase] = useState<"loading" | "done" | null>(null);
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [autoFilling, setAutoFilling] = useState(false);
+
+  const handleAutoFillFromObjective = useCallback(async () => {
+    if (autoFilling) return;
+    if (!objective.trim()) return;
+    setAutoFilling(true);
+    setExampleBannerPhase("loading");
+    try {
+      const { data, error: fnErr } = await supabaseExternalFunctions.functions.invoke(
+        "parse-objective",
+        { body: { objective: objective.trim() } }
+      );
+      if (fnErr) throw fnErr;
+      const rows = (data as any)?.rows;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        toast.error("Could not infer filters from objective");
+        setExampleBannerPhase(null);
+        return;
+      }
+      setSearch({ rows });
+      setExampleBannerPhase("done");
+    } catch (e: any) {
+      console.error("parse-objective error:", e);
+      toast.error("Auto-fill failed. Please try again.");
+      setExampleBannerPhase(null);
+    } finally {
+      setAutoFilling(false);
+    }
+  }, [autoFilling, objective]);
+
 
   const { data: counts, isLoading, error } = useSearchCounts({ search });
 
