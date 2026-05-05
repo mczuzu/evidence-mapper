@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PipelineTracker } from "@/components/PipelineTracker";
 import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2, X, CheckSquare } from "lucide-react";
 import { EXAMPLE_OBJECTIVE, EXAMPLE_SEARCH } from "@/lib/example-search";
-import { supabaseExternalFunctions } from "@/lib/supabase-external";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type Step = 1 | 2 | 3;
@@ -111,7 +111,7 @@ const Index = () => {
     setAutoFilling(true);
     setExampleBannerPhase("loading");
     try {
-      const { data, error: fnErr } = await supabaseExternalFunctions.functions.invoke(
+      const { data, error: fnErr } = await supabase.functions.invoke(
         "parse-objective",
         { body: { objective: objective.trim() } }
       );

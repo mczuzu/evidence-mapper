@@ -35,9 +35,9 @@ Rules:
 - If no clear condition is implied, use related indications
 - confidence: how confident you are in the extraction (0-1)`
 
-async function md5Hex(input: string): Promise<string> {
+async function hashHex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input)
-  const hash = await crypto.subtle.digest("MD5", data)
+  const hash = await crypto.subtle.digest("SHA-256", data)
   return Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("")
@@ -54,15 +54,15 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY")
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")
 
     if (!supabaseUrl || !serviceRoleKey) return json({ error: "Missing Supabase env vars" }, 500)
-    if (!openaiApiKey) return json({ error: "Missing OPENAI_API_KEY" }, 500)
+    if (!lovableApiKey) return json({ error: "Missing LOVABLE_API_KEY" }, 500)
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // ── Cache check ──────────────────────────────────────────────────────────
-    const cacheKey = "parse:" + (await md5Hex(objective.toLowerCase()))
+    const cacheKey = "parse:" + (await hashHex(objective.toLowerCase()))
     const { data: cached } = await supabase
       .from("analysis_runs")
       .select("result")
@@ -75,29 +75,29 @@ Deno.serve(async (req) => {
       return json({ ...(cached.result as Record<string, unknown>), cached: true })
     }
 
-    // ── LLM call ─────────────────────────────────────────────────────────────
-    const llmResp = await fetch("https://api.openai.com/v1/chat/completions", {
+    // ── LLM call (Lovable AI Gateway) ────────────────────────────────────────
+    const llmResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openaiApiKey}`,
+        Authorization: `Bearer ${lovableApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        temperature: 0,
-        max_tokens: 400,
-        response_format: { type: "json_object" },
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: `Research objective: "${objective}"` },
         ],
+        response_format: { type: "json_object" },
       }),
     })
 
     if (!llmResp.ok) {
       const t = await llmResp.text()
-      console.error("OpenAI error:", llmResp.status, t)
-      return json({ error: "OpenAI parse failed" }, 502)
+      console.error("LLM error:", llmResp.status, t)
+      if (llmResp.status === 429) return json({ error: "Rate limit exceeded" }, 429)
+      if (llmResp.status === 402) return json({ error: "AI credits exhausted" }, 402)
+      return json({ error: "LLM parse failed" }, 502)
     }
 
     const llmOut = await llmResp.json()
@@ -132,18 +132,25 @@ Deno.serve(async (req) => {
     const confidence = typeof parsed.confidence === "number" ? parsed.confidence : 0
     const reasoning = typeof parsed.reasoning === "string" ? parsed.reasoning : ""
 
-    // ── Validate conditions against em.search_mesh_conditions ────────────────
-    const db = supabase.schema("em")
+    // ── Validate conditions against em.search_mesh_conditions (external DB) ──
+    const externalUrl = Deno.env.get("VITE_EXTERNAL_SUPABASE_URL")
+    const externalKey = Deno.env.get("VITE_EXTERNAL_SUPABASE_ANON_KEY")
     const validatedConditions: string[] = []
-    for (const term of conditionsRaw) {
-      try {
-        const { data, error } = await db.rpc("search_mesh_conditions", { q: term, lim: 1 })
-        if (!error && Array.isArray(data) && data.length > 0) {
-          validatedConditions.push(term)
+    if (externalUrl && externalKey) {
+      const externalDb = createClient(externalUrl, externalKey, { db: { schema: "em" } })
+      for (const term of conditionsRaw) {
+        try {
+          const { data, error } = await externalDb.rpc("search_mesh_conditions", { q: term, lim: 1 })
+          if (!error && Array.isArray(data) && data.length > 0) {
+            validatedConditions.push(term)
+          }
+        } catch (e) {
+          console.error("MeSH validation error for", term, e)
         }
-      } catch (e) {
-        console.error("MeSH validation error for", term, e)
       }
+    } else {
+      // Fallback: keep raw conditions if external creds missing
+      validatedConditions.push(...conditionsRaw)
     }
 
     // ── Build SearchInput rows ───────────────────────────────────────────────
