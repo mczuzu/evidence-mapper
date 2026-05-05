@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { PipelineTracker } from "@/components/PipelineTracker";
 import { ArrowRight, ArrowLeft, Check, Pencil, Sparkles, Loader2, X, CheckSquare } from "lucide-react";
 import { EXAMPLE_OBJECTIVE, EXAMPLE_SEARCH } from "@/lib/example-search";
+import { supabaseExternalFunctions } from "@/lib/supabase-external";
+import { toast } from "sonner";
 
 type Step = 1 | 2 | 3;
 
@@ -101,6 +103,35 @@ const Index = () => {
   const [visibleExampleRows, setVisibleExampleRows] = useState(0);
   const [exampleBannerPhase, setExampleBannerPhase] = useState<"loading" | "done" | null>(null);
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [autoFilling, setAutoFilling] = useState(false);
+
+  const handleAutoFillFromObjective = useCallback(async () => {
+    if (autoFilling) return;
+    if (!objective.trim()) return;
+    setAutoFilling(true);
+    setExampleBannerPhase("loading");
+    try {
+      const { data, error: fnErr } = await supabaseExternalFunctions.functions.invoke(
+        "parse-objective",
+        { body: { objective: objective.trim() } }
+      );
+      if (fnErr) throw fnErr;
+      const rows = (data as any)?.rows;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        toast.error("Could not infer filters from objective");
+        setExampleBannerPhase(null);
+        return;
+      }
+      setSearch({ rows });
+      setExampleBannerPhase("done");
+    } catch (e: any) {
+      console.error("parse-objective error:", e);
+      toast.error("Auto-fill failed. Please try again.");
+      setExampleBannerPhase(null);
+    } finally {
+      setAutoFilling(false);
+    }
+  }, [autoFilling, objective]);
 
   const { data: counts, isLoading, error } = useSearchCounts({ search });
 
@@ -297,6 +328,23 @@ const Index = () => {
             {/* Example animation banner */}
             {exampleBannerPhase && (
               <ExampleBanner phase={exampleBannerPhase} onDismiss={handleDismissBanner} />
+            )}
+
+            {objective.trim().length > 0 && !hasSearch && (
+              <div>
+                <button
+                  onClick={handleAutoFillFromObjective}
+                  disabled={autoFilling}
+                  className="inline-flex items-center gap-2 rounded-lg border border-indigo text-indigo px-4 py-2 text-xs font-medium transition-colors hover:bg-indigo-light disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {autoFilling ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  Auto-fill filters from my objective
+                </button>
+              </div>
             )}
 
             <SearchBuilder value={search} onChange={(s) => {
