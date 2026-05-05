@@ -38,6 +38,81 @@ export type Database = {
         }
         Relationships: []
       }
+      rejected_bronze: {
+        Row: {
+          id: string
+          nct_id: string
+          reason: string
+          rejected_at: string
+          session_id: string
+        }
+        Insert: {
+          id?: string
+          nct_id: string
+          reason: string
+          rejected_at?: string
+          session_id: string
+        }
+        Update: {
+          id?: string
+          nct_id?: string
+          reason?: string
+          rejected_at?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
+      rejected_gold: {
+        Row: {
+          id: string
+          nct_id: string
+          reason: string
+          rejected_at: string
+          session_id: string
+        }
+        Insert: {
+          id?: string
+          nct_id: string
+          reason: string
+          rejected_at?: string
+          session_id: string
+        }
+        Update: {
+          id?: string
+          nct_id?: string
+          reason?: string
+          rejected_at?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
+      rejected_silver: {
+        Row: {
+          id: string
+          nct_id: string
+          reason: string
+          rejected_at: string
+          score: number | null
+          session_id: string
+        }
+        Insert: {
+          id?: string
+          nct_id: string
+          reason: string
+          rejected_at?: string
+          score?: number | null
+          session_id: string
+        }
+        Update: {
+          id?: string
+          nct_id?: string
+          reason?: string
+          rejected_at?: string
+          score?: number | null
+          session_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

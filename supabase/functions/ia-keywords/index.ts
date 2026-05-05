@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const objective = typeof body?.objective === "string" ? body.objective.trim() : ""
     const nctIds = normalizeNctIds(body?.nct_ids)
+    const sessionId = typeof body?.session_id === "string" ? body.session_id.trim() : ""
 
     if (!objective) return json({ error: "Missing objective" }, 400)
     if (nctIds.length === 0) return json({ error: "Missing nct_ids" }, 400)
@@ -138,6 +139,26 @@ Rules:
 
     // Cap at 200 for downstream processing
     const nctIdsFiltered = matchedIds.slice(0, 200)
+
+    // Log rejected (no keyword match) to rejected_bronze
+    if (sessionId) {
+      const matchedSet = new Set(matchedIds)
+      const rejectedIds = nctIds.filter((id) => !matchedSet.has(id))
+      if (rejectedIds.length > 0) {
+        const reason = `No keyword match in title or abstract (keywords: ${keywords.join(", ")})`
+        try {
+          await supabase.from("rejected_bronze").insert(
+            rejectedIds.map((nct_id) => ({
+              session_id: sessionId,
+              nct_id,
+              reason,
+            }))
+          )
+        } catch (e) {
+          console.error("rejected_bronze insert error:", e)
+        }
+      }
+    }
 
     return json({
       objective,

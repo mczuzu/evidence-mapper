@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const nctIds = normalizeNctIds(body?.nct_ids)
     const objective = typeof body?.objective === "string" ? body.objective.trim() : ""
+    const sessionId = typeof body?.session_id === "string" ? body.session_id.trim() : ""
 
     if (nctIds.length === 0) return json({ error: "Missing nct_ids" }, 400)
     if (!objective) return json({ error: "Missing objective" }, 400)
@@ -179,15 +180,37 @@ Sort by score descending.
     }
 
     // Validate and clean output
-    const validRanked = ranked
-      .filter(
-        (r) =>
-          typeof r.nct_id === "string" &&
-          /^NCT\d{8}$/.test(r.nct_id) &&
-          typeof r.score === "number" &&
-          r.score >= 4
-      )
+    const cleanRanked = ranked.filter(
+      (r) =>
+        typeof r.nct_id === "string" &&
+        /^NCT\d{8}$/.test(r.nct_id) &&
+        typeof r.score === "number"
+    )
+
+    const validRanked = cleanRanked
+      .filter((r) => r.score >= 4)
       .sort((a, b) => b.score - a.score)
+
+    // Log rejected (score < 4) to rejected_silver
+    if (sessionId) {
+      const rejected = cleanRanked.filter((r) => r.score < 4)
+      if (rejected.length > 0) {
+        try {
+          await supabase.from("rejected_silver").insert(
+            rejected.map((r) => ({
+              session_id: sessionId,
+              nct_id: r.nct_id,
+              reason: typeof r.reason === "string" && r.reason.length > 0
+                ? r.reason
+                : "Low relevance score",
+              score: r.score,
+            }))
+          )
+        } catch (e) {
+          console.error("rejected_silver insert error:", e)
+        }
+      }
+    }
 
     return json({
       objective,
