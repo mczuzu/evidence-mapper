@@ -103,6 +103,7 @@ const DatasetPage = () => {
   const objective = searchParams.get("objective") || "";
   const autoStartAI = searchParams.get("autoStartAI") === "1";
   const autoStartManual = searchParams.get("autoStartManual") === "1";
+  const forceRegenerateParam = searchParams.get("regenerate") === "1";
 
   // Dataset tier state
   const [tier, setTier] = useState<DatasetTier>("bronze");
@@ -422,7 +423,13 @@ const DatasetPage = () => {
   };
 
   // ── Analysis ──────────────────────────────────────────────────────────────
-  const runAnalysis = async (context?: AnalysisContext) => {
+  const computeCacheKey = (objectiveText: string, ids: string[]) => {
+    const sorted = [...ids].sort();
+    const obj = (objectiveText || "").trim().toLowerCase();
+    return `${obj}::${sorted.join(",")}`;
+  };
+
+  const runAnalysis = async (context?: AnalysisContext, opts?: { forceRegenerate?: boolean }) => {
     const nctIds = Array.from(selectedIds);
     if (nctIds.length === 0) return;
 
@@ -435,6 +442,41 @@ const DatasetPage = () => {
         .filter(Boolean);
 
       const searchMeta = { mesh_terms: meshConditions, keywords: activeKeywords };
+
+      // ── Cache lookup ────────────────────────────────────────────────────
+      const cacheKey = computeCacheKey(objective || "", nctIds);
+      if (!opts?.forceRegenerate) {
+        const { data: cached, error: cacheErr } = await supabaseExternalPublic
+          .from("analysis_runs")
+          .select("id, nct_ids, analysis, prompt_version, schema_version")
+          .eq("cache_key", cacheKey)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!cacheErr && cached && cached.analysis) {
+          toast.success("Loaded cached report");
+          setShowAnalysisModal(false);
+          navigate(`/analysis/${cached.id}`, {
+            state: {
+              run: {
+                id: cached.id,
+                nct_ids: cached.nct_ids,
+                analysis: cached.analysis,
+                prompt_version: cached.prompt_version ?? "v3",
+                schema_version: cached.schema_version ?? "V3",
+              },
+              bronzeCount: totalCount,
+              goldCount: goldResults?.length ?? 0,
+              conditionName: search?.rows?.find((r: any) => r.t === "c")?.terms?.[0] ?? "",
+              cached: true,
+            },
+          });
+          setIsAnalyzing(false);
+          return;
+        }
+      }
+
       const requestBody: {
         nct_ids: string[];
         objective?: string;
@@ -507,6 +549,7 @@ const DatasetPage = () => {
         prompt_version: result.prompt_version ?? "v3",
         schema_version: result.schema_version ?? "V3",
         analysis: analysisPayload,
+        cache_key: computeCacheKey(objective || "", available),
       });
 
       if (insertError) throw { message: "Failed to save analysis results", details: insertError.message };
@@ -762,7 +805,7 @@ const DatasetPage = () => {
               )}
             </div>
             <Button
-              onClick={() => runAnalysis()}
+              onClick={() => runAnalysis(undefined, { forceRegenerate: forceRegenerateParam })}
               disabled={selectedIds.size === 0 || isAnalyzing}
               size="lg"
               className="gap-2 shrink-0"
@@ -1101,7 +1144,7 @@ const DatasetPage = () => {
         open={showAnalysisModal}
         onOpenChange={setShowAnalysisModal}
         selectedCount={selectedIds.size}
-        onConfirm={runAnalysis}
+        onConfirm={(ctx) => runAnalysis(ctx, { forceRegenerate: forceRegenerateParam })}
         isLoading={isAnalyzing}
         error={analysisError}
       />

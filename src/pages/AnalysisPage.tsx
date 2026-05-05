@@ -27,6 +27,7 @@ type AnalysisRunRow = {
   dataset_query?: string | null;
   prompt_version?: string | null;
   schema_version?: string | null;
+  cache_key?: string | null;
 };
 
 type DirectionAnalysis = {
@@ -57,7 +58,7 @@ function useAnalysisRun(analysisId: string | undefined) {
 
       const { data, error } = await supabaseExternalPublic
         .from("analysis_runs")
-        .select("id, created_at, nct_ids, dataset_query, prompt_version, schema_version, analysis")
+        .select("id, created_at, nct_ids, dataset_query, prompt_version, schema_version, analysis, cache_key")
         .eq("id", analysisId)
         .single();
 
@@ -452,10 +453,25 @@ const AnalysisPage = () => {
               )}
               <ConfidencePill value={parsedLegacyText?.confidence} />
               {(hasLegacyTextContent || hasV3Content) && !isLoading && !errorMessage && (
-                <Button variant="outline" size="sm" onClick={() => handlePrint()}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print PDF
-                </Button>
+                <>
+                  {analysisRun?.dataset_query && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const qs = analysisRun.dataset_query!;
+                        navigate(`/dataset?${qs}&regenerate=1`);
+                      }}
+                      title="Re-run the LLM and replace the cached report"
+                    >
+                      Regenerate report
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => handlePrint()}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print PDF
+                  </Button>
+                </>
               )}
             </div>
           </div>
