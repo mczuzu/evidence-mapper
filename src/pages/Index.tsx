@@ -330,6 +330,23 @@ const Index = () => {
               <ExampleBanner phase={exampleBannerPhase} onDismiss={handleDismissBanner} />
             )}
 
+            {objective.trim().length > 0 && !hasSearch && (
+              <div>
+                <button
+                  onClick={handleAutoFillFromObjective}
+                  disabled={autoFilling}
+                  className="inline-flex items-center gap-2 rounded-lg border border-indigo text-indigo px-4 py-2 text-xs font-medium transition-colors hover:bg-indigo-light disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {autoFilling ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  Auto-fill filters from my objective
+                </button>
+              </div>
+            )}
+
             <SearchBuilder value={search} onChange={(s) => {
               setSearch(s);
               // If user edits, dismiss the banner
